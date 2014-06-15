@@ -25,5 +25,5 @@ RUN \
   curl -s https://storage.googleapis.com/golang/go1.2.2.src.tar.gz | tar -v -C /usr/local -xz && \
   cd /usr/local/go/src && ./make.bash
 
-# Define default command.
+# Define default command to force RUN to execute
 CMD ["bash"]
