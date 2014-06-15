@@ -13,7 +13,7 @@ docker stop dynsoftup 2> /dev/null
 docker rm dynsoftup 2> /dev/null
 
 # run container mapping internal docker port 8080 to external ports 9090
-docker run -name dynsoftup -p 9090:8080 samirarabbanian/dynsoftup
+docker run -d --name dynsoftup -p 9090:8080 samirarabbanian/dynsoftup
 
 # Note: boot2docker
 # boot2docker ip - to get ip address
