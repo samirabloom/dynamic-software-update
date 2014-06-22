@@ -6,4 +6,4 @@ boot2docker up
 export DOCKER_HOST=tcp://$(boot2docker ip 2>/dev/null):2375
 
 # build base GO docker image from Dockerfile
-docker build -t samirarabbanian/go-docker-base .
+docker build -t samirabloom/go-docker-base .
