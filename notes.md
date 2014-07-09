@@ -43,7 +43,6 @@ detection of invalid response)
 1. Extend the proxy to cover all scenarios described in the report
 submitted on CATE:
  - Multi-Version Update
-
  - Rapid Update
  - New Session Update
  - Long Term Update
