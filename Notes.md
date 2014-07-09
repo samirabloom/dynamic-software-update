@@ -9,7 +9,7 @@ Work done so far:
 1. Done Performance testing and analysing on proxy
 
         - Analysis demonstrated that messaging systems especially ZeroMQ are not suitable for this project
-        - To get the most efficient proxy with lowest over head the proxy was implemented 3 times (currently working with the most efficient proxy)
+        - To get the most efficient proxy with lowest overhead the proxy was reimplemented 3 times (currently working with the most efficient proxy)
 
 1. Researched about fleetctl, but decided to not use it because:
 
