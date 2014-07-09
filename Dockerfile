@@ -19,4 +19,4 @@ ADD . /home/goworld/src/github.com/samirabloom/software_upgrade/src
 EXPOSE 8080
 
 # Define default command
-CMD ["go", "run", "test.go"]
+CMD ["go", "run", "docker_example.go"]

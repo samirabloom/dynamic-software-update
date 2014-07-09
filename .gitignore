@@ -5,6 +5,8 @@
 *.exe
 *.o
 *.so
+dynsoftup
+pkg
 
 # Packages #
 ############
@@ -23,12 +25,9 @@ mods
 # Logs and databases #
 ######################
 *.log
+performance_log.csv
 *.sql
 *.sqlite
-
-# Runtime artifacts #
-#####################
-keystore.jks
 
 # OS generated files #
 ######################
@@ -49,17 +48,3 @@ Thumbs.db
 # Eclipse config files #
 ########################
 .project
-
-# Maven build artifacts files #
-###############################
-target
-pom.xml.releaseBackup
-release.properties
-google
-.extract
-
-# Gradle build artifacts files #
-################################
-.gradle
-build
-out
