@@ -48,6 +48,7 @@ func (mockConn *MockConn) Write(writeBuffer []byte) (n int, err error) {
 		mockConn.NumberOfWrites++
 		return writeSize/2, nil
 	} else {
+		mockConn.Data[mockConn.NumberOfWrites] = make([]byte, len(writeBuffer))
 		writeSize := copy(mockConn.Data[mockConn.NumberOfWrites], writeBuffer)
 		mockConn.NumberOfWrites++
 		return writeSize, mockConn.Error
