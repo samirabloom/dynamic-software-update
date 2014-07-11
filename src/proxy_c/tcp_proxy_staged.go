@@ -154,6 +154,7 @@ func route(next func(*chunkContext), clientToServer bool, uuidGenerator func() s
 				if uuidCookieValue == nil {
 					// todo uuidGenerator should return uuid.UUID object not string value
 					uuidCookieValue = uuid.Parse(uuidGenerator())
+//					context.requestUUID = uuidCookieValue
 				}
 				setCookieHeader := []byte(fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", uuidCookieValue.String()))
 				searchString := "\n"
