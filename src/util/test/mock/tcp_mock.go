@@ -30,7 +30,14 @@ type MockConn struct {
 	RemoteAddress  net.Addr
 	NumberOfReads  int
 	NumberOfWrites int
-	shortWrite     bool
+	ShortWrite     bool
+}
+
+func NewMockConn(err error, size int) *MockConn {
+	return &MockConn{
+		Data: make([][]byte, size),
+		Error: err,
+	}
 }
 
 func (mockConn *MockConn) Read(readBuffer []byte) (n int, err error) {
@@ -43,10 +50,11 @@ func (mockConn *MockConn) Read(readBuffer []byte) (n int, err error) {
 }
 
 func (mockConn *MockConn) Write(writeBuffer []byte) (n int, err error) {
-	if mockConn.shortWrite {
+	if mockConn.ShortWrite {
+		mockConn.Data[mockConn.NumberOfWrites] = make([]byte, len(writeBuffer)/2)
 		writeSize := copy(mockConn.Data[mockConn.NumberOfWrites], writeBuffer)
 		mockConn.NumberOfWrites++
-		return writeSize/2, nil
+		return writeSize, nil
 	} else {
 		mockConn.Data[mockConn.NumberOfWrites] = make([]byte, len(writeBuffer))
 		writeSize := copy(mockConn.Data[mockConn.NumberOfWrites], writeBuffer)

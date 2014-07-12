@@ -45,34 +45,7 @@ func Proxy() {
 
 // ==== MAIN - END
 
-
-type LoadBalancer struct {
-	listener     *net.TCPListener
-	frontendAddr *net.TCPAddr
-	backendAddr  *net.TCPAddr
-	loadBalanceCount int
-	stop             chan bool
-	uuidGenerator func() string
-}
-
-func NewLoadBalancer(frontendAddr, backendAddr *net.TCPAddr, loadBalanceCount int) (*LoadBalancer, error) {
-	listener, err := net.ListenTCP("tcp", frontendAddr)
-	if err != nil {
-		return nil, err
-	}
-	// If the port in frontendAddr was 0 then ListenTCP will have a picked
-	// a port to listen on, hence the call to Addr to get that actual port:
-	return &LoadBalancer{
-		listener:     listener,
-		frontendAddr: listener.Addr().(*net.TCPAddr),
-		backendAddr:  backendAddr,
-		loadBalanceCount: loadBalanceCount,
-		stop: make(chan bool),
-		uuidGenerator: func() string {
-			return uuid.NewUUID().String()
-		},
-	}, nil
-}
+// ==== READ - START
 
 func read(next func(*chunkContext), src io.Reader, complete func(*chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
@@ -112,6 +85,10 @@ func read(next func(*chunkContext), src io.Reader, complete func(*chunkContext))
 	}
 }
 
+// ==== READ - END
+
+// ==== ROUTE - START
+
 var (
 	cookieHeaderRegex = regexp.MustCompile("Cookie: .*dynsoftup=([a-z0-9-]*);.*")
 )
@@ -137,26 +114,25 @@ var (
 // 		1. do not create backpipe
 // 		2. do not add cookie
 // 		3. call next
-func route(next func(*chunkContext), clientToServer bool, uuidGenerator func() string, createBackPipe func(context *chunkContext, clientToServer bool)) func(*chunkContext) {
+func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, createBackPipe func(context *chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
 		defer trace(time.Now(), context.performance.route)
 		loggerFactory().Info("Route Stage START - %s", context)
 		if context.firstChunk {
-			if clientToServer {
+			if context.clientToServer {
 				submatches := cookieHeaderRegex.FindSubmatch(context.data)
 				if len(submatches) >= 2 {
 					context.requestUUID = uuid.Parse(string(submatches[1]))
 					loggerFactory().Info("Route Stage found UUID %s", context)
 				}
-				go createBackPipe(NewChunkContext("backpipe", context.to, context.from, context.event, context.requestNumber, context.requestUUID), !clientToServer)
+				go createBackPipe(NewChunkContext("backpipe", context.to, context.from, context.event, context.requestNumber, context.requestUUID, !context.clientToServer))
 			} else {
 				uuidCookieValue := context.requestUUID
 				if uuidCookieValue == nil {
-					// todo uuidGenerator should return uuid.UUID object not string value
-					uuidCookieValue = uuid.Parse(uuidGenerator())
+					uuidCookieValue = uuidGenerator()
 				}
 				setCookieHeader := []byte(fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", uuidCookieValue.String()))
-//				println("setCookieHeader length: %d \n the context data")
+				//				println("setCookieHeader length: %d \n the context data")
 				searchString := "\n"
 				insertLocation := bytes.Index(context.data, []byte(searchString))
 				if insertLocation > 0 {
@@ -170,6 +146,10 @@ func route(next func(*chunkContext), clientToServer bool, uuidGenerator func() s
 		loggerFactory().Info("Route Stage END - %s", context)
 	}
 }
+
+// ==== ROUTE - END
+
+// ==== WRITE - START
 
 // test chunk no errors
 // 	- should
@@ -200,6 +180,7 @@ func write(dst io.Writer) func(*chunkContext) {
 			writeSize, writeError := dst.Write(context.data)
 			if writeSize > 0 {
 				context.totalWriteSize += int64(writeSize)
+				fmt.Printf("context.totalWriteSize: %d - %s\n\n", context.totalWriteSize, context.String())
 			}
 			if writeError != nil {
 				context.err = writeError
@@ -211,6 +192,20 @@ func write(dst io.Writer) func(*chunkContext) {
 	}
 }
 
+// ==== WRITE - END
+
+// ==== COMPLETE - START
+
+// TODO TESTS
+
+// test no error
+// 	- should
+// 		1. read closed
+
+// test syscall.EPIPE error
+// 	- should
+// 		1. write closed
+// 		2. read closed
 func complete(context *chunkContext) {
 	defer trace(time.Now(), context.performance.complete)
 	loggerFactory().Info("Complete Stage START - %s", context)
@@ -228,14 +223,17 @@ func complete(context *chunkContext) {
 	loggerFactory().Info("Complete Stage END - %s", context)
 }
 
-func createPipe(context *chunkContext, clientToServer bool) {
+// ==== COMPLETE - END
+
+// ==== CLIENT_LOOP - START
+
+func createPipe(context *chunkContext) {
 	loggerFactory().Info("Creating forward " + context.description + " START")
 	stages := read(
 		route(
 			write(context.to),
-			clientToServer,
-			func() string {
-				return uuid.NewUUID().String()
+			func() uuid.UUID {
+				return uuid.NewUUID()
 			},
 			createPipe,
 		),
@@ -243,29 +241,25 @@ func createPipe(context *chunkContext, clientToServer bool) {
 		complete,
 	)
 	stages(context)
-	performanceLog.Write([]string{
-	strconv.Itoa(context.requestNumber),
-	strconv.FormatInt(*context.performance.read, 10),
-	strconv.FormatInt(*context.performance.route, 10),
-	strconv.FormatInt(*context.performance.write, 10),
-	strconv.FormatInt(*context.performance.complete, 10),
-})
-	performanceLog.Flush()
+	writePerformanceEntry(context)
 	context.event <- context.totalWriteSize
 	loggerFactory().Info("Creating forward " + context.description + " END")
 }
 
-func (proxy *LoadBalancer) clientLoop() func(*net.TCPConn, chan bool) {
+func clientLoop(backendBaseAddr *net.TCPAddr, loadBalanceCount int) func(*net.TCPConn, chan bool) {
 	var requestNumber = 0
 	return func(client *net.TCPConn, quit chan bool) {
 		loggerFactory().Info("Client loop START")
 		requestNumber++
-		backend, err := proxy.routeRequest(client, requestNumber); if err != nil {
-			return
+		backendAddr := &net.TCPAddr{IP: backendBaseAddr.IP, Port: backendBaseAddr.Port + (requestNumber % loadBalanceCount)}
+		backend, err := net.DialTCP("tcp", nil, backendAddr)
+		if err != nil {
+			log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
+			client.Close()
 		}
 
 		event := make(chan int64)
-		go createPipe(NewChunkContext("forwardpipe", client, backend, event, requestNumber, nil), true)
+		go createPipe(NewChunkContext("forwardpipe", client, backend, event, requestNumber, nil, true))
 
 		var transferred int64 = 0
 		for i := 0; i < 2; i++ {
@@ -288,16 +282,36 @@ func (proxy *LoadBalancer) clientLoop() func(*net.TCPConn, chan bool) {
 	}
 }
 
-func (proxy *LoadBalancer) routeRequest(client *net.TCPConn, requestNumber int) (*net.TCPConn, error) {
-	loggerFactory().Info("Route request START")
-	backendAddr := &net.TCPAddr{IP: proxy.backendAddr.IP, Port: proxy.backendAddr.Port + (requestNumber % proxy.loadBalanceCount)}
-	backend, err := net.DialTCP("tcp", nil, backendAddr)
+// ==== CLIENT_LOOP - END
+
+// ==== LOAD BALANCER - START
+
+type LoadBalancer struct {
+	listener     *net.TCPListener
+	frontendAddr *net.TCPAddr
+	backendAddr  *net.TCPAddr
+	loadBalanceCount int
+	stop             chan bool
+	uuidGenerator func() string
+}
+
+func NewLoadBalancer(frontendAddr, backendAddr *net.TCPAddr, loadBalanceCount int) (*LoadBalancer, error) {
+	listener, err := net.ListenTCP("tcp", frontendAddr)
 	if err != nil {
-		log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
-		client.Close()
+		return nil, err
 	}
-	loggerFactory().Info("Route request END")
-	return backend, err
+	// If the port in frontendAddr was 0 then ListenTCP will have a picked
+	// a port to listen on, hence the call to Addr to get that actual port:
+	return &LoadBalancer{
+		listener:     listener,
+		frontendAddr: listener.Addr().(*net.TCPAddr),
+		backendAddr:  backendAddr,
+		loadBalanceCount: loadBalanceCount,
+		stop: make(chan bool),
+		uuidGenerator: func() string {
+			return uuid.NewUUID().String()
+		},
+	}, nil
 }
 
 func (proxy *LoadBalancer) Run() {
@@ -312,7 +326,7 @@ func (proxy *LoadBalancer) Run() {
 		proxy.listener.Close()
 	}()
 
-	clientLoop := proxy.clientLoop()
+	clientLoop := clientLoop(proxy.backendAddr, proxy.loadBalanceCount)
 	for running {
 		client, err := proxy.listener.Accept()
 		if err != nil {
@@ -340,22 +354,81 @@ func (proxy *LoadBalancer) Stop() {
 	close(proxy.stop)
 }
 
+// ==== LOAD BALANCER - END
+
 // ==== CHUNK_CONTEXT - START
 
 type chunkContext struct {
-	description              string
-	data                     []byte
+	description           string
+	data                  []byte
 	to                    *net.TCPConn
 	from                  *net.TCPConn
-	err                      error
-	totalReadSize            int64
-	totalWriteSize           int64
-	event                    chan int64
-	firstChunk               bool
-	performance              performance
-	requestNumber            int
-	requestUUID              uuid.UUID
+	err                   error
+	totalReadSize         int64
+	totalWriteSize        int64
+	event                 chan int64
+	firstChunk            bool
+	performance           performance
+	requestNumber         int
+	requestUUID           uuid.UUID
+	clientToServer        bool
 }
+
+type ChunkContext interface {
+	String()
+}
+
+func (context *chunkContext) String() string {
+	var output string = ""
+	output += "\n{\n"
+	output += fmt.Sprintf("\t description: %s\n", context.description)
+	if (context.clientToServer) {
+		output += "\t direction: client->server\n"
+	} else {
+		output += "\t direction: server->client\n"
+	}
+	if len(context.data) > 0 {
+		output += "\t data:\n\t\t"+strings.Replace(string(context.data), "\n", "\n\t\t", -1)
+	}
+	output += "\n"
+	if context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
+		output += fmt.Sprintf("\t from: %s -> %s\n", context.from.LocalAddr(), context.from.RemoteAddr())
+	}
+	if context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
+		output += fmt.Sprintf("\t to: %s -> %s\n", context.to.LocalAddr(), context.to.RemoteAddr())
+	}
+	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
+	output += fmt.Sprintf("\t totalWriteSize: %d\n", context.totalWriteSize)
+	if context.requestUUID != nil {
+		output += fmt.Sprintf("\t requestUUID: %s\n", context.requestUUID)
+	}
+	output += "}\n"
+	return output
+}
+
+func NewChunkContext(description string, from *net.TCPConn, to *net.TCPConn, event chan int64, requestNumber int, requestUUID uuid.UUID, clientToServer bool) *chunkContext {
+	return &chunkContext{
+		description: description,
+		data: make([]byte, 64*1024),
+		from: from,
+		to: to,
+		event: event,
+		firstChunk: true,
+		performance: *&performance{
+			read: new(int64),
+			route: new(int64),
+			write: new(int64),
+			complete: new(int64),
+		},
+		requestNumber: requestNumber,
+		requestUUID: requestUUID,
+		clientToServer: clientToServer,
+	}
+}
+
+// ==== CHUNK_CONTEXT - END
+
+// ==== PERFORMANCE - START
 
 type performance struct {
 	read               *int64
@@ -399,81 +472,17 @@ var performanceLog = func() *csv.Writer {
 	return writer
 }()
 
-type ChunkContext interface {
-	String()
+func writePerformanceEntry(context *chunkContext) {
+	performanceLog.Write([]string{
+	strconv.Itoa(context.requestNumber),
+	strconv.FormatInt(*context.performance.read, 10),
+	strconv.FormatInt(*context.performance.route, 10),
+	strconv.FormatInt(*context.performance.write, 10),
+	strconv.FormatInt(*context.performance.complete, 10)})
+	performanceLog.Flush()
 }
 
-func (context *chunkContext) String() string {
-	var output string = ""
-	output += "\n{\n"
-	output += fmt.Sprintf("\t description: %s\n", context.description)
-	if len(context.data) > 0 {
-		output += "\t data:\n\t\t"+strings.Replace(string(context.data), "\n", "\n\t\t", -1)
-		//		output += fmt.Sprintf("\t data:\n\t\t%s\n", context.data)
-	}
-	output += "\n"
-	output += fmt.Sprintf("\t from: %s -> %s\n", context.from.LocalAddr().String(), context.from.RemoteAddr().String())
-	output += fmt.Sprintf("\t to: %s -> %s\n", context.to.LocalAddr().String(), context.to.RemoteAddr().String())
-	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
-	output += fmt.Sprintf("\t totalWriteSize: %d\n", context.totalWriteSize)
-	if context.requestUUID != nil {
-		output += fmt.Sprintf("\t requestUUID: %s\n", context.requestUUID)
-	}
-	output += "}\n"
-	return output
-}
-
-func NewChunkContext(description string, from *net.TCPConn, to *net.TCPConn, event chan int64, requestNumber int, requestUUID uuid.UUID) *chunkContext {
-	return &chunkContext{
-		description: description,
-		data: make([]byte, 64*1024),
-		from: from,
-		to: to,
-		err: nil,
-		totalReadSize: 0,
-		totalWriteSize: 0,
-		event: event,
-		firstChunk: true,
-		performance: *&performance{
-			read: new(int64),
-			route: new(int64),
-			write: new(int64),
-			complete: new(int64),
-		},
-		requestNumber: requestNumber,
-		requestUUID: requestUUID,
-	}
-}
-
-func CopyChunkContext(contextToCopy *chunkContext) *chunkContext {
-	copiedChunkContext := &chunkContext{
-		description: contextToCopy.description,
-		data: make([]byte, 64*1024),
-		from: contextToCopy.from, // todo warning not copied correctly
-		to: contextToCopy.to, // todo warning not copied correctly
-		err: contextToCopy.err,
-		totalReadSize: contextToCopy.totalReadSize,
-		totalWriteSize: contextToCopy.totalWriteSize,
-		event: contextToCopy.event, // todo warning not copied correctly
-		firstChunk: contextToCopy.firstChunk,
-		performance: *&performance{
-			read: new(int64),
-			route: new(int64),
-			write: new(int64),
-			complete: new(int64),
-		},
-		requestNumber: contextToCopy.requestNumber,
-	}
-	*copiedChunkContext.performance.read = *contextToCopy.performance.read
-	*copiedChunkContext.performance.route = *contextToCopy.performance.route
-	*copiedChunkContext.performance.write = *contextToCopy.performance.write
-	*copiedChunkContext.performance.complete = *contextToCopy.performance.complete
-	amountCopied := copy(copiedChunkContext.data, contextToCopy.data)
-	copiedChunkContext.data = copiedChunkContext.data[0:amountCopied]
-	return copiedChunkContext
-}
-
-// ==== CHUNK_CONTEXT - END
+// ==== PERFORMANCE - END
 
 // ==== LOGGER - START
 
