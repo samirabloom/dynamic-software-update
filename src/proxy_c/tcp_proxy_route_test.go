@@ -5,7 +5,6 @@ import (
 	"net"
 	"code.google.com/p/go-uuid/uuid"
 	"util/test/assertion"
-	"fmt"
 )
 
 // test firstChunk and clientToServer
@@ -117,6 +116,50 @@ func Test_On_Route_With_Not_ClientToServer_No_RequestUUID(testCtx *testing.T) {
 // 		1. add cookie with context.requestUUID
 // 		2. call next
 func Test_On_Route_With_RequestUUID_Not_ClientToServer(testCtx *testing.T) {
+	// given
+	var (
+		mockContext = &chunkContext{
+		description: "",
+		data: make([]byte, 64*1024),
+		from: &net.TCPConn{},
+		to: &net.TCPConn{},
+		err: nil,
+		totalReadSize: 0,
+		totalWriteSize: 0,
+		event: make(chan int64, 100),
+		firstChunk: true,
+		performance: *&performance{
+			read: new(int64),
+			route: new(int64),
+			write: new(int64),
+			complete: new(int64),
+		},
+		requestNumber: 0,
+		requestUUID: uuid.Parse("6ba7b810-9dad-11d1-80b4-00c04fd430c8"),
+	}
+		mockWriteCallCounter   = 0
+		mockWriteChunkContexts = make([]*chunkContext, 5)
+		mockWrite  = func(mockDestination *chunkContext) {
+		mockWriteChunkContexts[mockWriteCallCounter] = mockDestination
+		mockWriteCallCounter++
+	}
+		clientToServer bool = false
+
+		createMockPipeCounter  = 0
+		createMockPipe = func(context *chunkContext, clientToServer bool){
+		createMockPipeCounter++
+	}
+	)
+	mockContext.data = []byte("this is a request with no cookie \n added")
+
+	// when
+	route(mockWrite, clientToServer, func() string {return uuid.NewUUID().String()},createMockPipe)(mockContext)
+
+	// then
+	assertion.AssertDeepEqual("Correct context.data after adding cookie", testCtx, mockContext.data, []byte("this is a request with no cookie \nSet-Cookie: dynsoftup="+"6ba7b810-9dad-11d1-80b4-00c04fd430c8"+";\n added"))
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, mockWriteCallCounter, 1)
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, mockContext.totalReadSize, int64(60))
+
 }
 
 
@@ -126,6 +169,53 @@ func Test_On_Route_With_RequestUUID_Not_ClientToServer(testCtx *testing.T) {
 // 		2. do not add cookie
 // 		3. call next
 func Test_On_Route_With_Not_First_Chunk(testCtx *testing.T) {
+	// given
+	var (
+		mockContext = &chunkContext{
+		description: "",
+		data: make([]byte, 64*1024),
+		from: &net.TCPConn{},
+		to: &net.TCPConn{},
+		err: nil,
+		totalReadSize: 0,
+		totalWriteSize: 0,
+		event: make(chan int64, 100),
+		firstChunk: false	,
+		performance: *&performance{
+			read: new(int64),
+			route: new(int64),
+			write: new(int64),
+			complete: new(int64),
+		},
+		requestNumber: 0,
+		requestUUID: uuid.Parse("6ba7b810-9dad-11d1-80b4-00c04fd430c8"),
+	}
+		mockWriteCallCounter   = 0
+		mockWriteChunkContexts = make([]*chunkContext, 5)
+		mockWrite  = func(mockDestination *chunkContext) {
+		mockWriteChunkContexts[mockWriteCallCounter] = mockDestination
+		mockWriteCallCounter++
+	}
+		clientToServer bool = false
+
+		createMockPipeCounter  = 0
+		createMockPipe = func(context *chunkContext, clientToServer bool){
+		createMockPipeCounter++
+		// **************
+		// TO DO AND MOVE THE ASSERT FUNCTION
+		// ****************
+		assertion.AssertDeepEqual("Correct new pipe Counter", testCtx, createMockPipeCounter, 0)
+	}
+	)
+	mockContext.data = []byte("this is a request with no cookie \n added")
+
+	// when
+	route(mockWrite, clientToServer, func() string {return uuid.NewUUID().String()},createMockPipe)(mockContext)
+
+	// then
+	assertion.AssertDeepEqual("Correct context.data after adding cookie", testCtx, mockContext.data, []byte("this is a request with no cookie \n added"))
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, mockWriteCallCounter, 1)
+
 }
 
 
