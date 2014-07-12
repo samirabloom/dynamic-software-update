@@ -4,6 +4,7 @@ import (
 	"testing"
 	"code.google.com/p/go-uuid/uuid"
 	"util/test/assertion"
+	"net"
 )
 
 func NewTestRouteChunkContext(data string, requestUUID uuid.UUID, clientToServer bool) *chunkContext {
@@ -14,6 +15,11 @@ func NewTestRouteChunkContext(data string, requestUUID uuid.UUID, clientToServer
 	return mockContext
 }
 
+func panicingUUIDGenerator() uuid.UUID {
+	panic("THIS FUNCTION SHOULD NOT BE CALLED")
+	return nil
+}
+
 // test firstChunk and clientToServer
 // 	- should
 // 		1. read dynsofyup cookie
@@ -22,19 +28,19 @@ func NewTestRouteChunkContext(data string, requestUUID uuid.UUID, clientToServer
 func Test_On_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
-		uuidString     = "3f872698-0852-11e4-b87a-600308a8245e"
-		mockContext    = NewTestRouteChunkContext("Cookie: dynsoftup="+uuidString+";", uuid.NIL, true)
+		uuidValue      = uuid.NewUUID()
+		mockContext    = NewTestRouteChunkContext("Cookie: dynsoftup="+uuidValue.String()+";", uuid.NIL, true)
 		mockWrite      = NewMockStage("mockWrite")
 		mockCreatePipe = NewMockStage("mockCreatePipe")
-		uuidGenerator  = func() uuid.UUID {return nil}
+		routingContext = &RoutingContext{backendBaseAddr: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}, loadBalanceCount: 3}
 	)
 	mockCreatePipe.close(1)
 
 	// when
-	route(mockWrite.mockStage, uuidGenerator, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.mockStage, panicingUUIDGenerator, routingContext, mockCreatePipe.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct UUID From Request Cookie", testCtx, mockContext.requestUUID, uuid.Parse(uuidString))
+	assertion.AssertDeepEqual("Correct UUID From Request Cookie", testCtx, mockContext.requestUUID, uuidValue)
 	<-mockCreatePipe.mockStageCallChannel
 	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, mockCreatePipe.mockStageCallCounter, 1)
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, mockWrite.mockStageCallCounter, 1)
@@ -48,18 +54,18 @@ func Test_On_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 func Test_On_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
+		uuidValue            = uuid.NewUUID()
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, false)
 		mockWrite            = NewMockStage("mockWrite")
 		mockCreatePipe       = NewMockStage("mockCreatePipe")
-		uuidString           = "3f872698-0852-11e4-b87a-600308a8245e"
 		initialTotalReadSize = int64(10)
-		expectedCookieHeader = "Set-Cookie: dynsoftup=" + uuidString + ";\n"
-		uuidGenerator        = func() uuid.UUID {return uuid.Parse(uuidString)}
+		expectedCookieHeader = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
+		uuidGenerator        = func() uuid.UUID {return uuidValue}
 	)
 	mockContext.totalReadSize = initialTotalReadSize
 
 	// when
-	route(mockWrite.mockStage, uuidGenerator, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.mockStage, uuidGenerator, &RoutingContext{}, mockCreatePipe.mockStage)(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, mockContext.data, []byte("this is a request with no cookie \n"+expectedCookieHeader+" added"))
@@ -74,18 +80,17 @@ func Test_On_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 func Test_On_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		uuidString           = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", uuid.Parse(uuidString), false)
+		uuidValue            = uuid.NewUUID()
+		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", uuidValue, false)
 		mockWrite            = NewMockStage("mockWrite")
 		mockCreatePipe       = NewMockStage("mockCreatePipe")
 		initialTotalReadSize = int64(10)
-		expectedCookieHeader = "Set-Cookie: dynsoftup=" + uuidString + ";\n"
-		uuidGenerator        = func() uuid.UUID {return nil}
+		expectedCookieHeader = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
 	)
 	mockContext.totalReadSize = initialTotalReadSize
 
 	// when
-	route(mockWrite.mockStage, uuidGenerator, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.mockStage, panicingUUIDGenerator, &RoutingContext{}, mockCreatePipe.mockStage)(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, mockContext.data, []byte("this is a request with no cookie \n"+expectedCookieHeader+" added\n"))
@@ -104,13 +109,12 @@ func Test_On_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 		mockContext    = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, true)
 		mockWrite      = NewMockStage("mockWrite")
 		mockCreatePipe = NewMockStage("mockCreatePipe")
-		uuidGenerator  = func() uuid.UUID {return nil}
 	)
 	mockContext.firstChunk = false
 	mockCreatePipe.close(1)
 
 	// when
-	route(mockWrite.mockStage, uuidGenerator, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.mockStage, panicingUUIDGenerator, &RoutingContext{}, mockCreatePipe.mockStage)(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Chunk Without Cookie", testCtx, mockContext.data, []byte("this is a request with no cookie \n added"))
@@ -129,12 +133,11 @@ func Test_On_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 		mockContext    = NewTestRouteChunkContext("this is a response with no cookie \n added", nil, false)
 		mockWrite      = NewMockStage("mockWrite")
 		mockCreatePipe = NewMockStage("mockCreatePipe")
-		uuidGenerator  = func() uuid.UUID {return nil}
 	)
 	mockContext.firstChunk = false
 
 	// when
-	route(mockWrite.mockStage, uuidGenerator, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.mockStage, panicingUUIDGenerator, &RoutingContext{}, mockCreatePipe.mockStage)(mockContext)
 
 	// then
 	println("mockContext.data", "["+string(mockContext.data)+"]")

@@ -3,6 +3,7 @@ package mock
 import (
 	"time"
 	"net"
+	"io"
 )
 
 type MockReader struct {
@@ -24,6 +25,7 @@ func (mockWriter MockWriter) Write(writeBuffer []byte) (n int, err error) {
 }
 
 type MockConn struct {
+	net.TCPConn
 	Data           [][]byte
 	Error          error
 	LocalAddress   net.Addr
@@ -84,5 +86,33 @@ func (mockConn *MockConn) SetReadDeadline(t time.Time) error {
 }
 
 func (mockConn *MockConn) SetWriteDeadline(t time.Time) error {
+	return nil
+}
+
+func (mockConn *MockConn) ReadFrom(r io.Reader) (int64, error) {
+	return 0, nil
+}
+
+func (mockConn *MockConn) CloseRead() error {
+	return nil
+}
+
+func (mockConn *MockConn) CloseWrite() error {
+	return nil
+}
+
+func (mockConn *MockConn) SetLinger(sec int) error {
+	return nil
+}
+
+func (mockConn *MockConn) SetKeepAlive(keepalive bool) error {
+	return nil
+}
+
+func (mockConn *MockConn) SetKeepAlivePeriod(d time.Duration) error {
+	return nil
+}
+
+func (mockConn *MockConn) SetNoDelay(noDelay bool) error {
 	return nil
 }

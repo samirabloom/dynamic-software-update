@@ -23,7 +23,6 @@ func NewTestChunkContext() *chunkContext {
 			write: new(int64),
 			complete: new(int64),
 		},
-		requestNumber: 0,
 		requestUUID: uuid.NewUUID(),
 	}
 	return mockContext
@@ -46,7 +45,6 @@ func CopyChunkContext(contextToCopy *chunkContext) *chunkContext {
 			write: new(int64),
 			complete: new(int64),
 		},
-		requestNumber: contextToCopy.requestNumber,
 	}
 	*copiedChunkContext.performance.read = *contextToCopy.performance.read
 	*copiedChunkContext.performance.route = *contextToCopy.performance.route

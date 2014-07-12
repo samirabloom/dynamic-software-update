@@ -2,15 +2,17 @@ package proxy_c
 
 import (
 	"testing"
-	"util/test/mock"
+	mock "util/test/mock"
 	"util/test/assertion"
 	"io"
 )
 
-func NewTestWriteChunkContext(data string) *chunkContext {
+func NewTestWriteChunkContext(data string, err error) (*chunkContext, *mock.MockConn) {
 	mockContext := NewTestChunkContext()
+	mockDestination := mock.NewMockConn(nil, 5)
 	mockContext.data = []byte(data)
-	return mockContext
+	mockContext.to = mockDestination
+	return mockContext, mockDestination
 }
 
 // test chunk no errors
@@ -19,15 +21,12 @@ func NewTestWriteChunkContext(data string) *chunkContext {
 // 		2. update context.totalWriteSize
 func Test_On_Write_With_Chunk_No_Error(testCtx *testing.T) {
 	// given
-	var (
-		mockDestination             = mock.NewMockConn(nil, 5)
-		initialTotalWriteSize int64 = 10
-		mockContext                 = NewTestWriteChunkContext("this is the data that is going to be written")
-	)
+	initialTotalWriteSize := int64(10)
+	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", nil)
 	mockContext.totalWriteSize = initialTotalWriteSize
 
 	// when
-	write(mockDestination)(mockContext)
+	write(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data))+initialTotalWriteSize)
@@ -43,13 +42,10 @@ func Test_On_Write_With_Chunk_No_Error(testCtx *testing.T) {
 // 		2. set context.err
 func Test_On_Write_With_Chunk_With_Error(testCtx *testing.T) {
 	// given
-	var (
-		mockDestination = mock.NewMockConn(io.EOF, 5)
-		mockContext     = NewTestWriteChunkContext("this is the data that is going to be written")
-	)
+	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", io.EOF)
 
 	// when
-	write(mockDestination)(mockContext)
+	write(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data)))
@@ -63,13 +59,10 @@ func Test_On_Write_With_Chunk_With_Error(testCtx *testing.T) {
 // 		1. not call write
 func Test_On_Write_With_Zero_Chunk(testCtx *testing.T) {
 	// given
-	var (
-		mockDestination = mock.NewMockConn(nil, 5)
-		mockContext     = NewTestWriteChunkContext("")
-	)
+	mockContext, mockDestination := NewTestWriteChunkContext("", nil)
 
 	// when
-	write(mockDestination)(mockContext)
+	write(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data)))
@@ -85,16 +78,14 @@ func Test_On_Write_With_Zero_Chunk(testCtx *testing.T) {
 // 		2. set context.err as io.ErrShortWrite
 func Test_On_Write_With_Short_Write_Error(testCtx *testing.T) {
 	// given
-	var (
-		mockDestination = mock.NewMockConn(io.EOF, 5)
-		mockContext     = NewTestWriteChunkContext("this is the data that is going to be written")
-	)
+	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", io.EOF)
 	mockDestination.ShortWrite = true
+
 	expectedData := make([]byte, len(mockContext.data)/2)
 	copy(expectedData, mockContext.data)
 
 	// when
-	write(mockDestination)(mockContext)
+	write(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data) / 2))

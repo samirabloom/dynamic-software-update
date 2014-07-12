@@ -7,6 +7,16 @@ import (
 	"util/test/assertion"
 )
 
+func NewTestReadChunkContext(chunks []string, err error) (*chunkContext, *mock.MockConn) {
+	mockContext := NewTestChunkContext()
+	mockSource := mock.NewMockConn(err, len(chunks))
+	mockContext.from = mockSource
+	for index, chunk := range chunks {
+		mockSource.Data[index] = []byte(chunk)
+	}
+	return mockContext, mockSource
+}
+
 // test readSize == 0 then EOF
 // 	- should
 // 		1. call src.Read once
@@ -15,14 +25,13 @@ import (
 func Test_On_Read_With_No_Chunk_And_EOF_Error(testCtx *testing.T) {
 	// given
 	var (
-		mockSource   = mock.NewMockConn(io.EOF, 0)
-		mockContext  = NewTestChunkContext()
-		mockRoute    = NewMockStage("mockRoute")
-		mockComplete = NewMockStage("mockComplete")
+		mockContext, mockSource = NewTestReadChunkContext([]string{}, io.EOF)
+		mockRoute               = NewMockStage("mockRoute")
+		mockComplete            = NewMockStage("mockComplete")
 	)
 
 	// when
-	read(mockRoute.mockStage, mockSource, mockComplete.mockStage)(mockContext)
+	read(mockRoute.mockStage, mockComplete.mockStage)(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, mockSource.NumberOfReads, 1)
@@ -40,15 +49,13 @@ func Test_On_Read_With_No_Chunk_And_EOF_Error(testCtx *testing.T) {
 func Test_On_Read_With_Empty_Chunk_And_Non_EOF_Error(testCtx *testing.T) {
 	// given
 	var (
-		mockSource   = mock.NewMockConn(io.ErrClosedPipe, 1)
-		mockContext  = NewTestChunkContext()
-		mockRoute    = NewMockStage("mockRoute")
-		mockComplete = NewMockStage("mockComplete")
+		mockContext, mockSource = NewTestReadChunkContext([]string{""}, io.ErrClosedPipe)
+		mockRoute               = NewMockStage("mockRoute")
+		mockComplete            = NewMockStage("mockComplete")
 	)
-	mockSource.Data[0] = []byte("")
 
 	// when
-	read(mockRoute.mockStage, mockSource, mockComplete.mockStage)(mockContext)
+	read(mockRoute.mockStage, mockComplete.mockStage)(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, mockSource.NumberOfReads, 2)
@@ -68,16 +75,13 @@ func Test_On_Read_With_Empty_Chunk_And_Non_EOF_Error(testCtx *testing.T) {
 func Test_On_Read_With_Two_Chunks(testCtx *testing.T) {
 	// given
 	var (
-		mockSource   = mock.NewMockConn(io.EOF, 2)
-		mockContext  = NewTestChunkContext()
-		mockRoute    = NewMockStage("mockRoute")
-		mockComplete = NewMockStage("mockComplete")
+		mockContext, mockSource = NewTestReadChunkContext([]string{"this is the first chunk", "this is the second chunk"}, io.EOF)
+		mockRoute               = NewMockStage("mockRoute")
+		mockComplete            = NewMockStage("mockComplete")
 	)
-	mockSource.Data[0] = []byte("this is the first chunk")
-	mockSource.Data[1] = []byte("this is the second chunk")
 
 	// when
-	read(mockRoute.mockStage, mockSource, mockComplete.mockStage)(mockContext)
+	read(mockRoute.mockStage, mockComplete.mockStage)(mockContext)
 
 	// then
 	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, mockSource.NumberOfReads, 3)

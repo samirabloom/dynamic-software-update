@@ -28,7 +28,6 @@ func Test_On_Complete_With_(testCtx *testing.T) {
 				write: new(int64),
 				complete: new(int64),
 		},
-			requestNumber: 0,
 	}
 		//		expectedResult error =
 	)
