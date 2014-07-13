@@ -15,7 +15,7 @@ func NewTestChunkContext() *chunkContext {
 		err: nil,
 		totalReadSize: 0,
 		totalWriteSize: 0,
-		event: make(chan int64, 100),
+		pipeComplete: make(chan int64, 100),
 		firstChunk: true,
 		performance: *&performance{
 			read: new(int64),
@@ -37,7 +37,7 @@ func CopyChunkContext(contextToCopy *chunkContext) *chunkContext {
 		err: contextToCopy.err,
 		totalReadSize: contextToCopy.totalReadSize,
 		totalWriteSize: contextToCopy.totalWriteSize,
-		event: contextToCopy.event, // todo warning not copied correctly
+		pipeComplete: contextToCopy.pipeComplete, // todo warning not copied correctly
 		firstChunk: contextToCopy.firstChunk,
 		performance: *&performance{
 			read: new(int64),

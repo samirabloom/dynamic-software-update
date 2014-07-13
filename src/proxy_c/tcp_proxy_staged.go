@@ -114,17 +114,14 @@ var (
 // 		1. do not create backpipe
 // 		2. do not add cookie
 // 		3. call next
-var requestNumber = 0
-
 func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, routingContext *RoutingContext, createBackPipe func(context *chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
 		defer trace(time.Now(), context.performance.route)
 		loggerFactory().Info("Route Stage START - %s", context)
 		if context.firstChunk {
 			if context.clientToServer {
-				requestNumber++
 				var err error
-				backendAddr := &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + (requestNumber % routingContext.loadBalanceCount)}
+				backendAddr := &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.loadBalanceCount))}
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
 					log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
@@ -235,7 +232,7 @@ func complete(context *chunkContext) {
 
 // ==== COMPLETE - END
 
-// ==== CLIENT_LOOP - START
+// ==== CREATE PIPE - START
 
 func createPipe(routingContext *RoutingContext) func(*chunkContext) {
 	return func(context *chunkContext) {
@@ -253,59 +250,25 @@ func createPipe(routingContext *RoutingContext) func(*chunkContext) {
 		)
 		stages(context)
 		writePerformanceEntry(context)
-		context.event <- context.totalWriteSize
+		context.pipeComplete <- context.totalWriteSize
 		loggerFactory().Info("Creating forward " + context.description + " END")
 	}
 }
 
-func clientLoop(routingContext *RoutingContext) func(*net.TCPConn, chan bool) {
-	return func(client *net.TCPConn, quit chan bool) {
-		loggerFactory().Info("Client loop START")
-		event := make(chan int64)
-
-		forwardContext := NewForwardPipeChunkContext(client, event, nil)
-		go createPipe(routingContext)(forwardContext)
-
-		var transferred int64 = 0
-		for i := 0; i < 2; i++ {
-			select {
-			case written := <-event:
-				transferred += written
-			case <-quit:
-				// Interrupt the two brokers and "join" them.
-				forwardContext.from.Close()
-				if (forwardContext.to != nil) {
-					forwardContext.to.Close()
-				}
-				for ; i < 2; i++ {
-					transferred += <-event
-				}
-				return
-			}
-		}
-		forwardContext.from.Close()
-		if (forwardContext.to != nil) {
-			forwardContext.to.Close()
-		}
-		loggerFactory().Info("Client loop END")
-	}
-}
-
-// ==== CLIENT_LOOP - END
+// ==== CREATE PIPE - END
 
 // ==== LOAD BALANCER - START
 
 type RoutingContext struct {
 	backendBaseAddr  *net.TCPAddr
 	loadBalanceCount int
+	requestCounter   int64
 }
 
 type LoadBalancer struct {
 	listener       *net.TCPListener
-	frontendAddr   *net.TCPAddr
 	routingContext *RoutingContext
 	stop           chan bool
-	uuidGenerator  func() string
 }
 
 func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCount int) (*LoadBalancer, error) {
@@ -313,24 +276,26 @@ func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCoun
 	if err != nil {
 		return nil, err
 	}
-	// If the port in frontendAddr was 0 then ListenTCP will have a picked
-	// a port to listen on, hence the call to Addr to get that actual port:
+
 	return &LoadBalancer{
 		listener:     listener,
-		frontendAddr: listener.Addr().(*net.TCPAddr),
 		routingContext: &RoutingContext{
 			backendBaseAddr:  backendBaseAddr,
 			loadBalanceCount: loadBalanceCount,
 		},
 		stop: make(chan bool),
-		uuidGenerator: func() string {
-			return uuid.NewUUID().String()
-		},
 	}, nil
 }
 
 func (proxy *LoadBalancer) Run() {
-	loggerFactory().Info("Run START")
+	proxy.acceptLoop()
+}
+
+func (proxy *LoadBalancer) Stop() {
+	close(proxy.stop)
+}
+
+func (proxy *LoadBalancer) acceptLoop() {
 	quitRequest := make(chan bool)
 	defer close(quitRequest)
 
@@ -341,18 +306,49 @@ func (proxy *LoadBalancer) Run() {
 		proxy.listener.Close()
 	}()
 
-	clientLoop := clientLoop(proxy.routingContext)
 	for running {
+		loggerFactory().Info("Accept loop IN LOOP - START")
+
+		// accept connection
 		client, err := proxy.listener.Accept()
-		if err != nil {
+
+		if err != nil { // stop proxy
+
 			if !isClosedError(err) {
-				log.Printf("Stopping proxy on tcp/%v for tcp/%v (%v)", proxy.frontendAddr, proxy.routingContext.backendBaseAddr, err)
+				log.Printf("Stopping proxy on tcp/%v for tcp/%v (%v)", proxy.listener.Addr().(*net.TCPAddr), proxy.routingContext.backendBaseAddr, err)
 			}
-			return
+			running = false
+
+		} else { // process connection
+
+			proxy.routingContext.requestCounter++
+			go func() {
+				pipeComplete := make(chan int64)
+
+				// create forward pipe
+				forwardContext := NewForwardPipeChunkContext(client.(*net.TCPConn), pipeComplete)
+				go createPipe(proxy.routingContext)(forwardContext)
+
+				// wait for pipes to complete (or quit early)
+				for i := 0; i < 2; i++ {
+					select {
+					case <-pipeComplete:
+					case <-quitRequest:
+						close(pipeComplete)
+					}
+				}
+
+				// close sockets
+				forwardContext.from.Close()
+				if (forwardContext.to != nil) {
+					forwardContext.to.Close()
+				}
+			}()
+
 		}
-		go clientLoop(client.(*net.TCPConn), quitRequest)
+
+		loggerFactory().Info("Accept loop IN LOOP - END")
 	}
-	loggerFactory().Info("Run END")
 }
 
 func isClosedError(err error) bool {
@@ -363,10 +359,6 @@ func isClosedError(err error) bool {
 	 * https://groups.google.com/forum/#!msg/golang-nuts/0_aaCvBmOcM/SptmDyX1XJMJ
 	 */
 	return strings.HasSuffix(err.Error(), "use of closed network connection")
-}
-
-func (proxy *LoadBalancer) Stop() {
-	close(proxy.stop)
 }
 
 // ==== LOAD BALANCER - END
@@ -392,22 +384,18 @@ type TCPConnection interface {
 }
 
 type chunkContext struct {
-	description    string
-	data           []byte
-	to             TCPConnection
-	from           TCPConnection
-	err            error
-	totalReadSize  int64
-	totalWriteSize int64
-	event          chan int64
-	firstChunk     bool
-	performance    performance
-	requestUUID    uuid.UUID
-	clientToServer bool
-}
-
-type ChunkContext interface {
-	String()
+	description            string
+	data                   []byte
+	to                     TCPConnection
+	from                   TCPConnection
+	err                    error
+	totalReadSize          int64
+	totalWriteSize         int64
+	pipeComplete           chan int64
+	firstChunk             bool
+	performance            performance
+	requestUUID            uuid.UUID
+	clientToServer         bool
 }
 
 func (context *chunkContext) String() string {
@@ -438,37 +426,37 @@ func (context *chunkContext) String() string {
 	return output
 }
 
-func NewForwardPipeChunkContext(from *net.TCPConn, event chan int64, requestUUID uuid.UUID) *chunkContext {
+func NewForwardPipeChunkContext(from *net.TCPConn, pipeComplete chan int64) *chunkContext {
 	return &chunkContext{
-		description: "forwardpipe",
-		data:        make([]byte, 64*1024),
-		from:        from,
-		event:       event,
-		firstChunk:  true,
-		performance: *&performance{
-			read:     new(int64),
-			route:    new(int64),
-			write:    new(int64),
-			complete: new(int64),
+		description:    "forwardpipe",
+		data:           make([]byte, 64*1024),
+		from:           from,
+		pipeComplete:   pipeComplete,
+		firstChunk:     true,
+		performance:    *&performance{
+			read:       new(int64),
+			route:      new(int64),
+			write:      new(int64),
+			complete:   new(int64),
 		},
-		requestUUID:    requestUUID,
+		requestUUID:    nil,
 		clientToServer: true,
 	}
 }
 
 func NewBackPipeChunkContext(forwardContext *chunkContext) *chunkContext {
 	return &chunkContext{
-		description: "backpipe",
-		data:        make([]byte, 64*1024),
-		from:        forwardContext.to,
-		to:          forwardContext.from,
-		event:       forwardContext.event,
-		firstChunk:  true,
-		performance: *&performance{
-			read:     new(int64),
-			route:    new(int64),
-			write:    new(int64),
-			complete: new(int64),
+		description:    "backpipe",
+		data:           make([]byte, 64*1024),
+		from:           forwardContext.to,
+		to:             forwardContext.from,
+		pipeComplete:   forwardContext.pipeComplete,
+		firstChunk:     true,
+		performance:    *&performance{
+			read:       new(int64),
+			route:      new(int64),
+			write:      new(int64),
+			complete:   new(int64),
 		},
 		requestUUID:    forwardContext.requestUUID,
 		clientToServer: false,

@@ -20,7 +20,7 @@ func Test_On_Complete_With_(testCtx *testing.T) {
 			err: syscall.EPIPE,
 			totalReadSize: 0,
 			totalWriteSize: 0,
-			event: make(chan int64, 100),
+			pipeComplete: make(chan int64, 100),
 			firstChunk: true,
 			performance: *&performance{
 				read: new(int64),
