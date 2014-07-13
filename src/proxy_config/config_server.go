@@ -53,14 +53,12 @@ func (h *RegexpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-
 func PUTHandler(uuidGenerator func() string) func(map[string]interface{}, http.ResponseWriter, *http.Request) {
 	return func(jsonObjectMaps map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-		// retriving json bodies
 		body := make([]byte, 1024)
 		size, _ := r.Body.Read(body)
 
-		var jsonObject interface {}
+		var jsonObject interface{}
 		err := json.Unmarshal(body[0:size], &jsonObject)
 		if err != nil {
 			fmt.Println("Error decoding json request", err.Error())
@@ -69,14 +67,7 @@ func PUTHandler(uuidGenerator func() string) func(map[string]interface{}, http.R
 		jsonObject.(map[string]interface{})["id"] = id
 		jsonObjectMaps[id] = jsonObject
 
-		//	for key, value := range jsonObjectMaps {
-		//		fmt.Printf("\njson with id \n %s is: \n %s\n\n", key, value)
-		//	}
-
-		// parse received json body
-//		m := jsonObject.(map[string]interface{})
-//		parseJsonBody(m)
-
+		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprintf(w, "%s", id)
 	}
 }
@@ -127,17 +118,13 @@ func GETHandler(urlRegex *regexp.Regexp) func(map[string]interface{}, http.Respo
 
 func DeleteHandler(urlRegex *regexp.Regexp) func(map[string]interface{}, http.ResponseWriter, *http.Request) {
 	return func(jsonObjectMaps map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-		//		println("I am in the get function")
 		serverId := urlRegex.FindSubmatch([]byte(r.URL.Path))
-		if len(serverId) >= 2 {
-			//fmt.Printf("dynsoftup value is: %s\n", string(serverId[1]))
-		}
+
 		if jsonObjectMaps[string(serverId[1])] == nil {
 			http.NotFound(w, r)
 		} else {
 			delete(jsonObjectMaps, string(serverId[1]))
-			response := http.StatusText(202)
-			fmt.Fprintf(w, "%s", response)
+			w.WriteHeader(http.StatusAccepted)
 		}
 	}
 }

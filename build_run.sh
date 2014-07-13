@@ -6,6 +6,7 @@ if [ -z "${logLevel}" ]; then logLevel="WARN"; fi
 # note: using this instead of -a flag on go build to only rebuild local packages
 echo "Cleaning previously built packages for current project"
 rm -rf .pkg/* ./dynsoftup ./performance_log.csv
+sleep 1
 
 GOPATH=$PWD:$GOPATH
 echo "Using GOROOT=${GOROOT}"

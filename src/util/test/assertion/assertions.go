@@ -13,7 +13,7 @@ type visit struct {
 	typ reflect.Type
 }
 
-const equal_comparison_failure_message = "\n%s - Failed %s [%v] not equal to [%v]\n\n\n"
+const equal_comparison_failure_message = "\n%s - Failed: %s [%v] not equal to [%v]\n\n\n"
 
 func AssertArrayEquals(testCtx *testing.T, expected []byte, actual []byte) {
 	for key := range expected {
@@ -95,7 +95,7 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 		}
 		for i := 0; i < expected.Len(); i++ {
 			if !deepValueEqual(message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1) {
-				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "objects not equal", expected, actual))
+				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "arrays not equal", expected, actual))
 				return false
 			}
 		}
@@ -133,7 +133,7 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 
 		for i, n := 0, expected.NumField(); i < n; i++ {
 			if !deepValueEqual(message, testCtx, expected.Field(i), actual.Field(i), visited, depth+1) {
-				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "objects not equal", expected, actual))
+				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "structs not equal", expected, actual))
 				return false
 			}
 		}
@@ -153,7 +153,7 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 		}
 	for _, k := range expected.MapKeys() {
 		if !deepValueEqual(message, testCtx, expected.MapIndex(k), actual.MapIndex(k), visited, depth+1) {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "objects not equal", expected, actual))
+			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "maps not equal", expected, actual))
 			return false
 		}
 	}
@@ -166,7 +166,13 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 		// Can't do better than this:
 		testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "functions not equal", expected, actual))
 		return false
-		//	case reflect.Bool:
+	case reflect.Bool:
+		if expected.Bool() != actual.Bool() {
+			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "booleans not equal", expected.Bool(), actual.Bool()))
+			return false;
+		} else {
+			return true;
+		}
 	case reflect.Int:
 		return compareInt(message, testCtx, expected, actual)
 	case reflect.Int8:
@@ -186,10 +192,9 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 	case reflect.Uint64:
 		return compareInt(message, testCtx, expected, actual)
 	default:
-
 		// Normal equality suffices
 		if !bytes.Equal([]byte(fmt.Sprintf("%v", expected)), []byte(fmt.Sprintf("%v", actual))) {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "objects not equal", []byte(fmt.Sprintf("%v", expected)), []byte(fmt.Sprintf("%v", actual))))
+			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "values not equal", fmt.Sprintf("%v", expected), fmt.Sprintf("%v", actual)))
 			return false;
 		} else {
 			return true;

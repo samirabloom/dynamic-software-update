@@ -2,9 +2,9 @@ package proxy_c
 
 import (
 	"testing"
-	"util/test/mock"
 	"io"
-	"util/test/assertion"
+	mock "util/test/mock"
+	assertion "util/test/assertion"
 )
 
 func NewTestReadChunkContext(chunks []string, err error) (*chunkContext, *mock.MockConn) {
@@ -22,7 +22,7 @@ func NewTestReadChunkContext(chunks []string, err error) (*chunkContext, *mock.M
 // 		1. call src.Read once
 // 		2. should not call next(context)
 // 		3. should not set context.firstChunk to false
-func Test_On_Read_With_No_Chunk_And_EOF_Error(testCtx *testing.T) {
+func Test_Read_With_No_Chunk_And_EOF_Error(testCtx *testing.T) {
 	// given
 	var (
 		mockContext, mockSource = NewTestReadChunkContext([]string{}, io.EOF)
@@ -46,7 +46,7 @@ func Test_On_Read_With_No_Chunk_And_EOF_Error(testCtx *testing.T) {
 // 		1. call src.Read once
 // 		2. should not call next(context)
 // 		3. should not set context.firstChunk to false
-func Test_On_Read_With_Empty_Chunk_And_Non_EOF_Error(testCtx *testing.T) {
+func Test_Read_With_Empty_Chunk_And_Non_EOF_Error(testCtx *testing.T) {
 	// given
 	var (
 		mockContext, mockSource = NewTestReadChunkContext([]string{""}, io.ErrClosedPipe)
@@ -72,7 +72,7 @@ func Test_On_Read_With_Empty_Chunk_And_Non_EOF_Error(testCtx *testing.T) {
 // 		3. should update context.totalReadSize with amount read in both
 // 		4. should call next(context) twice
 // 		5. should set context.firstChunk to false
-func Test_On_Read_With_Two_Chunks(testCtx *testing.T) {
+func Test_Read_With_Two_Chunks(testCtx *testing.T) {
 	// given
 	var (
 		mockContext, mockSource = NewTestReadChunkContext([]string{"this is the first chunk", "this is the second chunk"}, io.EOF)

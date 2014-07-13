@@ -3,68 +3,50 @@ package proxy_c
 import (
 	"testing"
 	"net"
-	"fmt"
 	"syscall"
+	mock "util/test/mock"
+	assertion "util/test/assertion"
 )
 
-func Test_On_Complete_With_(testCtx *testing.T) {
+func NewTestCompleteChunkContext(chunks []string, err error) (*chunkContext, *mock.MockConn, *mock.MockConn) {
+	mockContext := NewTestChunkContext()
+	mockContext.err = err
+	mockContext.from = mock.NewMockConn(err, len(chunks))
+	mockContext.to = mock.NewMockConn(err, len(chunks))
+	return mockContext, mockContext.to.(*mock.MockConn), mockContext.from.(*mock.MockConn)
+}
+
+// test no error
+// 	- should
+// 		1. read closed
+func Test_Complete_With_No_Error(testCtx *testing.T) {
 	// given
 	var (
-		source      = &net.TCPConn{}
-		destination = &net.TCPConn{}
-		mockContext = &chunkContext{
-			description: "",
-			data: make([]byte, 64*1024),
-			from: source,
-			to: destination,
-			err: syscall.EPIPE,
-			totalReadSize: 0,
-			totalWriteSize: 0,
-			pipeComplete: make(chan int64, 100),
-			firstChunk: true,
-			performance: *&performance{
-				read: new(int64),
-				route: new(int64),
-				write: new(int64),
-				complete: new(int64),
-		},
-	}
-		//		expectedResult error =
+		mockContext, mockSource, mockDestination = NewTestCompleteChunkContext([]string{}, nil)
 	)
 
 	// when
-	fmt.Printf("Before calling the complete function [%v]\n", mockContext.err)
 	complete(mockContext)
-	//	fmt.Printf("After calling the complete function [%v]\n", mockContext.err)
 
 	// then
-//	if mockContext.err != io.ErrShortWrite {
-//		testCtx.Fatalf("expected: [%v] actual: [%v]", io.ErrShortWrite, mockContext.err)
-//	}
-
+	assertion.AssertDeepEqual("Correct Read Closed", testCtx, mockSource.ReadClosed, true)
+	assertion.AssertDeepEqual("Correct Write Closed", testCtx, mockDestination.WriteClosed, false)
 }
 
+// test syscall.EPIPE error
+// 	- should
+// 		1. write closed
+// 		2. read closed
+func Test_Complete_With_EPIPE_Error(testCtx *testing.T) {
+	// given
+	var (
+		mockContext, mockSource, mockDestination = NewTestCompleteChunkContext([]string{}, &net.OpError{Err: syscall.EPIPE})
+	)
 
-// TEST - START
+	// when
+	complete(mockContext)
 
-//func TestFoo() {
-//	var testValue
-//
-//	var mockFunction = func(someParameter string) {
-//		testValue = someParameter
-//	}
-//
-//	Foo(mockFunction)
-//
-//	if(testValue != "hello") {
-//		// test failed
-//	}
-//}
-//
-//func Foo(next func(someParameter string)) {
-//	// do something
-//	next("hello")
-//	// do something else
-//}
-
-// - END
+	// then
+	assertion.AssertDeepEqual("Correct Read Closed", testCtx, mockSource.ReadClosed, true)
+	assertion.AssertDeepEqual("Correct Wrtie Closed", testCtx, mockDestination.WriteClosed, true)
+}

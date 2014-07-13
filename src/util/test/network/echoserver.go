@@ -9,9 +9,9 @@ import (
 	"testing"
 )
 
-func Run(testCtx *testing.T, address string) {
+func Run(testCtx *testing.T, address *net.TCPAddr) {
 	go func() {
-		listener, err := net.Listen("tcp", address)
+		listener, err := net.ListenTCP("tcp", address)
 		if err != nil {
 			testCtx.Fatal(err)
 		}

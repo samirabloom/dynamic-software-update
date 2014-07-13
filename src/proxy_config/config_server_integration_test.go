@@ -2,62 +2,69 @@ package proxy_config
 
 import (
 	"fmt"
-	"bytes"
-	"strings"
 	"testing"
+	"code.google.com/p/go-uuid/uuid"
+	networkutil "util/test/network"
+	assertion "util/test/assertion"
+	"strconv"
 )
 
-func TestConfigServerEndToEnd(testCtx *testing.T) {
-	// put request
-	uuid := PUTRequest("http://127.0.0.1:8080/server", "{\"name_one\":\"value_one\", \"name_two\":\"value_two\"}")
-	fmt.Printf("UUID Response %s\n", uuid)
+func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
+	// given - a config server
+	var (
+		serverPort = networkutil.FindFreeLocalSocket(testCtx).Port
+		serverUrl = "http://127.0.0.1:" + strconv.Itoa(serverPort) + "/server"
+	)
+	go Server(serverPort)
 
-	// get request
-	// given
-	var ExpectedJsonResponse = []byte("{\"id\":\"" + uuid + "\",\"name_one\":\"value_one\",\"name_two\":\"value_two\"}")
 
-	//	// when
-	jsonResponse := GETRequest("http://127.0.0.1:8080/server/" + uuid)
-	fmt.Printf("JSON Response %s\n", jsonResponse)
 
-	// then
-	if !bytes.Equal(ExpectedJsonResponse, jsonResponse) {
-		testCtx.Fatal(fmt.Errorf("\nUUID response incorrect\n\nExpected:\n[%s]\nActual:\n[%s]", ExpectedJsonResponse, jsonResponse))
-	}
-
-	// delete request
-	// given
-	var response string = "Accepted"
 	// when
-	deleteResponse := DELETERequest("http://127.0.0.1:8080/server/" + uuid)
-	fmt.Printf("\nresponse after delete %s\n", deleteResponse)
-	// then
-	if !strings.EqualFold(response, deleteResponse) {
-		testCtx.Fatal(fmt.Errorf("\nUUID response incorrect\n\nExpected:\n[%s]\nActual:\n[%s]", response, deleteResponse))
-	}
+	// - a PUT request
 
-	// get response
-	ResponseAfterDelete := GETRequest("http://127.0.0.1:8080/server/" + uuid)
+	uuidResponse, putStatus := PUTRequest(serverUrl, "{\"name_one\":\"value_one\", \"name_two\":\"value_two\"}")
 
 	// then
-	var expectedResponse string = "404 page not found\n"
-	fmt.Printf("\nresponse after delete: %s\n", ResponseAfterDelete)
-
-	if !strings.EqualFold(expectedResponse, string(ResponseAfterDelete)) {
-		testCtx.Fatal(fmt.Errorf("\nexpected:[%s]\n Actual:<%s>", expectedResponse, ResponseAfterDelete))
+	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "202 Accepted", putStatus)
+	if uuid.Parse(uuidResponse) == nil {
+		testCtx.Fatal(fmt.Errorf("\nInvalid UUID returned from request, response was [%s]", uuidResponse))
 	}
-}
 
-func TestToDeleteTheNonExistingJsonObject(testCtx *testing.T) {
-	// delete request
-	// given
-	var response string = "404 page not found\n"
+
+
 	// when
-	deleteResponse := DELETERequest("http://127.0.0.1:8080/server/" + "Non_existing_uuid")
-	fmt.Printf("\nresponse after delete: %s\n", deleteResponse)
+	// - a GET request
+	jsonResponse, getStatus := GETRequest(serverUrl + "/" + uuidResponse)
+
 	// then
-	if !strings.EqualFold(response, deleteResponse) {
-		testCtx.Fatal(fmt.Errorf("\nUUID response incorrect\n\nExpected:\n[%s]\nActual:\n[%s]", response, deleteResponse))
-	}
+	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "200 OK", getStatus)
+	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\"id\":\"" + uuidResponse + "\",\"name_one\":\"value_one\",\"name_two\":\"value_two\"}", jsonResponse)
+
+
+
+	// when
+	// - a DELETE request
+	_, deleteStatus := DELETERequest(serverUrl + "/" + uuidResponse)
+
+	// then
+	assertion.AssertDeepEqual("Correct DELETE Status", testCtx, "202 Accepted", deleteStatus)
+
+
+
+	// when
+	// - another GET response
+	_, getAfterDeleteStatus := GETRequest(serverUrl + "/" + uuidResponse)
+
+	// then
+	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "404 Not Found", getAfterDeleteStatus)
+
+
+
+	// when
+	// - another DELETE request
+	_, deleteAfterDeleteStatus := DELETERequest(serverUrl + "/" + uuidResponse)
+
+	// then
+	assertion.AssertDeepEqual("Correct DELETE Status", testCtx, "404 Not Found", deleteAfterDeleteStatus)
 }
 

@@ -1,10 +1,10 @@
 package proxy_c
 
 import (
+	"io"
 	"testing"
 	mock "util/test/mock"
-	"util/test/assertion"
-	"io"
+	assertion "util/test/assertion"
 )
 
 func NewTestWriteChunkContext(data string, err error) (*chunkContext, *mock.MockConn) {
@@ -19,7 +19,7 @@ func NewTestWriteChunkContext(data string, err error) (*chunkContext, *mock.Mock
 // 	- should
 // 		1. call write with context.data once
 // 		2. update context.totalWriteSize
-func Test_On_Write_With_Chunk_No_Error(testCtx *testing.T) {
+func Test_Write_With_Chunk_No_Error(testCtx *testing.T) {
 	// given
 	initialTotalWriteSize := int64(10)
 	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", nil)
@@ -40,7 +40,7 @@ func Test_On_Write_With_Chunk_No_Error(testCtx *testing.T) {
 // 		1. call write with context.data once
 // 		2. update context.totalWriteSize
 // 		2. set context.err
-func Test_On_Write_With_Chunk_With_Error(testCtx *testing.T) {
+func Test_Write_With_Chunk_With_Error(testCtx *testing.T) {
 	// given
 	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", io.EOF)
 
@@ -57,7 +57,7 @@ func Test_On_Write_With_Chunk_With_Error(testCtx *testing.T) {
 // test zero sized chunk
 // 	- should
 // 		1. not call write
-func Test_On_Write_With_Zero_Chunk(testCtx *testing.T) {
+func Test_Write_With_Zero_Chunk(testCtx *testing.T) {
 	// given
 	mockContext, mockDestination := NewTestWriteChunkContext("", nil)
 
@@ -76,7 +76,7 @@ func Test_On_Write_With_Zero_Chunk(testCtx *testing.T) {
 // 		1. call write with context.data once
 // 		2. update context.totalWriteSize
 // 		2. set context.err as io.ErrShortWrite
-func Test_On_Write_With_Short_Write_Error(testCtx *testing.T) {
+func Test_Write_With_Short_Write_Error(testCtx *testing.T) {
 	// given
 	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", io.EOF)
 	mockDestination.ShortWrite = true

@@ -4,15 +4,17 @@ import (
 	"testing"
 	"bytes"
 	"net/http"
-	"util/test/mock"
 	"fmt"
 	"encoding/json"
 	"regexp"
 	"net/url"
-	"util/test/assertion"
+	mock "util/test/mock"
+	assertion "util/test/assertion"
 )
 
-func TestShouldPutJsonObject(testCtx *testing.T) {
+// TODO - this file needs to be cleaned up!!
+
+func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	// given
 	var (
 		jsonObjectMaps map[string]interface{} = make(map[string]interface{})
@@ -39,7 +41,7 @@ func TestShouldPutJsonObject(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Json objects match", testCtx, jsonObject, jsonObjectMaps[uuid])
 }
 
-func TestShouldGetJsonObject(testCtx *testing.T) {
+func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 	// given
 	var (
 		jsonObjectMaps map[string]interface{} = make(map[string]interface{})
@@ -69,7 +71,7 @@ func TestShouldGetJsonObject(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Json objects match", testCtx, jsonObject, jsonObjectMaps["uuid"])
 }
 
-func TestShouldDeleteJsonObject(testCtx *testing.T) {
+func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
 	// given
 	var (
 		jsonObjectMaps map[string]interface{} = make(map[string]interface{})

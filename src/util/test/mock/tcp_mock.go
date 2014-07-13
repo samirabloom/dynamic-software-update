@@ -26,13 +26,16 @@ func (mockWriter MockWriter) Write(writeBuffer []byte) (n int, err error) {
 
 type MockConn struct {
 	net.TCPConn
-	Data           [][]byte
-	Error          error
-	LocalAddress   net.Addr
-	RemoteAddress  net.Addr
-	NumberOfReads  int
-	NumberOfWrites int
-	ShortWrite     bool
+	Data            [][]byte
+	Error           error
+	LocalAddress    net.Addr
+	RemoteAddress   net.Addr
+	NumberOfReads   int
+	NumberOfWrites  int
+	ShortWrite      bool
+	ReadClosed      bool
+	WriteClosed     bool
+	Closed          bool
 }
 
 func NewMockConn(err error, size int) *MockConn {
@@ -66,6 +69,7 @@ func (mockConn *MockConn) Write(writeBuffer []byte) (n int, err error) {
 }
 
 func (mockConn *MockConn) Close() error {
+	mockConn.Closed = true
 	return mockConn.Error
 }
 
@@ -78,15 +82,15 @@ func (mockConn *MockConn) RemoteAddr() net.Addr {
 }
 
 func (mockConn *MockConn) SetDeadline(t time.Time) error {
-	return nil
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) SetReadDeadline(t time.Time) error {
-	return nil
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) SetWriteDeadline(t time.Time) error {
-	return nil
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) ReadFrom(r io.Reader) (int64, error) {
@@ -94,25 +98,27 @@ func (mockConn *MockConn) ReadFrom(r io.Reader) (int64, error) {
 }
 
 func (mockConn *MockConn) CloseRead() error {
-	return nil
+	mockConn.ReadClosed = true
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) CloseWrite() error {
-	return nil
+	mockConn.WriteClosed = true
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) SetLinger(sec int) error {
-	return nil
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) SetKeepAlive(keepalive bool) error {
-	return nil
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) SetKeepAlivePeriod(d time.Duration) error {
-	return nil
+	return mockConn.Error
 }
 
 func (mockConn *MockConn) SetNoDelay(noDelay bool) error {
-	return nil
+	return mockConn.Error
 }

@@ -27,20 +27,15 @@ func Proxy() {
 	logLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
 	flag.Parse()
 
-	go Server(1024, 1025, 1026)
+	go Server(1024, 1025, 1026, 1027, 1028)
 
 	time.Sleep(1000 * time.Millisecond)
 
-	proxy, err := NewLoadBalancer(
+	NewLoadBalancer(
 		&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1234},
 		&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024},
-		3,
-	)
-	if proxy != nil && proxy.listener != nil {
-		proxy.Run()
-	} else {
-		log.Fatalf("Error opening socket - %s", err)
-	}
+		5,
+	).Start()
 }
 
 // ==== MAIN - END
@@ -93,27 +88,6 @@ var (
 	cookieHeaderRegex = regexp.MustCompile("Cookie: .*dynsoftup=([a-z0-9-]*);.*")
 )
 
-// test firstChunk and clientToServer
-// 	- should
-// 		1. read dynsofyup cookie
-// 		2. create backpipe
-// 		3. call next
-
-// test firstChunk and not clientToServer and no requestUUID
-// 	- should
-// 		1. add cookie with new UUID value
-// 		2. call next
-
-// test firstChunk and not clientToServer and context.requestUUID
-// 	- should
-// 		1. add cookie with context.requestUUID
-// 		2. call next
-
-// test not firstChunk
-// 	- should
-// 		1. do not create backpipe
-// 		2. do not add cookie
-// 		3. call next
 func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, routingContext *RoutingContext, createBackPipe func(context *chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
 		defer trace(time.Now(), context.performance.route)
@@ -121,16 +95,16 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, routingCont
 		if context.firstChunk {
 			if context.clientToServer {
 				var err error
-				backendAddr := &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.loadBalanceCount))}
+				backendAddr := &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.clusterSize))}
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
 					log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
 					context.from.Close()
 				}
 
-				submatches := cookieHeaderRegex.FindSubmatch(context.data)
-				if len(submatches) >= 2 {
-					context.requestUUID = uuid.Parse(string(submatches[1]))
+				submatchs := cookieHeaderRegex.FindSubmatch(context.data)
+				if len(submatchs) >= 2 {
+					context.requestUUID = uuid.Parse(string(submatchs[1]))
 					loggerFactory().Info("Route Stage found UUID %s", context)
 				}
 				go createBackPipe(NewBackPipeChunkContext(context))
@@ -140,11 +114,9 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, routingCont
 					uuidCookieValue = uuidGenerator()
 				}
 				setCookieHeader := []byte(fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", uuidCookieValue.String()))
-				//				println("setCookieHeader length: %d \n the context data")
-				searchString := "\n"
-				insertLocation := bytes.Index(context.data, []byte(searchString))
+				insertLocation := bytes.Index(context.data, []byte("\n"))
 				if insertLocation > 0 {
-					context.data = byteutil.Insert(context.data, insertLocation+len(searchString), setCookieHeader)
+					context.data = byteutil.Insert(context.data, insertLocation+len("\n"), setCookieHeader)
 					context.totalReadSize += int64(len(setCookieHeader))
 				}
 			}
@@ -159,26 +131,6 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, routingCont
 
 // ==== WRITE - START
 
-// test chunk no errors
-// 	- should
-// 		1. call write with context.data once
-// 		2. update context.totalWriteSize
-
-// test zero sized chunk
-// 	- should
-// 		1. not call write
-
-// test chunk none nil error
-// 	- should
-// 		1. call write with context.data once
-// 		2. update context.totalWriteSize
-// 		2. set context.err
-
-// test chunk amount written less than amountToWrite
-// 	- should
-// 		1. call write with context.data once
-// 		2. update context.totalWriteSize
-// 		2. set context.err as io.ErrShortWrite
 func write(context *chunkContext) {
 	defer trace(time.Now(), context.performance.write)
 	loggerFactory().Info("Write Stage Write Stage Write Stage Write Stage START - %s", context)
@@ -201,16 +153,6 @@ func write(context *chunkContext) {
 
 // ==== COMPLETE - START
 
-// TODO TESTS
-
-// test no error
-// 	- should
-// 		1. read closed
-
-// test syscall.EPIPE error
-// 	- should
-// 		1. write closed
-// 		2. read closed
 func complete(context *chunkContext) {
 	defer trace(time.Now(), context.performance.complete)
 	loggerFactory().Info("Complete Stage START - %s", context)
@@ -249,7 +191,7 @@ func createPipe(routingContext *RoutingContext) func(*chunkContext) {
 			complete,
 		)
 		stages(context)
-		writePerformanceEntry(context)
+		writePerformanceLogEntry(context)
 		context.pipeComplete <- context.totalWriteSize
 		loggerFactory().Info("Creating forward " + context.description + " END")
 	}
@@ -261,7 +203,7 @@ func createPipe(routingContext *RoutingContext) func(*chunkContext) {
 
 type RoutingContext struct {
 	backendBaseAddr  *net.TCPAddr
-	loadBalanceCount int
+	clusterSize      int
 	requestCounter   int64
 }
 
@@ -271,23 +213,23 @@ type LoadBalancer struct {
 	stop           chan bool
 }
 
-func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCount int) (*LoadBalancer, error) {
+func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCount int) *LoadBalancer {
 	listener, err := net.ListenTCP("tcp", frontendAddr)
 	if err != nil {
-		return nil, err
+		log.Fatalf("Error opening socket - %s", err)
 	}
 
 	return &LoadBalancer{
 		listener:     listener,
 		routingContext: &RoutingContext{
 			backendBaseAddr:  backendBaseAddr,
-			loadBalanceCount: loadBalanceCount,
+			clusterSize: loadBalanceCount,
 		},
 		stop: make(chan bool),
-	}, nil
+	}
 }
 
-func (proxy *LoadBalancer) Run() {
+func (proxy *LoadBalancer) Start() {
 	proxy.acceptLoop()
 }
 
@@ -296,9 +238,7 @@ func (proxy *LoadBalancer) Stop() {
 }
 
 func (proxy *LoadBalancer) acceptLoop() {
-	quitRequest := make(chan bool)
-	defer close(quitRequest)
-
+	// allow for stopping
 	running := true
 	go func() {
 		<-proxy.stop
@@ -323,18 +263,19 @@ func (proxy *LoadBalancer) acceptLoop() {
 
 			proxy.routingContext.requestCounter++
 			go func() {
-				pipeComplete := make(chan int64)
+				pipesComplete := make(chan int64)
 
 				// create forward pipe
-				forwardContext := NewForwardPipeChunkContext(client.(*net.TCPConn), pipeComplete)
+				forwardContext := NewForwardPipeChunkContext(client.(*net.TCPConn), pipesComplete)
 				go createPipe(proxy.routingContext)(forwardContext)
 
 				// wait for pipes to complete (or quit early)
 				for i := 0; i < 2; i++ {
 					select {
-					case <-pipeComplete:
-					case <-quitRequest:
-						close(pipeComplete)
+					case <-pipesComplete:
+					case <-proxy.stop:
+						running = false
+						proxy.listener.Close()
 					}
 				}
 
@@ -511,7 +452,7 @@ var performanceLog = func() *csv.Writer {
 	return writer
 }()
 
-func writePerformanceEntry(context *chunkContext) {
+func writePerformanceLogEntry(context *chunkContext) {
 	performanceLog.Write([]string{
 	strconv.FormatInt(*context.performance.read, 10),
 	strconv.FormatInt(*context.performance.route, 10),
