@@ -42,7 +42,7 @@ func Test_Proxy_Basic_Request_And_Response(testCtx *testing.T) {
 	var (
 		proxy = NewLoadBalancer(proxyAddress, echoServerAddress, 1)
 	)
-	go proxy.Start()
+	proxy.Start()
 
 	//   - a example request
 	var (
@@ -57,7 +57,7 @@ func Test_Proxy_Basic_Request_And_Response(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, response)
 
 	// clean-up
-	go proxy.Stop()
+	proxy.Stop()
 }
 
 func Test_Proxy_Request_With_UUID(testCtx *testing.T) {
@@ -73,7 +73,7 @@ func Test_Proxy_Request_With_UUID(testCtx *testing.T) {
 	var (
 		proxy = NewLoadBalancer(proxyAddress, echoServerAddress, 1)
 	)
-	go proxy.Start()
+	proxy.Start()
 
 	//   - a example request
 	var (
@@ -88,7 +88,7 @@ func Test_Proxy_Request_With_UUID(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, response)
 
 	// clean-up
-	go proxy.Stop()
+	proxy.Stop()
 }
 
 func Test_Proxy_Load_Balances_Request(testCtx *testing.T) {
@@ -105,7 +105,7 @@ func Test_Proxy_Load_Balances_Request(testCtx *testing.T) {
 	var (
 		proxy = NewLoadBalancer(proxyAddress, echoServerAddresses[0], 2)
 	)
-	go proxy.Start()
+	proxy.Start()
 
 	//   - a example request
 	var (
@@ -127,7 +127,7 @@ func Test_Proxy_Load_Balances_Request(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponseOne, responseThree)
 
 	// clean-up
-	go proxy.Stop()
+	proxy.Stop()
 }
 
 // TODO:

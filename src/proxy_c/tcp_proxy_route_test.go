@@ -32,7 +32,7 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 		mockContext    = NewTestRouteChunkContext("Cookie: dynsoftup="+uuidValue.String()+";", uuid.NIL, true)
 		mockWrite      = NewMockStage("mockWrite")
 		mockCreatePipe = NewMockStage("mockCreatePipe")
-		routingContext = &RoutingContext{backendBaseAddr: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}, clusterSize: 3}
+		routingContext = &RangeRoutingContext{backendBaseAddr: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}, clusterSize: 3}
 	)
 	mockCreatePipe.close(1)
 
@@ -54,14 +54,14 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		uuidValue                      = uuid.NewUUID()
-		mockContext                    = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, false)
-		mockWrite                      = NewMockStage("mockWrite")
-		mockCreatePipe                 = NewMockStage("mockCreatePipe")
-		initialTotalReadSize           = int64(10)
-		expectedCookieHeader           = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
-		uuidGenerator                  = func() uuid.UUID {return uuidValue}
-		routingContext *RoutingContext = nil
+		uuidValue                           = uuid.NewUUID()
+		mockContext                         = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, false)
+		mockWrite                           = NewMockStage("mockWrite")
+		mockCreatePipe                      = NewMockStage("mockCreatePipe")
+		initialTotalReadSize                = int64(10)
+		expectedCookieHeader                = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
+		uuidGenerator                       = func() uuid.UUID {return uuidValue}
+		routingContext *RangeRoutingContext = nil
 	)
 	mockContext.totalReadSize = initialTotalReadSize
 
@@ -81,13 +81,13 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		uuidValue                      = uuid.NewUUID()
-		mockContext                    = NewTestRouteChunkContext("this is a request with no cookie \n added\n", uuidValue, false)
-		mockWrite                      = NewMockStage("mockWrite")
-		mockCreatePipe                 = NewMockStage("mockCreatePipe")
-		initialTotalReadSize           = int64(10)
-		expectedCookieHeader           = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
-		routingContext *RoutingContext = nil
+		uuidValue                           = uuid.NewUUID()
+		mockContext                         = NewTestRouteChunkContext("this is a request with no cookie \n added\n", uuidValue, false)
+		mockWrite                           = NewMockStage("mockWrite")
+		mockCreatePipe                      = NewMockStage("mockCreatePipe")
+		initialTotalReadSize                = int64(10)
+		expectedCookieHeader                = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
+		routingContext *RangeRoutingContext = nil
 	)
 	mockContext.totalReadSize = initialTotalReadSize
 
@@ -108,10 +108,10 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
-		mockContext                    = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, true)
-		mockWrite                      = NewMockStage("mockWrite")
-		mockCreatePipe                 = NewMockStage("mockCreatePipe")
-		routingContext *RoutingContext = nil
+		mockContext                         = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, true)
+		mockWrite                           = NewMockStage("mockWrite")
+		mockCreatePipe                      = NewMockStage("mockCreatePipe")
+		routingContext *RangeRoutingContext = nil
 	)
 	mockContext.firstChunk = false
 	mockCreatePipe.close(1)
@@ -133,10 +133,10 @@ func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 func Test_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
-		mockContext                    = NewTestRouteChunkContext("this is a response with no cookie \n added", nil, false)
-		mockWrite                      = NewMockStage("mockWrite")
-		mockCreatePipe                 = NewMockStage("mockCreatePipe")
-		routingContext *RoutingContext = nil
+		mockContext                         = NewTestRouteChunkContext("this is a response with no cookie \n added", nil, false)
+		mockWrite                           = NewMockStage("mockWrite")
+		mockCreatePipe                      = NewMockStage("mockCreatePipe")
+		routingContext *RangeRoutingContext = nil
 	)
 	mockContext.firstChunk = false
 

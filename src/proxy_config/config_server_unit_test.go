@@ -19,13 +19,12 @@ func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	var (
 		jsonObjectMaps map[string]interface{} = make(map[string]interface{})
 		responseWriter                        = &mock.MockResponseWriter{WritenBodyBytes: make(map[int][]byte)}
-		request                               = &http.Request{}
-		uuid string                           = "uuid"
 		bodyByte                              = []byte("{\"name_one\":\"value_one\", \"name_two\":\"value_two\"}")
+		request                               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		uuid string                           = "uuid"
 		jsonObject interface{}
 	)
 	json.Unmarshal(bodyByte, &jsonObject)
-	request.Body = &mock.MockBody{BodyBytes: bodyByte}
 
 	// when
 	PUTHandler(func() string {
@@ -46,13 +45,11 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 	var (
 		jsonObjectMaps map[string]interface{} = make(map[string]interface{})
 		responseWriter                        = &mock.MockResponseWriter{WritenBodyBytes: make(map[int][]byte)}
-		request                               = &http.Request{}
 		bodyByte                              = []byte("{\"id\":\"uuid\",\"name_one\":\"value_one\",\"name_two\":\"value_two\"}")
+		request                               = &http.Request{URL: &url.URL{Path: "/server/uuid"}}
+		urlRegex                              = regexp.MustCompile("/server/([a-z0-9-]*){1}")
 		jsonObject interface{}
 	)
-	urlRegex := regexp.MustCompile("/server/([a-z0-9-]*){1}")
-	request.URL = &url.URL{}
-	request.URL.Path = "/server/uuid"
 	json.Unmarshal(bodyByte, &jsonObject)
 	jsonObjectMaps["uuid"] = jsonObject
 
@@ -76,13 +73,11 @@ func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
 	var (
 		jsonObjectMaps map[string]interface{} = make(map[string]interface{})
 		responseWriter                        = &mock.MockResponseWriter{WritenBodyBytes: make(map[int][]byte)}
-		request                               = &http.Request{}
 		bodyByte                              = []byte("{\"id\":\"uuid\",\"name_one\":\"value_one\", \"name_two\":\"value_two\"}")
+		request                               = &http.Request{URL: &url.URL{Path: "/server/uuid"}}
+		urlRegex                              = regexp.MustCompile("/server/([a-z0-9-]*){1}")
 		jsonObject interface{}
 	)
-	urlRegex := regexp.MustCompile("/server/([a-z0-9-]*){1}")
-	request.URL = &url.URL{}
-	request.URL.Path = "/server/uuid"
 	json.Unmarshal(bodyByte, &jsonObject)
 	jsonObjectMaps["uuid"] = jsonObject
 

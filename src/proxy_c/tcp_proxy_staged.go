@@ -27,16 +27,32 @@ func Proxy() {
 	logLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
 	flag.Parse()
 
-	go Server(1024, 1025, 1026, 1027, 1028)
+	go Server(1024, 1025, 1026, 1027)
 
 	time.Sleep(1000 * time.Millisecond)
 
 	NewLoadBalancer(
 		&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1234},
 		&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024},
-		5,
+		4,
 	).Start()
+
+	var blocking = make(chan bool)
+	<- blocking
+	//	loadConfig().Start()
 }
+
+//func loadConfig() *LoadBalancer {
+//	return parseConfigFile(readConfigFile())
+//}
+//
+//func readConfigFile() []byte {
+//
+//}
+//
+//func parseConfigFile(jsonData []byte) *LoadBalancer {
+//
+//}
 
 // ==== MAIN - END
 
@@ -88,14 +104,15 @@ var (
 	cookieHeaderRegex = regexp.MustCompile("Cookie: .*dynsoftup=([a-z0-9-]*);.*")
 )
 
-func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, routingContext *RoutingContext, createBackPipe func(context *chunkContext)) func(*chunkContext) {
+func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Router, createBackPipe func(context *chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
 		defer trace(time.Now(), context.performance.route)
 		loggerFactory().Info("Route Stage START - %s", context)
 		if context.firstChunk {
 			if context.clientToServer {
 				var err error
-				backendAddr := &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.clusterSize))}
+
+				backendAddr := router.NextServer()
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
 					log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
@@ -176,7 +193,7 @@ func complete(context *chunkContext) {
 
 // ==== CREATE PIPE - START
 
-func createPipe(routingContext *RoutingContext) func(*chunkContext) {
+func createPipe(router Router) func(*chunkContext) {
 	return func(context *chunkContext) {
 		loggerFactory().Info("Creating forward " + context.description + " START")
 		stages := read(
@@ -185,8 +202,8 @@ func createPipe(routingContext *RoutingContext) func(*chunkContext) {
 				func() uuid.UUID {
 					return uuid.NewUUID()
 				},
-				routingContext,
-				createPipe(routingContext),
+				router,
+				createPipe(router),
 			),
 			complete,
 		)
@@ -201,27 +218,40 @@ func createPipe(routingContext *RoutingContext) func(*chunkContext) {
 
 // ==== LOAD BALANCER - START
 
-type RoutingContext struct {
+type Router interface {
+	NextServer() *net.TCPAddr
+}
+
+type RangeRoutingContext struct {
 	backendBaseAddr  *net.TCPAddr
 	clusterSize      int
 	requestCounter   int64
 }
 
+func (routingContext *RangeRoutingContext) NextServer() *net.TCPAddr {
+	routingContext.requestCounter++
+	return &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.clusterSize))}
+}
+
+type MultipleAddressRoutingContext struct {
+	backendAddresses        []*net.TCPAddr
+	requestCounter          int64
+}
+
+func (routingContext *MultipleAddressRoutingContext) NextServer() *net.TCPAddr {
+	return &net.TCPAddr{}
+}
+
 type LoadBalancer struct {
-	listener       *net.TCPListener
-	routingContext *RoutingContext
+	frontendAddr   *net.TCPAddr
+	router         Router
 	stop           chan bool
 }
 
 func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCount int) *LoadBalancer {
-	listener, err := net.ListenTCP("tcp", frontendAddr)
-	if err != nil {
-		log.Fatalf("Error opening socket - %s", err)
-	}
-
 	return &LoadBalancer{
-		listener:     listener,
-		routingContext: &RoutingContext{
+		frontendAddr: frontendAddr,
+		router: &RangeRoutingContext{
 			backendBaseAddr:  backendBaseAddr,
 			clusterSize: loadBalanceCount,
 		},
@@ -230,44 +260,51 @@ func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCoun
 }
 
 func (proxy *LoadBalancer) Start() {
-	proxy.acceptLoop()
+	var started = make(chan bool)
+	go proxy.acceptLoop(started)
+	<- started
 }
 
 func (proxy *LoadBalancer) Stop() {
 	close(proxy.stop)
 }
 
-func (proxy *LoadBalancer) acceptLoop() {
+func (proxy *LoadBalancer) acceptLoop(started chan bool) {
+	listener, err := net.ListenTCP("tcp", proxy.frontendAddr)
+	if err != nil {
+		log.Fatalf("Error opening socket - %s", err)
+	}
+	started <- true
+
 	// allow for stopping
 	running := true
 	go func() {
 		<-proxy.stop
 		running = false
-		proxy.listener.Close()
+		listener.Close()
 	}()
 
 	for running {
 		loggerFactory().Info("Accept loop IN LOOP - START")
 
 		// accept connection
-		client, err := proxy.listener.Accept()
+		client, err := listener.Accept()
 
 		if err != nil { // stop proxy
 
 			if !isClosedError(err) {
-				log.Printf("Stopping proxy on tcp/%v for tcp/%v (%v)", proxy.listener.Addr().(*net.TCPAddr), proxy.routingContext.backendBaseAddr, err)
+				log.Printf("Stopping proxy on tcp/%v", listener.Addr().(*net.TCPAddr), err)
 			}
 			running = false
 
 		} else { // process connection
 
-			proxy.routingContext.requestCounter++
 			go func() {
 				pipesComplete := make(chan int64)
 
 				// create forward pipe
 				forwardContext := NewForwardPipeChunkContext(client.(*net.TCPConn), pipesComplete)
-				go createPipe(proxy.routingContext)(forwardContext)
+				go createPipe(proxy.router)(forwardContext)
 
 				// wait for pipes to complete (or quit early)
 				for i := 0; i < 2; i++ {
@@ -275,7 +312,7 @@ func (proxy *LoadBalancer) acceptLoop() {
 					case <-pipesComplete:
 					case <-proxy.stop:
 						running = false
-						proxy.listener.Close()
+						listener.Close()
 					}
 				}
 
