@@ -19,42 +19,138 @@ import (
 	"syscall"
 	"time"
 	byteutil "util/byte"
+	"io/ioutil"
+	"encoding/json"
+	"errors"
 )
 
 // ==== MAIN - START
 
 func Proxy() {
 	logLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
+	var (
+		cmd, _     = os.Getwd()
+		configFile = flag.String("configFile", cmd+"/config.json", "Set the location of the configuration file")
+	)
 	flag.Parse()
 
-	go Server(1024, 1025, 1026, 1027)
+	//	go Server(1024, 1025)
+	go Server(1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031)
 
 	time.Sleep(1000 * time.Millisecond)
 
-	NewLoadBalancer(
-		&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1234},
-		&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024},
-		4,
-	).Start()
-
+	loadBalancer, err := loadConfig(configFile)
+	if err == nil {
+		loadBalancer.Start()
+	} else {
+		loggerFactory().Error("Error parsing config %v", err)
+	}
 	var blocking = make(chan bool)
-	<- blocking
-	//	loadConfig().Start()
+	<-blocking
 }
 
-//func loadConfig() *LoadBalancer {
-//	return parseConfigFile(readConfigFile())
-//}
-//
-//func readConfigFile() []byte {
-//
-//}
-//
-//func parseConfigFile(jsonData []byte) *LoadBalancer {
-//
-//}
-
 // ==== MAIN - END
+
+// ==== PARSE CONFIG - START
+
+func loadConfig(configFile *string) (*LoadBalancer, error) {
+	return parseConfigFile(readConfigFile(configFile), parseProxy, parseClusterConfig)
+}
+
+func readConfigFile(configFile *string) []byte {
+	jsonConfig, err := ioutil.ReadFile(*configFile)
+	if err != nil {
+		loggerFactory().Error("Error %s reading config file [%s]", err, *configFile)
+	}
+	return jsonConfig
+}
+
+func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseClusterConfig func(map[string]interface{}) (Router, error)) (loadBalancer *LoadBalancer, err error) {
+	// parse json object
+	var jsonConfig = make(map[string]interface{})
+	err = json.Unmarshal(jsonData, &jsonConfig)
+	if err != nil {
+		loggerFactory().Error("Error %s parsing config file:\n%s", err.Error(), jsonData)
+	}
+
+	tcpProxyLocalAddress, proxyParseErr := parseProxy(jsonConfig)
+	if proxyParseErr == nil {
+		router, clusterParseErr := parseClusterConfig(jsonConfig)
+		if clusterParseErr == nil {
+			// create load balancer
+			loadBalancer = &LoadBalancer{
+				frontendAddr: tcpProxyLocalAddress,
+				router: router,
+				stop: make(chan bool),
+			}
+			loggerFactory().Info("Parsed config file:\n%s\nas:\n%s", jsonData, loadBalancer)
+
+			return loadBalancer, nil
+		} else {
+			return nil, clusterParseErr
+		}
+	} else {
+		return nil, proxyParseErr
+	}
+}
+
+func parseProxy(jsonConfig map[string]interface{}) (tcpProxyLocalAddress *net.TCPAddr, err error) {
+	if jsonConfig["proxy"] != nil {
+		var proxyConfig map[string]interface{} = jsonConfig["proxy"].(map[string]interface{})
+		tcpProxyLocalAddress, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]))
+		if err != nil {
+			loggerFactory().Error("Invalid proxy address [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "]")
+		}
+	}
+	if tcpProxyLocalAddress == nil {
+		loggerFactory().Error("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		return nil, errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+	}
+	return tcpProxyLocalAddress, err
+}
+
+func parseClusterConfig(jsonConfig map[string]interface{}) (router Router, err error) {
+	if jsonConfig["server_range"] != nil {
+		var serverConfig map[string]interface{} = jsonConfig["server_range"].(map[string]interface{})
+		backendBaseAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]))
+		if err != nil {
+			loggerFactory().Error("Invalid address [" + fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]) + "]")
+			return nil, err
+		}
+
+		clusterSize , err := strconv.Atoi(serverConfig["clusterSize"].(string))
+		if err != nil {
+			loggerFactory().Error("Cluster Size not a valid integer [" + serverConfig["clusterSize"].(string) + "]")
+			return nil, err
+		}
+
+		router = &RangeRoutingContext{
+			backendBaseAddr:  backendBaseAddr,
+			clusterSize: clusterSize,
+		}
+	} else if jsonConfig["servers"] != nil {
+		servers := jsonConfig["servers"].([]interface{})
+		var backendAddresses = make([]*net.TCPAddr, len(servers))
+		for index := range servers {
+			server := servers[index].(map[string]interface{})
+			backendAddresses[index], err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["ip"], server["port"]))
+			if err != nil {
+				loggerFactory().Error("Invalid address [" + fmt.Sprintf("%s:%v", server["ip"], server["port"]) + "]")
+				return nil, err
+			}
+		}
+		router = &MultipleAddressRoutingContext{
+			backendAddresses: backendAddresses,
+		}
+	}
+	if router == nil {
+		loggerFactory().Error("Invalid proxy configuration please \"server_range\" or \"servers\"")
+		return nil, errors.New("Invalid proxy configuration please \"server_range\" or \"servers\"")
+	}
+	return router, nil
+}
+
+// ==== PARSE CONFIG - END
 
 // ==== READ - START
 
@@ -72,9 +168,15 @@ func read(next func(*chunkContext), complete func(*chunkContext)) func(*chunkCon
 			if readSize > 0 {
 				context.totalReadSize += int64(readSize)
 				next(context)
+				loggerFactory().Info("Error routing connection %s - %s", context.err, context)
 				if context.firstChunk {
 					context.firstChunk = false
 				}
+			}
+
+			if context.err != nil {
+				loggerFactory().Info("Error routing connection %s - %s", context.err, context)
+				break
 			}
 
 			if readError == io.EOF {
@@ -115,8 +217,13 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Rout
 				backendAddr := router.NextServer()
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
-					log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
-					context.from.Close()
+					loggerFactory().Error("Can't forward traffic to server tcp/%v: %s\n", backendAddr, err)
+					if isConnectionRefused(err) {
+						// no such device or address
+						context.err = &net.OpError{Op: "dial", Addr: backendAddr, Err: syscall.ENXIO}
+						context.pipeComplete <- 0
+					}
+					return
 				}
 
 				submatchs := cookieHeaderRegex.FindSubmatch(context.data)
@@ -150,7 +257,7 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Rout
 
 func write(context *chunkContext) {
 	defer trace(time.Now(), context.performance.write)
-	loggerFactory().Info("Write Stage Write Stage Write Stage Write Stage START - %s", context)
+	loggerFactory().Info("Write Stage START - %s", context)
 	amountToWrite := len(context.data)
 	if amountToWrite > 0 {
 		writeSize, writeError := context.to.Write(context.data)
@@ -181,11 +288,19 @@ func complete(context *chunkContext) {
 			loggerFactory().Info("Complete Stage closed WRITE with error %s - %s", closeWriteError, context)
 		}
 	}
-	if (context.to != nil) {
-		closeReadError := context.to.CloseRead()
-		loggerFactory().Info("Complete Stage closed READ with error %s - %s", closeReadError, context)
+	if context.to != nil {
+		_, assertion := context.to.(*net.TCPConn)
+		if assertion {
+			if context.to.(*net.TCPConn) != nil {
+				closeReadError := context.to.CloseRead()
+				loggerFactory().Info("Complete Stage closed READ with error %s - %s", closeReadError, context)
+			}
+		} else {
+			closeReadError := context.to.CloseRead()
+			loggerFactory().Info("Complete Stage closed READ with error %s - %s", closeReadError, context)
+		}
 	}
-
+	context.pipeComplete <- context.totalWriteSize
 	loggerFactory().Info("Complete Stage END - %s", context)
 }
 
@@ -195,7 +310,7 @@ func complete(context *chunkContext) {
 
 func createPipe(router Router) func(*chunkContext) {
 	return func(context *chunkContext) {
-		loggerFactory().Info("Creating forward " + context.description + " START")
+		loggerFactory().Info("Creating " + context.description + " START")
 		stages := read(
 			route(
 				write,
@@ -209,8 +324,7 @@ func createPipe(router Router) func(*chunkContext) {
 		)
 		stages(context)
 		writePerformanceLogEntry(context)
-		context.pipeComplete <- context.totalWriteSize
-		loggerFactory().Info("Creating forward " + context.description + " END")
+		loggerFactory().Info("Creating " + context.description + " END")
 	}
 }
 
@@ -233,13 +347,29 @@ func (routingContext *RangeRoutingContext) NextServer() *net.TCPAddr {
 	return &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.clusterSize))}
 }
 
+func (routingContext *RangeRoutingContext) String() string {
+	return fmt.Sprintf("{baseAddress: %s, clusterSize: %d}", routingContext.backendBaseAddr, routingContext.clusterSize)
+}
+
 type MultipleAddressRoutingContext struct {
 	backendAddresses        []*net.TCPAddr
 	requestCounter          int64
 }
 
 func (routingContext *MultipleAddressRoutingContext) NextServer() *net.TCPAddr {
-	return &net.TCPAddr{}
+	routingContext.requestCounter++
+	return routingContext.backendAddresses[int(routingContext.requestCounter) % len(routingContext.backendAddresses)]
+}
+
+func (routingContext *MultipleAddressRoutingContext) String() string {
+	var result string = ""
+	for index, address := range routingContext.backendAddresses {
+		if index > 0 {
+			result += ", "
+		}
+		result += fmt.Sprintf("%s", address)
+	}
+	return result
 }
 
 type LoadBalancer struct {
@@ -259,10 +389,14 @@ func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCoun
 	}
 }
 
+func (proxy *LoadBalancer) String() string {
+	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:   %s\n\tProxied Servers: %s\n}", proxy.frontendAddr, proxy.router)
+}
+
 func (proxy *LoadBalancer) Start() {
 	var started = make(chan bool)
 	go proxy.acceptLoop(started)
-	<- started
+	<-started
 }
 
 func (proxy *LoadBalancer) Stop() {
@@ -318,7 +452,7 @@ func (proxy *LoadBalancer) acceptLoop(started chan bool) {
 
 				// close sockets
 				forwardContext.from.Close()
-				if (forwardContext.to != nil) {
+				if forwardContext.to != nil && forwardContext.to.(*net.TCPConn) != nil {
 					forwardContext.to.Close()
 				}
 			}()
@@ -337,6 +471,11 @@ func isClosedError(err error) bool {
 	 * https://groups.google.com/forum/#!msg/golang-nuts/0_aaCvBmOcM/SptmDyX1XJMJ
 	 */
 	return strings.HasSuffix(err.Error(), "use of closed network connection")
+}
+
+func isConnectionRefused(err error) bool {
+	// This comparison is ugly, but unfortunately, net.go doesn't export appropriate error code.
+	return strings.HasSuffix(err.Error(), "connection refused")
 }
 
 // ==== LOAD BALANCER - END
@@ -389,10 +528,10 @@ func (context *chunkContext) String() string {
 		output += "\t data:\n\t\t"+strings.Replace(string(context.data), "\n", "\n\t\t", -1)
 	}
 	output += "\n"
-	if context.from != nil && context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
+	if context.from.(*net.TCPConn) != nil && context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
 		output += fmt.Sprintf("\t from: %s -> %s\n", context.from.LocalAddr(), context.from.RemoteAddr())
 	}
-	if context.to != nil && context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
+	if context.to.(*net.TCPConn) != nil && context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
 		output += fmt.Sprintf("\t to: %s -> %s\n", context.to.LocalAddr(), context.to.RemoteAddr())
 	}
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
@@ -515,7 +654,7 @@ var loggerFactory = func() func() *logging.Logger {
 			logging.SetFormatter(logging.MustStringFormatter("%{level:8s} - %{message}"))
 
 			// Setup one stdout and one syslog backend
-			logBackend := logging.NewLogBackend(os.Stderr, "", log.Ldate|log.Lmicroseconds|log.Lshortfile)
+			logBackend := logging.NewLogBackend(os.Stdout, "", log.Ldate|log.Lmicroseconds|log.Lshortfile)
 			logBackend.Color = true
 
 			// Combine them both into one logging backend

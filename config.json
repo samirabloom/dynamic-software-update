@@ -1,6 +1,11 @@
 {
-    "name": "value",
-    "object": {
-        "name": "value"
-    }
+    "proxy": {
+        "ip": "localhost",
+        "port": 1234
+    },
+    "servers":[
+        {"ip": "127.0.0.1", "port": 1024},
+        {"ip": "127.0.0.1", "port": 1025},
+        {"ip": "127.0.0.1", "port": 1026}
+    ]
 }
