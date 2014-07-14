@@ -1,0 +1,12 @@
+{
+    "proxy": {
+        "ip": "localhost",
+        "port": 1234
+    },
+    "server_range":{
+        "ip": "127.0.0.1",
+        "port": 1024,
+        "clusterSize": "8"
+    }
+}
+
