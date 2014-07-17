@@ -4,49 +4,144 @@ import (
 	"testing"
 	assertion "util/test/assertion"
 	"net"
+	"errors"
+	"fmt"
 )
 
-// calling ParseProxy with
-// Proxy not nil
-// Err nil
-func Test_Parse_Cluster_Config_Proxy_Not_Nil_Err_Nil(testCtx *testing.T) {
+func Test_Parse_Cluster_Config_When_Config_Valid(testCtx *testing.T) {
 	// given
 	var (
 		expectedError error = nil
 		backendBaseAddr, _  = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		expectedMockRouter  = &RangeRoutingContext{backendBaseAddr: backendBaseAddr, clusterSize: 8}
-		mockProxyConfig     = map[string]interface{}{"ip": "127.0.0.1", "port": 1024, "clusterSize": "8"}
-		jsonConfig          = map[string]interface{}{"server_range": mockProxyConfig}
+		proxyConfig     = map[string]interface{}{"ip": "127.0.0.1", "port": 1024, "clusterSize": "8"}
+		jsonConfig          = map[string]interface{}{"server_range": proxyConfig}
 	)
 
 	// when
 	actualMockRouter, actualError := parseClusterConfig(jsonConfig)
 
 	// then
-	assertion.AssertDeepEqual("Correct Context Error ", testCtx, actualError, expectedError)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, actualMockRouter, expectedMockRouter)
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, actualError, expectedError)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, actualMockRouter, expectedMockRouter)
 }
 
-// TODO add more invalid and missing as per proxy
 
-//func Parse_Cluster_Config(jsonConfig map[string]interface{}) (router Router, err error) {
-//	if jsonConfig["server_range"] != nil {
-//		var serverConfig map[string]interface{} = jsonConfig["server_range"].(map[string]interface{})
-//		backendBaseAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]))
-//		if err != nil {
-//			loggerFactory().Error("Invalid address [" + fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]) + "]")
-//			return nil, err
-//		}
-//
-//		clusterSize , err := strconv.Atoi(serverConfig["clusterSize"].(string))
-//		if err != nil {
-//			loggerFactory().Error("Cluster Size not a valid integer [" + serverConfig["clusterSize"].(string) + "]")
-//			return nil, err
-//		}
-//
-//		router = &RangeRoutingContext{
-//			backendBaseAddr:  backendBaseAddr,
-//			clusterSize: clusterSize,
-//		}
-//	}
-//}
+
+func Test_Parse_Cluster_When_No_server_range_IP(testCtx *testing.T) {
+	// given
+	var (
+		proxyConfig     = map[string]interface{}{"port": 1024, "clusterSize": "8"}
+		jsonConfig          = map[string]interface{}{"server_range": proxyConfig}
+		expectedError      = errors.New("Invalid server range configuration please provide \"server_range\" with an \"ip\" and \"port\" in configuration - address provided was [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "]")
+	)
+
+	// when
+	actualMockRouter, actualError := parseClusterConfig(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, actualError, expectedError)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, actualMockRouter, nil)
+}
+
+func TestParse_Cluster_When_IP_Invalid(testCtx *testing.T) {
+	// given
+	var (
+		proxyConfig     = map[string]interface{}{"ip": "inv@lid", "port": 1024, "clusterSize": "8"}
+		jsonConfig          = map[string]interface{}{"server_range": proxyConfig}
+		expectedError      = errors.New("Invalid server range configuration please provide \"server_range\" with an \"ip\" and \"port\" in configuration - address provided was [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "]")
+	)
+
+	// when
+	actualMockRouter, actualError := parseClusterConfig(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, actualError, expectedError)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, actualMockRouter, nil)
+}
+
+func Test_Parse_Cluster_When_No_Port(testCtx *testing.T) {
+	// given
+	var (
+		proxyConfig     = map[string]interface{}{"ip": "127.0.0.1", "clusterSize": "8"}
+		jsonConfig          = map[string]interface{}{"server_range": proxyConfig}
+		expectedError      = errors.New("Invalid server range configuration please provide \"server_range\" with an \"ip\" and \"port\" in configuration - address provided was [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "]")
+	)
+
+	// when
+	actualMockRouter, actualError := parseClusterConfig(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, actualError, expectedError)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, actualMockRouter, nil)
+}
+
+func Test_Parse_Cluster_When_Port_Invalid(testCtx *testing.T) {
+	// given
+	var (
+		proxyConfig     = map[string]interface{}{"ip": "127.0.0.1", "port": "invalid", "clusterSize": "8"}
+		jsonConfig          = map[string]interface{}{"server_range": proxyConfig}
+		expectedError      = errors.New("Invalid server range configuration please provide \"server_range\" with an \"ip\" and \"port\" in configuration - address provided was [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "]")
+	)
+
+	// when
+	actualMockRouter, actualError := parseClusterConfig(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, actualError, expectedError)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, actualMockRouter, nil)
+}
+
+
+func Test_Parse_Cluster_Config_When_ClusterSize_Invalid(testCtx *testing.T) {
+	// given
+	var (
+		proxyConfig     = map[string]interface{}{"ip": "127.0.0.1", "port": 1024, "clusterSize": "invalid"}
+		jsonConfig          = map[string]interface{}{"server_range": proxyConfig}
+		expectedError      = errors.New("Cluster Size not a valid integer [" + proxyConfig["clusterSize"].(string) + "]")
+	)
+
+	// when
+	actualMockRouter, actualError := parseClusterConfig(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, actualError, expectedError)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, actualMockRouter, nil)
+}
+
+func Test_Parse_Cluster_When_Server_Range_Nil(testCtx *testing.T) {
+	// given
+	var (
+		jsonConfig = map[string]interface{}{
+		"server_range": nil,
+	}
+		error      = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+	)
+	// when
+	tcpProxyLocalAddress, err := parseProxy(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, err, error)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, tcpProxyLocalAddress, nil)
+}
+
+func Test_Parse_Cluster_When_Servers_Nil(testCtx *testing.T) {
+	// given
+	var (
+		jsonConfig = map[string]interface{}{
+		"servers": nil,
+	}
+		error      = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+	)
+	// when
+	tcpProxyLocalAddress, err := parseProxy(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, err, error)
+	assertion.AssertDeepEqual("Correct tcpProxy Local Address", testCtx, tcpProxyLocalAddress, nil)
+}
+
+// TODO add more for the range
+
+
+

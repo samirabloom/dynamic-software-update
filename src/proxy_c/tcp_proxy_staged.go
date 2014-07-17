@@ -103,8 +103,9 @@ func parseProxy(jsonConfig map[string]interface{}) (tcpProxyLocalAddress *net.TC
 		}
 	}
 	if tcpProxyLocalAddress == nil {
-		loggerFactory().Error("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
-		return nil, errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		errorMessage := "Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration"
+		loggerFactory().Error(errorMessage)
+		return nil, errors.New(errorMessage)
 	}
 	return tcpProxyLocalAddress, err
 }
@@ -114,14 +115,16 @@ func parseClusterConfig(jsonConfig map[string]interface{}) (router Router, err e
 		var serverConfig map[string]interface{} = jsonConfig["server_range"].(map[string]interface{})
 		backendBaseAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]))
 		if err != nil {
-			loggerFactory().Error("Invalid address [" + fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]) + "]")
-			return nil, err
+			errorMessage := "Invalid server range configuration please provide \"server_range\" with an \"ip\" and \"port\" in configuration - address provided was [" + fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]) + "]"
+			loggerFactory().Error(errorMessage)
+			return nil, errors.New(errorMessage)
 		}
 
 		clusterSize , err := strconv.Atoi(serverConfig["clusterSize"].(string))
 		if err != nil {
-			loggerFactory().Error("Cluster Size not a valid integer [" + serverConfig["clusterSize"].(string) + "]")
-			return nil, err
+			errorMessage := "Cluster Size not a valid integer [" + serverConfig["clusterSize"].(string) + "]"
+			loggerFactory().Error(errorMessage)
+			return nil, errors.New(errorMessage)
 		}
 
 		router = &RangeRoutingContext{
@@ -144,8 +147,9 @@ func parseClusterConfig(jsonConfig map[string]interface{}) (router Router, err e
 		}
 	}
 	if router == nil {
-		loggerFactory().Error("Invalid proxy configuration please \"server_range\" or \"servers\"")
-		return nil, errors.New("Invalid proxy configuration please \"server_range\" or \"servers\"")
+		errorMessage := "Invalid proxy configuration please \"server_range\" or \"servers\""
+		loggerFactory().Error(errorMessage)
+		return nil, errors.New(errorMessage)
 	}
 	return router, nil
 }
