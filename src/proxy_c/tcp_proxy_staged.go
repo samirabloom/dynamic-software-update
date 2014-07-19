@@ -34,10 +34,8 @@ func Proxy() {
 	}
 	var configFile = flag.String("configFile", cmd+"config.json", "Set the location of the configuration file")
 
-
 	flag.Parse()
 
-	//	go Server(1024, 1025)
 	go Server(1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031)
 
 	time.Sleep(1000 * time.Millisecond)
@@ -57,7 +55,9 @@ func Proxy() {
 // ==== PARSE CONFIG - START
 
 func loadConfig(configFile *string) (*LoadBalancer, error) {
-	return parseConfigFile(readConfigFile(configFile), parseProxy, parseClusterConfig)
+	return parseConfigFile(readConfigFile(configFile), parseProxy, parseClusterConfig(func() uuid.UUID {
+			return uuid.NewUUID()
+		}))
 }
 
 func readConfigFile(configFile *string) []byte {
@@ -68,7 +68,7 @@ func readConfigFile(configFile *string) []byte {
 	return jsonConfig
 }
 
-func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseClusterConfig func(map[string]interface{}) (Router, error)) (loadBalancer *LoadBalancer, err error) {
+func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseClusterConfig func(map[string]interface{}) (*RoutingContexts, error)) (loadBalancer *LoadBalancer, err error) {
 	// parse json object
 	var jsonConfig = make(map[string]interface{})
 	err = json.Unmarshal(jsonData, &jsonConfig)
@@ -106,56 +106,39 @@ func parseProxy(jsonConfig map[string]interface{}) (tcpProxyLocalAddress *net.TC
 		}
 	}
 	if tcpProxyLocalAddress == nil {
-		errorMessage := "Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration"
+		errorMessage := "Invalid proxy configuration - \"proxy\" JSON field missing or invalid"
 		loggerFactory().Error(errorMessage)
 		return nil, errors.New(errorMessage)
 	}
 	return tcpProxyLocalAddress, err
 }
 
-func parseClusterConfig(jsonConfig map[string]interface{}) (router Router, err error) {
-	if jsonConfig["server_range"] != nil {
-		var serverConfig map[string]interface{} = jsonConfig["server_range"].(map[string]interface{})
-		backendBaseAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]))
-		if err != nil {
-			errorMessage := "Invalid server range configuration please provide \"server_range\" with an \"ip\" and \"port\" in configuration - address provided was [" + fmt.Sprintf("%s:%v", serverConfig["ip"], serverConfig["port"]) + "]"
-			loggerFactory().Error(errorMessage)
-			return nil, errors.New(errorMessage)
-		}
-
-		clusterSize , err := strconv.Atoi(serverConfig["clusterSize"].(string))
-		if err != nil {
-			errorMessage := "Cluster Size not a valid integer [" + serverConfig["clusterSize"].(string) + "]"
-			loggerFactory().Error(errorMessage)
-			return nil, errors.New(errorMessage)
-		}
-
-		router = &RangeRoutingContext{
-			backendBaseAddr:  backendBaseAddr,
-			clusterSize: clusterSize,
-			requestCounter: -1,
-		}
-	} else if jsonConfig["servers"] != nil {
-		servers := jsonConfig["servers"].([]interface{})
-		var backendAddresses = make([]*net.TCPAddr, len(servers))
-		for index := range servers {
-			server := servers[index].(map[string]interface{})
-			backendAddresses[index], err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["ip"], server["port"]))
-			if err != nil {
-				loggerFactory().Error("Invalid address [" + fmt.Sprintf("%s:%v", server["ip"], server["port"]) + "]")
-				return nil, err
+func parseClusterConfig(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*RoutingContexts, error) {
+	return func(jsonConfig map[string]interface{}) (router *RoutingContexts, err error) {
+		if jsonConfig["servers"] != nil {
+			var servers = jsonConfig["servers"].([]interface {})
+			var backendAddresses = make([]*net.TCPAddr, len(servers))
+			for index := range servers {
+				server := servers[index].(map[string]interface {})
+				backendAddresses[index], err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["ip"], server["port"]))
+				if err != nil {
+					loggerFactory().Error("Invalid server address [" + fmt.Sprintf("%s:%v", server["ip"], server["port"]) + "]")
+					return nil, err
+				}
 			}
+			router = &RoutingContexts{
+				all: make(map[string]*RoutingContext),
+			}
+			router.Add(&RoutingContext{backendAddresses: backendAddresses, requestCounter: -1, uuid: uuidGenerator()})
 		}
-		router = &MultipleAddressRoutingContext{
-			backendAddresses: backendAddresses,
+
+		if router == nil {
+			errorMessage := "Invalid cluster configuration - \"servers\" JSON field missing or invalid"
+			loggerFactory().Error(errorMessage)
+			return nil, errors.New(errorMessage)
 		}
+		return router, nil
 	}
-	if router == nil {
-		errorMessage := "Invalid proxy configuration please \"server_range\" or \"servers\""
-		loggerFactory().Error(errorMessage)
-		return nil, errors.New(errorMessage)
-	}
-	return router, nil
 }
 
 // ==== PARSE CONFIG - END
@@ -222,7 +205,7 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Rout
 			if context.clientToServer {
 				var err error
 
-				backendAddr := router.NextServer()
+				backendAddr := router.NextServer(nil)
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
 					loggerFactory().Error("Can't forward traffic to server tcp/%v: %s\n", backendAddr, err)
@@ -341,35 +324,53 @@ func createPipe(router Router) func(*chunkContext) {
 // ==== LOAD BALANCER - START
 
 type Router interface {
-	NextServer() *net.TCPAddr
+	NextServer(uuid uuid.UUID) *net.TCPAddr
 }
 
-type RangeRoutingContext struct {
-	backendBaseAddr  *net.TCPAddr
-	clusterSize      int
+type RoutingContexts  struct {
+	current *RoutingContext
+	all     map[string]*RoutingContext
+	mode    string
+	timeout int
+}
+
+func (routingContexts *RoutingContexts) NextServer(uuid uuid.UUID) *net.TCPAddr {
+	routingContext := routingContexts.current
+	if (uuid != nil && routingContexts.all[uuid.String()] != nil) {
+		routingContext = routingContexts.all[uuid.String()]
+	}
+	return routingContext.NextServer(nil)
+}
+
+func (routingContexts *RoutingContexts) Add(routingContext *RoutingContext) {
+	routingContexts.current = routingContext
+	routingContexts.all[routingContext.uuid.String()] = routingContext
+}
+
+func (routingContexts *RoutingContexts) Delete(uuid uuid.UUID) {
+	delete(routingContexts.all, uuid.String())
+}
+
+func (routingContexts *RoutingContexts) Get(uuid uuid.UUID) *RoutingContext {
+	return routingContexts.all[uuid.String()]
+}
+
+func (routingContexts *RoutingContexts) String() string {
+	return routingContexts.current.String()
+}
+
+type RoutingContext struct {
+	backendAddresses []*net.TCPAddr
 	requestCounter   int64
+	uuid             uuid.UUID
 }
 
-func (routingContext *RangeRoutingContext) NextServer() *net.TCPAddr {
-	routingContext.requestCounter++
-	return &net.TCPAddr{IP: routingContext.backendBaseAddr.IP, Port: routingContext.backendBaseAddr.Port + int(routingContext.requestCounter % int64(routingContext.clusterSize))}
-}
-
-func (routingContext *RangeRoutingContext) String() string {
-	return fmt.Sprintf("{baseAddress: %s, clusterSize: %d}", routingContext.backendBaseAddr, routingContext.clusterSize)
-}
-
-type MultipleAddressRoutingContext struct {
-	backendAddresses        []*net.TCPAddr
-	requestCounter          int64
-}
-
-func (routingContext *MultipleAddressRoutingContext) NextServer() *net.TCPAddr {
+func (routingContext *RoutingContext) NextServer(uuid uuid.UUID) *net.TCPAddr {
 	routingContext.requestCounter++
 	return routingContext.backendAddresses[int(routingContext.requestCounter) % len(routingContext.backendAddresses)]
 }
 
-func (routingContext *MultipleAddressRoutingContext) String() string {
+func (routingContext *RoutingContext) String() string {
 	var result string = ""
 	for index, address := range routingContext.backendAddresses {
 		if index > 0 {
@@ -384,17 +385,6 @@ type LoadBalancer struct {
 	frontendAddr   *net.TCPAddr
 	router         Router
 	stop           chan bool
-}
-
-func NewLoadBalancer(frontendAddr, backendBaseAddr *net.TCPAddr, loadBalanceCount int) *LoadBalancer {
-	return &LoadBalancer{
-		frontendAddr: frontendAddr,
-		router: &RangeRoutingContext{
-			backendBaseAddr:  backendBaseAddr,
-			clusterSize: loadBalanceCount,
-		},
-		stop: make(chan bool),
-	}
 }
 
 func (proxy *LoadBalancer) String() string {
@@ -412,7 +402,7 @@ func (proxy *LoadBalancer) Stop() {
 }
 
 func (proxy *LoadBalancer) acceptLoop(started chan bool) {
-	listener, err := net.Listen("tcp", ":" + strconv.Itoa(proxy.frontendAddr.Port))
+	listener, err := net.Listen("tcp", ":"+strconv.Itoa(proxy.frontendAddr.Port))
 	if err != nil {
 		log.Fatalf("Error opening socket - %s", err)
 	}

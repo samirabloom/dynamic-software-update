@@ -8,14 +8,15 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"regexp"
 	"time"
+	"proxy_c"
 )
 
 func main() {
-	Server(8080)
+	ConfigServer(8080, nil)
 	time.Sleep(100 * time.Millisecond)
 }
 
-func Server(port int) {
+func ConfigServer(port int, contexts *proxy_c.RoutingContexts) {
 	fmt.Println("Starting server " + strconv.Itoa(port) + " ....")
 	urlRegex := regexp.MustCompile("/server/([a-z0-9-]*){1}")
 	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
@@ -69,29 +70,6 @@ func PUTHandler(uuidGenerator func() string) func(map[string]interface{}, http.R
 
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprintf(w, "%s", id)
-	}
-}
-
-func parseJsonBody(jsonMap map[string]interface{}) {
-	for k, v := range jsonMap {
-		switch vv := v.(type) {
-		case string:
-			fmt.Println(k, "is string", vv)
-		case int:
-			fmt.Println(k, "is int", vv)
-		case []interface{}:
-			fmt.Println(k, "is an array:")
-		for i, u := range vv {
-			fmt.Printf("[%s], [%s]", i, u)
-		}
-		case map[string]interface{}:
-			fmt.Printf("%s is a map: ", k)
-		for i, u := range vv {
-			fmt.Printf("\n\t[%s], [%s]", i, u)
-		}
-		default:
-			fmt.Println(k, "is of a type I don't know how to handle")
-		}
 	}
 }
 

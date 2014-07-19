@@ -15,7 +15,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 		serverPort = networkutil.FindFreeLocalSocket(testCtx).Port
 		serverUrl = "http://127.0.0.1:" + strconv.Itoa(serverPort) + "/server"
 	)
-	go Server(serverPort)
+	go ConfigServer(serverPort, nil)
 
 
 

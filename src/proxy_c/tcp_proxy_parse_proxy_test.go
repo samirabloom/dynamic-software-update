@@ -31,7 +31,7 @@ func Test_Parse_Proxy_When_No_IP(testCtx *testing.T) {
 	var (
 		proxyConfig   = map[string]interface{}{"port":   "1234"}
 		jsonConfig    = map[string]interface{}{"proxy": proxyConfig}
-		expectedError = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		expectedError = errors.New("Invalid proxy configuration - \"proxy\" JSON field missing or invalid")
 	)
 	// when
 	tcpProxyLocalAddress, err := parseProxy(jsonConfig)
@@ -46,7 +46,7 @@ func Test_Parse_Proxy_When_IP_Invalid(testCtx *testing.T) {
 	var (
 		proxyConfig   = map[string]interface{}{"ip": "", "port": "1234"}
 		jsonConfig    = map[string]interface{}{"proxy": proxyConfig}
-		expectedError = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		expectedError = errors.New("Invalid proxy configuration - \"proxy\" JSON field missing or invalid")
 	)
 	// when
 	tcpProxyLocalAddress, err := parseProxy(jsonConfig)
@@ -61,7 +61,7 @@ func Test_Parse_Proxy_When_No_Port(testCtx *testing.T) {
 	var (
 		proxyConfig   = map[string]interface{}{"ip": "localhost"}
 		jsonConfig    = map[string]interface{}{"proxy": proxyConfig}
-		expectedError = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		expectedError = errors.New("Invalid proxy configuration - \"proxy\" JSON field missing or invalid")
 	)
 	// when
 	tcpProxyLocalAddress, err := parseProxy(jsonConfig)
@@ -76,7 +76,7 @@ func Test_Parse_Proxy_When_Port_Invalid(testCtx *testing.T) {
 	var (
 		proxyConfig   = map[string]interface{}{"ip": "localhost", "port":   "not valid port"}
 		jsonConfig    = map[string]interface{}{"proxy": proxyConfig}
-		expectedError = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		expectedError = errors.New("Invalid proxy configuration - \"proxy\" JSON field missing or invalid")
 	)
 	// when
 	tcpProxyLocalAddress, err := parseProxy(jsonConfig)
@@ -90,7 +90,7 @@ func Test_Parse_Proxy_When_No_IP_Or_Port(testCtx *testing.T) {
 	// given
 	var (
 		jsonConfig    = map[string]interface{}{"proxy": nil}
-		expectedError = errors.New("Invalid proxy configuration please provide \"proxy\" with an \"ip\" and \"port\" in configuration")
+		expectedError = errors.New("Invalid proxy configuration - \"proxy\" JSON field missing or invalid")
 	)
 	// when
 	tcpProxyLocalAddress, err := parseProxy(jsonConfig)

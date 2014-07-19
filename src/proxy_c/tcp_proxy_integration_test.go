@@ -6,7 +6,20 @@ import (
 	"testing"
 	networkutil "util/test/network"
 	assertion "util/test/assertion"
+	"code.google.com/p/go-uuid/uuid"
 )
+
+func NewLoadBalancer(frontendAddr *net.TCPAddr, backendAddresses []*net.TCPAddr) *LoadBalancer {
+	return &LoadBalancer{
+		frontendAddr: frontendAddr,
+		router: &RoutingContext{
+			backendAddresses:  backendAddresses,
+			requestCounter: -1,
+			uuid: uuid.NewUUID(),
+		},
+		stop: make(chan bool),
+	}
+}
 
 func sendRequest(testCtx *testing.T, address *net.TCPAddr, request []byte) []byte {
 	//   - a socket connected to proxy
@@ -40,7 +53,7 @@ func Test_Proxy_Basic_Request_And_Response(testCtx *testing.T) {
 
 	//   - proxy running
 	var (
-		proxy = NewLoadBalancer(proxyAddress, echoServerAddress, 1)
+		proxy = NewLoadBalancer(proxyAddress, []*net.TCPAddr{echoServerAddress})
 	)
 	proxy.Start()
 
@@ -71,7 +84,7 @@ func Test_Proxy_Request_With_UUID(testCtx *testing.T) {
 
 	//   - proxy running
 	var (
-		proxy = NewLoadBalancer(proxyAddress, echoServerAddress, 1)
+		proxy = NewLoadBalancer(proxyAddress, []*net.TCPAddr{echoServerAddress})
 	)
 	proxy.Start()
 
@@ -103,7 +116,7 @@ func Test_Proxy_Load_Balances_Request(testCtx *testing.T) {
 
 	//   - proxy running
 	var (
-		proxy = NewLoadBalancer(proxyAddress, echoServerAddresses[0], 2)
+		proxy = NewLoadBalancer(proxyAddress, echoServerAddresses)
 	)
 	proxy.Start()
 
