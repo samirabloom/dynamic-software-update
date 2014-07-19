@@ -27,12 +27,14 @@ func panicingUUIDGenerator() uuid.UUID {
 // 		3. call next
 func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 	// given
+	listener, _ := net.Listen("tcp", ":1024")
+	defer listener.Close()
 	var (
 		uuidValue      = uuid.NewUUID()
 		mockContext    = NewTestRouteChunkContext("Cookie: dynsoftup="+uuidValue.String()+";", uuid.NIL, true)
 		mockWrite      = NewMockStage("mockWrite")
 		mockCreatePipe = NewMockStage("mockCreatePipe")
-		routingContext = &RangeRoutingContext{backendBaseAddr: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}, clusterSize: 3}
+		routingContext = &RangeRoutingContext{backendBaseAddr: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}, clusterSize: 3, requestCounter: -1}
 	)
 	mockCreatePipe.close(1)
 

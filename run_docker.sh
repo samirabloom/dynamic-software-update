@@ -31,7 +31,7 @@ docker rm local_registry 2> /dev/null
 docker run -d --name local_registry -p 5000:5000 registry
 
 # wait for docker registry to start up
-sleep 60
+sleep 10
 
 # == ADD GO BASE IMAGE TO LOCAL REGISTRY ==
 echo
@@ -39,6 +39,9 @@ echo "==================================="
 echo "ADD GO BASE IMAGE TO LOCAL REGISTRY"
 echo "==================================="
 echo
+
+# pull latest copy of docker-go container
+docker pull samirabloom/docker-go
 
 # pull go base from public registry
 docker run samirabloom/docker-go
@@ -59,6 +62,20 @@ echo "BUILD DOCKERFILE IN LOCAL DIRECTORY BASED ON GO BASE IMAGE IN LOCAL REGIST
 echo "============================================================================"
 echo
 
+# create proxy config file in boot2docker
+boot2docker ssh "mkdir /home/docker/config; cd /home/docker/config; cat << EOF > config.json
+{
+    "proxy": {
+        "ip": "localhost",
+        "port": 1234
+    },
+    "server_range":{
+        "ip": "127.0.0.1",
+        "port": 1024,
+        "clusterSize": "8"
+    }
+}"
+
 # build dynamic software update image based on go base image (in local registry)
 docker build -t samirabloom/dynsoftup .
 
@@ -66,8 +83,8 @@ docker build -t samirabloom/dynsoftup .
 docker stop dynsoftup 2> /dev/null
 docker rm dynsoftup 2> /dev/null
 
-# run container mapping internal docker port 8080 to external ports 9090
-docker run -d --name dynsoftup -p 9090:8080 samirabloom/dynsoftup
+# run container mapping internal docker port 1234 to external ports 1234 (i.e. -p <external port>:<internal port>
+docker run -d --name dynsoftup -p 1234:1234 -v /home/docker/config:/dynamic_software_update_config samirabloom/dynsoftup
 
 # remove any existing tag
 docker rmi $boot2dockerIp:5000/dynsoftup 2> /dev/null

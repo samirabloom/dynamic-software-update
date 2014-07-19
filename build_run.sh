@@ -16,4 +16,4 @@ echo "Building project"
 go build -o dynsoftup ./src/main_run.go
 
 echo "Running main func with logLevel ${logLevel}"
-./dynsoftup -logLevel="${logLevel}" -configFile="range_config.json"
+./dynsoftup -logLevel="${logLevel}" -configFile="config/config_script.json"

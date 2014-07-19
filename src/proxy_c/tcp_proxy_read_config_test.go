@@ -24,7 +24,7 @@ func Test_Read_Config_When_File_Exists(testCtx *testing.T) {
 func Test_Read_Config_When_File_Not_Exists(testCtx *testing.T) {
 	// given
 	var (
-		fileName          = new(string)
+		fileName = new(string)
 	)
 	*fileName = "does_not_exist.json"
 

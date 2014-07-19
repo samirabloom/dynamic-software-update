@@ -21,7 +21,7 @@ RUN \
   apt-get -y upgrade && \
   apt-get install -y build-essential && \
   apt-get install -y software-properties-common && \
-  apt-get install -y curl git htop man unzip vim wget pkg-config && \ 
+  apt-get install -y curl git htop man unzip vim wget pkg-config mercurial && \ 
   curl -s https://storage.googleapis.com/golang/go1.2.2.src.tar.gz | tar -v -C /usr/local -xz && \
   cd /usr/local/go/src && ./make.bash
 
