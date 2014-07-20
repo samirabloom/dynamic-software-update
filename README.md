@@ -81,6 +81,10 @@ i.e. http://nginx.com/blog/http-keepalives-and-web-performance/
 curl -vvv http://127.0.0.1:1235/blog/http-keepalives-and-web-performance/ -H "Host: nginx.com"
 ```
 
+### testing config REST services
+
+The easiest way to test the config services is to use [DHC](https://chrome.google.com/webstore/detail/dhc-rest-http-api-client/aejoelaoggembcahagimdiliamlcdmfm) and import the example calls from DHC_Chrome_Extension_Config_Server_REST_Examples.json in the project root.
+
 ### test running in boot2docker
 
 To make boot2docker work it needs a copy of the config file read by the docker proxy container, as follows:

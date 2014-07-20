@@ -13,7 +13,7 @@ type visit struct {
 	typ reflect.Type
 }
 
-const equal_comparison_failure_message = "\n%s - Failed: %s [%v] not equal to [%v]\n\n\n"
+const equal_comparison_failure_message = "\n%s - Failed: - %s - expected: [%v] not equal to actual: [%v]\n"
 
 func AssertArrayEquals(testCtx *testing.T, expected []byte, actual []byte) {
 	for key := range expected {
@@ -25,30 +25,27 @@ func AssertArrayEquals(testCtx *testing.T, expected []byte, actual []byte) {
 	}
 }
 
-func AssertDeepEqual(message string, testCtx *testing.T, expected, actual interface{}) bool {
-	if expected == nil || actual == nil {
-		return expected == actual
+func AssertDeepEqual(message string, testCtx *testing.T, expected, actual interface{}) {
+	failure_message := equal_comparison_failure_message + fmt.Sprintf("\t expected:\n\t[%#v]\n\t[%s]\n\t actual:\n\t[%#v]\n\t[%s]\n\n\n", expected, expected, actual, actual)
+	if expected != nil && actual != nil {
+		v1 := reflect.ValueOf(expected)
+		v2 := reflect.ValueOf(actual)
+		if v1.Type() != v2.Type() {
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "type not equal", v1.Type(), v2.Type()))
+		}
+		deepValueEqual(failure_message, message, testCtx, v1, v2, make(map[visit]bool), 0)
+	} else if expected != actual {
+		testCtx.Fatal(fmt.Errorf(failure_message, message, "one value is nil", fmt.Sprintf("%#v", expected), fmt.Sprintf("%#v", actual)))
 	}
-
-
-	v1 := reflect.ValueOf(expected)
-	v2 := reflect.ValueOf(actual)
-	if v1.Type() != v2.Type() {
-		testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "type not equal", v1.Type(), v2.Type()))
-		return false
-	}
-	return deepValueEqual(message, testCtx, v1, v2, make(map[visit]bool), 0)
 }
 
-func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect.Value, visited map[visit]bool, depth int) bool {
+func deepValueEqual(failure_message, message string, testCtx *testing.T, expected, actual reflect.Value, visited map[visit]bool, depth int) {
 
 	if !expected.IsValid() || !actual.IsValid() {
-		testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "not valid value", expected, actual))
-		return expected.IsValid() == actual.IsValid()
+		testCtx.Fatal(fmt.Errorf(failure_message, message, "not valid value", fmt.Sprintf("%#v", expected), fmt.Sprintf("%#v", actual)))
 	}
 	if expected.Type() != actual.Type() {
-		testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "type not equal", expected.Type(), actual.Type()))
-		return false
+		testCtx.Fatal(fmt.Errorf(failure_message, message, "type not equal", expected.Type(), actual.Type()))
 	}
 
 	// if depth > 10 { panic("deepValueEqual") }	// for debugging
@@ -60,7 +57,6 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 		return false
 	}
 
-
 	if expected.CanAddr() && actual.CanAddr() && hard(expected.Kind()) {
 		addr1 := expected.UnsafeAddr()
 		addr2 := actual.UnsafeAddr()
@@ -71,14 +67,14 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 
 		// Short circuit if references are identical ...
 		if addr1 == addr2 {
-			return true
+			return
 		}
 
 		// ... or already seen
 		typ := expected.Type()
 		v := visit{addr1, addr2, typ}
 		if visited[v] {
-			return true
+			return
 		}
 
 		// Remember for later.
@@ -88,125 +84,100 @@ func deepValueEqual(message string, testCtx *testing.T, expected, actual reflect
 
 	switch expected.Kind() {
 	case reflect.Array:
-
 		if expected.Len() != actual.Len() {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "length not equal", expected.Len(), actual.Len()))
-			return false
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "length not equal", expected.Len(), actual.Len()))
 		}
 		for i := 0; i < expected.Len(); i++ {
-			if !deepValueEqual(message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1) {
-				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "arrays not equal", expected, actual))
-				return false
-			}
+			deepValueEqual(failure_message, message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1)
 		}
-		return true
 	case reflect.Slice:
-
 		if expected.IsNil() != actual.IsNil() {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "one object is nil and the other is not", expected.IsNil(), actual.IsNil()))
-			return false
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "one slice is nil and the other is not", fmt.Sprintf("is nil: %t", expected.IsNil()), fmt.Sprintf("is nil: %t", actual.IsNil())))
 		}
 		if expected.Len() != actual.Len() {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "length not equal", expected.Len(), actual.Len()))
-			return false
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "length not equal", expected.Len(), actual.Len()))
 		}
-		if expected.Pointer() == actual.Pointer() {
-			return true
-		}
-		for i := 0; i < expected.Len(); i++ {
-			if !deepValueEqual(message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1) {
-				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "objects not equal", expected, actual))
-				return false
+		if expected.Pointer() != actual.Pointer() {
+			for i := 0; i < expected.Len(); i++ {
+				deepValueEqual(failure_message, message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1)
 			}
 		}
-		return true
 	case reflect.Interface:
-
-		if expected.IsNil() || actual.IsNil() {
-			return expected.IsNil() == actual.IsNil()
+		if !expected.IsNil() && !actual.IsNil() {
+			deepValueEqual(failure_message, message, testCtx, expected.Elem(), actual.Elem(), visited, depth+1)
+		} else if !(expected.IsNil() && actual.IsNil()) {
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "objects not equal", expected, actual))
 		}
-		return deepValueEqual(message, testCtx, expected.Elem(), actual.Elem(), visited, depth+1)
 	case reflect.Ptr:
-
-		return deepValueEqual(message, testCtx, expected.Elem(), actual.Elem(), visited, depth+1)
-	case reflect.Struct:
-
-		for i, n := 0, expected.NumField(); i < n; i++ {
-			if !deepValueEqual(message, testCtx, expected.Field(i), actual.Field(i), visited, depth+1) {
-				testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "structs not equal", expected, actual))
-				return false
-			}
+		var nilPointer uintptr
+		if expected.Pointer() != nilPointer && actual.Pointer() != nilPointer {
+			deepValueEqual(failure_message, message, testCtx, expected.Elem(), actual.Elem(), visited, depth+1)
+		} else if expected.Pointer() != actual.Pointer() {
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "one pointer is nil and the other is not", fmt.Sprintf("%#v", expected.Pointer()), fmt.Sprintf("%#v", actual.Pointer())))
 		}
-		return true
+	case reflect.Struct:
+		for i, n := 0, expected.NumField(); i < n; i++ {
+			deepValueEqual(failure_message, message, testCtx, expected.Field(i), actual.Field(i), visited, depth+1)
+		}
 	case reflect.Map:
-
 		if expected.IsNil() != actual.IsNil() {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "one object is nil and the other is not", expected.IsNil(), actual.IsNil()))
-			return false
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "one map is nil and the other is not", fmt.Sprintf("is nil: %t", expected.IsNil()), fmt.Sprintf("is nil: %t", actual.IsNil())))
 		}
 		if expected.Len() != actual.Len() {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "keys not equal", expected.MapKeys(), actual.MapKeys()))
-			return false
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "keys not equal", expected.MapKeys(), actual.MapKeys()))
 		}
-		if expected.Pointer() == actual.Pointer() {
-			return true
+		if expected.Pointer() != actual.Pointer() {
+			for _, k := range expected.MapKeys() {
+				deepValueEqual(failure_message, message, testCtx, expected.MapIndex(k), actual.MapIndex(k), visited, depth+1)
+			}
 		}
-	for _, k := range expected.MapKeys() {
-		if !deepValueEqual(message, testCtx, expected.MapIndex(k), actual.MapIndex(k), visited, depth+1) {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "maps not equal", expected, actual))
-			return false
-		}
-	}
-		return true
 	case reflect.Func:
-
-		if expected.IsNil() && actual.IsNil() {
-			return true
+		if !(expected.IsNil() && actual.IsNil()) {
+			// Can't do better than this:
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "functions not equal", expected, actual))
 		}
-		// Can't do better than this:
-		testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "functions not equal", expected, actual))
-		return false
 	case reflect.Bool:
 		if expected.Bool() != actual.Bool() {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "booleans not equal", expected.Bool(), actual.Bool()))
-			return false;
-		} else {
-			return true;
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "booleans not equal", expected.Bool(), actual.Bool()))
 		}
 	case reflect.Int:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Int8:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Int16:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Int32:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Int64:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint16:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint32:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint64:
-		return compareInt(message, testCtx, expected, actual)
+		compareInt(failure_message, message, testCtx, expected, actual)
+	case reflect.Float32:
+		compareFloat(failure_message, message, testCtx, expected, actual)
+	case reflect.Float64:
+		compareFloat(failure_message, message, testCtx, expected, actual)
 	default:
 		// Normal equality suffices
 		if !bytes.Equal([]byte(fmt.Sprintf("%v", expected)), []byte(fmt.Sprintf("%v", actual))) {
-			testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "values not equal", fmt.Sprintf("%v", expected), fmt.Sprintf("%v", actual)))
-			return false;
-		} else {
-			return true;
+			testCtx.Fatal(fmt.Errorf(failure_message, message, "values not equal", fmt.Sprintf("%v", expected), fmt.Sprintf("%v", actual)))
 		}
 	}
 }
 
-func compareInt(message string, testCtx *testing.T, expected, actual reflect.Value) bool {
+func compareInt(failure_message, message string, testCtx *testing.T, expected, actual reflect.Value) {
 	if expected.Int() != actual.Int() {
-		testCtx.Fatal(fmt.Errorf(equal_comparison_failure_message, message, "integers not equal", expected.Int(), actual.Int()))
-		return false;
-	} else {
-		return true;
+		testCtx.Fatal(fmt.Errorf(failure_message, message, "integers not equal", expected.Int(), actual.Int()))
+	}
+}
+
+func compareFloat(failure_message, message string, testCtx *testing.T, expected, actual reflect.Value) {
+	if expected.Float() != actual.Float() {
+		testCtx.Fatal(fmt.Errorf(failure_message, message, "floating point number not equal", expected.Float(), actual.Float()))
 	}
 }

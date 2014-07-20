@@ -1,4 +1,4 @@
-package proxy_config
+package proxy_c
 
 import (
 	"fmt"
@@ -7,22 +7,22 @@ import (
 	networkutil "util/test/network"
 	assertion "util/test/assertion"
 	"strconv"
+	"time"
 )
 
 func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 	// given - a config server
 	var (
 		serverPort = networkutil.FindFreeLocalSocket(testCtx).Port
-		serverUrl = "http://127.0.0.1:" + strconv.Itoa(serverPort) + "/server"
+		serverUrl  = "http://127.0.0.1:" + strconv.Itoa(serverPort) + "/server"
 	)
-	go ConfigServer(serverPort, nil)
+	go ConfigServer(serverPort, &RoutingContexts{})
 
-
+	time.Sleep(500 * time.Millisecond)
 
 	// when
 	// - a PUT request
-
-	uuidResponse, putStatus := PUTRequest(serverUrl, "{\"name_one\":\"value_one\", \"name_two\":\"value_two\"}")
+	uuidResponse, putStatus := networkutil.PUTRequest(serverUrl, "{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1024}, {\"ip\":\"127.0.0.1\", \"port\":1025}], \"version\": 1.1}}")
 
 	// then
 	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "202 Accepted", putStatus)
@@ -34,17 +34,17 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 
 	// when
 	// - a GET request
-	jsonResponse, getStatus := GETRequest(serverUrl + "/" + uuidResponse)
+	jsonResponse, getStatus := networkutil.GETRequest(serverUrl + "/" + uuidResponse)
 
 	// then
 	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "200 OK", getStatus)
-	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\"id\":\"" + uuidResponse + "\",\"name_one\":\"value_one\",\"name_two\":\"value_two\"}", jsonResponse)
+	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\""+uuidResponse+"\",\"version\":1.1}}", jsonResponse)
 
 
 
 	// when
 	// - a DELETE request
-	_, deleteStatus := DELETERequest(serverUrl + "/" + uuidResponse)
+	_, deleteStatus := networkutil.DELETERequest(serverUrl + "/" + uuidResponse)
 
 	// then
 	assertion.AssertDeepEqual("Correct DELETE Status", testCtx, "202 Accepted", deleteStatus)
@@ -53,7 +53,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 
 	// when
 	// - another GET response
-	_, getAfterDeleteStatus := GETRequest(serverUrl + "/" + uuidResponse)
+	_, getAfterDeleteStatus := networkutil.GETRequest(serverUrl + "/" + uuidResponse)
 
 	// then
 	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "404 Not Found", getAfterDeleteStatus)
@@ -62,7 +62,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 
 	// when
 	// - another DELETE request
-	_, deleteAfterDeleteStatus := DELETERequest(serverUrl + "/" + uuidResponse)
+	_, deleteAfterDeleteStatus := networkutil.DELETERequest(serverUrl + "/" + uuidResponse)
 
 	// then
 	assertion.AssertDeepEqual("Correct DELETE Status", testCtx, "404 Not Found", deleteAfterDeleteStatus)

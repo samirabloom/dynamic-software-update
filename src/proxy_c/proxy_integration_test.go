@@ -10,13 +10,11 @@ import (
 )
 
 func NewLoadBalancer(frontendAddr *net.TCPAddr, backendAddresses []*net.TCPAddr) *LoadBalancer {
+	routingContexts := &RoutingContexts{}
+	routingContexts.Add(&RoutingContext{backendAddresses:  backendAddresses, requestCounter: -1, uuid: uuid.NewUUID()})
 	return &LoadBalancer{
 		frontendAddr: frontendAddr,
-		router: &RoutingContext{
-			backendAddresses:  backendAddresses,
-			requestCounter: -1,
-			uuid: uuid.NewUUID(),
-		},
+		routingContexts: routingContexts,
 		stop: make(chan bool),
 	}
 }
@@ -64,10 +62,10 @@ func Test_Proxy_Basic_Request_And_Response(testCtx *testing.T) {
 	)
 
 	// when
-	response := sendRequest(testCtx, proxyAddress, testRequest)
+	actualResponse := sendRequest(testCtx, proxyAddress, testRequest)
 
 	// then
-	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, response)
+	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, actualResponse)
 
 	// clean-up
 	proxy.Stop()
@@ -95,10 +93,10 @@ func Test_Proxy_Request_With_UUID(testCtx *testing.T) {
 	)
 
 	// when
-	response := sendRequest(testCtx, proxyAddress, testRequest)
+	actualResponse := sendRequest(testCtx, proxyAddress, testRequest)
 
 	// then
-	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, response)
+	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, actualResponse)
 
 	// clean-up
 	proxy.Stop()

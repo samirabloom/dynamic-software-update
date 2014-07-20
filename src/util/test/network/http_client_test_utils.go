@@ -1,4 +1,4 @@
-package proxy_config
+package network
 
 import (
 	"net/http"

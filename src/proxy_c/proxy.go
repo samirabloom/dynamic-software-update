@@ -3,24 +3,20 @@ package proxy_c
 import (
 	"bytes"
 	uuid "code.google.com/p/go-uuid/uuid"
-	"encoding/csv"
 	"flag"
 	"fmt"
-	logging "github.com/op/go-logging"
 	"io"
 	"log"
 	"net"
 	"os"
-	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 	byteutil "util/byte"
-	"io/ioutil"
-	"encoding/json"
-	"errors"
+	"server"
+	"container/list"
 )
 
 // ==== MAIN - START
@@ -36,7 +32,7 @@ func Proxy() {
 
 	flag.Parse()
 
-	go Server(1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031)
+	go server.Server(1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031)
 
 	time.Sleep(1000 * time.Millisecond)
 
@@ -52,106 +48,15 @@ func Proxy() {
 
 // ==== MAIN - END
 
-// ==== PARSE CONFIG - START
-
-func loadConfig(configFile *string) (*LoadBalancer, error) {
-	return parseConfigFile(readConfigFile(configFile), parseProxy, parseClusterConfig(func() uuid.UUID {
-			return uuid.NewUUID()
-		}))
-}
-
-func readConfigFile(configFile *string) []byte {
-	jsonConfig, err := ioutil.ReadFile(*configFile)
-	if err != nil {
-		loggerFactory().Error("Error %s reading config file [%s]", err, *configFile)
-	}
-	return jsonConfig
-}
-
-func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseClusterConfig func(map[string]interface{}) (*RoutingContexts, error)) (loadBalancer *LoadBalancer, err error) {
-	// parse json object
-	var jsonConfig = make(map[string]interface{})
-	err = json.Unmarshal(jsonData, &jsonConfig)
-	if err != nil {
-		loggerFactory().Error("Error %s parsing config file:\n%s", err.Error(), jsonData)
-	}
-
-	tcpProxyLocalAddress, proxyParseErr := parseProxy(jsonConfig)
-	if proxyParseErr == nil {
-		router, clusterParseErr := parseClusterConfig(jsonConfig)
-		if clusterParseErr == nil {
-			// create load balancer
-			loadBalancer = &LoadBalancer{
-				frontendAddr: tcpProxyLocalAddress,
-				router: router,
-				stop: make(chan bool),
-			}
-			loggerFactory().Info("Parsed config file:\n%s\nas:\n%s", jsonData, loadBalancer)
-
-			return loadBalancer, nil
-		} else {
-			return nil, clusterParseErr
-		}
-	} else {
-		return nil, proxyParseErr
-	}
-}
-
-func parseProxy(jsonConfig map[string]interface{}) (tcpProxyLocalAddress *net.TCPAddr, err error) {
-	if jsonConfig["proxy"] != nil {
-		var proxyConfig map[string]interface{} = jsonConfig["proxy"].(map[string]interface{})
-		tcpProxyLocalAddress, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]))
-		if err != nil {
-			loggerFactory().Error("Invalid proxy address [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "]")
-		}
-	}
-	if tcpProxyLocalAddress == nil {
-		errorMessage := "Invalid proxy configuration - \"proxy\" JSON field missing or invalid"
-		loggerFactory().Error(errorMessage)
-		return nil, errors.New(errorMessage)
-	}
-	return tcpProxyLocalAddress, err
-}
-
-func parseClusterConfig(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*RoutingContexts, error) {
-	return func(jsonConfig map[string]interface{}) (router *RoutingContexts, err error) {
-		if jsonConfig["servers"] != nil {
-			var servers = jsonConfig["servers"].([]interface {})
-			var backendAddresses = make([]*net.TCPAddr, len(servers))
-			for index := range servers {
-				server := servers[index].(map[string]interface {})
-				backendAddresses[index], err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["ip"], server["port"]))
-				if err != nil {
-					loggerFactory().Error("Invalid server address [" + fmt.Sprintf("%s:%v", server["ip"], server["port"]) + "]")
-					return nil, err
-				}
-			}
-			router = &RoutingContexts{
-				all: make(map[string]*RoutingContext),
-			}
-			router.Add(&RoutingContext{backendAddresses: backendAddresses, requestCounter: -1, uuid: uuidGenerator()})
-		}
-
-		if router == nil {
-			errorMessage := "Invalid cluster configuration - \"servers\" JSON field missing or invalid"
-			loggerFactory().Error(errorMessage)
-			return nil, errors.New(errorMessage)
-		}
-		return router, nil
-	}
-}
-
-// ==== PARSE CONFIG - END
-
 // ==== READ - START
 
 func read(next func(*chunkContext), complete func(*chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
 		defer trace(time.Now(), context.performance.read)
-		loggerFactory().Info("Read Stage START - %s", context)
+		loggerFactory().Debug("Read Stage START - %s", context)
 		var loopCounter = 0
 		for {
-			loggerFactory().Info("Read Loop START - %d - %s", loopCounter, context)
+			loggerFactory().Debug("Read Loop START - %d - %s", loopCounter, context)
 			context.data = context.data[0:cap(context.data)]
 			readSize, readError := context.from.Read(context.data)
 			context.data = context.data[0:readSize]
@@ -159,33 +64,33 @@ func read(next func(*chunkContext), complete func(*chunkContext)) func(*chunkCon
 			if readSize > 0 {
 				context.totalReadSize += int64(readSize)
 				next(context)
-				loggerFactory().Info("Error routing connection %s - %s", context.err, context)
+				loggerFactory().Debug("Error routing connection %s - %s", context.err, context)
 				if context.firstChunk {
 					context.firstChunk = false
 				}
 			}
 
 			if context.err != nil {
-				loggerFactory().Info("Error routing connection %s - %s", context.err, context)
+				loggerFactory().Debug("Error routing connection %s - %s", context.err, context)
 				break
 			}
 
 			if readError == io.EOF {
-				loggerFactory().Info("Read Loop EOF - %s", context)
+				loggerFactory().Debug("Read Loop EOF - %s", context)
 				break
 			}
 
 			if readError != nil {
-				loggerFactory().Info("Read Loop error %s - %s", readError, context)
+				loggerFactory().Debug("Read Loop error %s - %s", readError, context)
 				context.err = readError
 				break
 			}
 
-			loggerFactory().Info("Read Loop END - %d - %s", loopCounter, context)
+			loggerFactory().Debug("Read Loop END - %d - %s", loopCounter, context)
 			loopCounter++
 		}
 		complete(context)
-		loggerFactory().Info("Read Stage END - %s", context)
+		loggerFactory().Debug("Read Stage END - %s", context)
 	}
 }
 
@@ -197,15 +102,21 @@ var (
 	cookieHeaderRegex = regexp.MustCompile("Cookie: .*dynsoftup=([a-z0-9-]*);.*")
 )
 
-func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Router, createBackPipe func(context *chunkContext)) func(*chunkContext) {
+func route(next func(*chunkContext), router *RoutingContexts, createBackPipe func(context *chunkContext)) func(*chunkContext) {
 	return func(context *chunkContext) {
 		defer trace(time.Now(), context.performance.route)
-		loggerFactory().Info("Route Stage START - %s", context)
+		loggerFactory().Debug("Route Stage START - %s", context)
 		if context.firstChunk {
 			if context.clientToServer {
 				var err error
+				submatchs := cookieHeaderRegex.FindSubmatch(context.data)
+				if len(submatchs) >= 2 {
+					context.requestUUID = uuid.Parse(string(submatchs[1]))
+					loggerFactory().Debug("Route Stage found UUID %s", context)
+				}
 
-				backendAddr := router.NextServer(nil)
+				backendAddr, uuidCookieValue := router.NextServer(context.requestUUID)
+				context.requestUUID = uuidCookieValue
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
 					loggerFactory().Error("Can't forward traffic to server tcp/%v: %s\n", backendAddr, err)
@@ -217,17 +128,9 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Rout
 					return
 				}
 
-				submatchs := cookieHeaderRegex.FindSubmatch(context.data)
-				if len(submatchs) >= 2 {
-					context.requestUUID = uuid.Parse(string(submatchs[1]))
-					loggerFactory().Info("Route Stage found UUID %s", context)
-				}
 				go createBackPipe(NewBackPipeChunkContext(context))
 			} else {
 				uuidCookieValue := context.requestUUID
-				if uuidCookieValue == nil {
-					uuidCookieValue = uuidGenerator()
-				}
 				setCookieHeader := []byte(fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", uuidCookieValue.String()))
 				insertLocation := bytes.Index(context.data, []byte("\n"))
 				if insertLocation > 0 {
@@ -238,7 +141,7 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Rout
 		}
 
 		next(context)
-		loggerFactory().Info("Route Stage END - %s", context)
+		loggerFactory().Debug("Route Stage END - %s", context)
 	}
 }
 
@@ -248,7 +151,7 @@ func route(next func(*chunkContext), uuidGenerator func() uuid.UUID, router Rout
 
 func write(context *chunkContext) {
 	defer trace(time.Now(), context.performance.write)
-	loggerFactory().Info("Write Stage START - %s", context)
+	loggerFactory().Debug("Write Stage START - %s", context)
 	amountToWrite := len(context.data)
 	if amountToWrite > 0 {
 		writeSize, writeError := context.to.Write(context.data)
@@ -261,7 +164,7 @@ func write(context *chunkContext) {
 			context.err = io.ErrShortWrite
 		}
 	}
-	loggerFactory().Info("Write Stage END - %s", context)
+	loggerFactory().Debug("Write Stage END - %s", context)
 }
 
 // ==== WRITE - END
@@ -270,13 +173,13 @@ func write(context *chunkContext) {
 
 func complete(context *chunkContext) {
 	defer trace(time.Now(), context.performance.complete)
-	loggerFactory().Info("Complete Stage START - %s", context)
+	loggerFactory().Debug("Complete Stage START - %s", context)
 	if context.err != nil {
 		// If the socket we are writing to is shutdown with
 		// SHUT_WR, forward it to the other end of the createForwardPipe:
 		if err, ok := context.err.(*net.OpError); ok && err.Err == syscall.EPIPE {
 			closeWriteError := context.from.CloseWrite()
-			loggerFactory().Info("Complete Stage closed WRITE with error %s - %s", closeWriteError, context)
+			loggerFactory().Debug("Complete Stage closed WRITE with error %s - %s", closeWriteError, context)
 		}
 	}
 	if context.to != nil {
@@ -284,38 +187,35 @@ func complete(context *chunkContext) {
 		if assertion {
 			if context.to.(*net.TCPConn) != nil {
 				closeReadError := context.to.CloseRead()
-				loggerFactory().Info("Complete Stage closed READ with error %s - %s", closeReadError, context)
+				loggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
 			}
 		} else {
 			closeReadError := context.to.CloseRead()
-			loggerFactory().Info("Complete Stage closed READ with error %s - %s", closeReadError, context)
+			loggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
 		}
 	}
 	context.pipeComplete <- context.totalWriteSize
-	loggerFactory().Info("Complete Stage END - %s", context)
+	loggerFactory().Debug("Complete Stage END - %s", context)
 }
 
 // ==== COMPLETE - END
 
 // ==== CREATE PIPE - START
 
-func createPipe(router Router) func(*chunkContext) {
+func createPipe(routingContexts *RoutingContexts) func(*chunkContext) {
 	return func(context *chunkContext) {
-		loggerFactory().Info("Creating " + context.description + " START")
+		loggerFactory().Debug("Creating " + context.description + " START")
 		stages := read(
 			route(
 				write,
-				func() uuid.UUID {
-					return uuid.NewUUID()
-				},
-				router,
-				createPipe(router),
+				routingContexts,
+				createPipe(routingContexts),
 			),
 			complete,
 		)
 		stages(context)
 		writePerformanceLogEntry(context)
-		loggerFactory().Info("Creating " + context.description + " END")
+		loggerFactory().Debug("Creating " + context.description + " END")
 	}
 }
 
@@ -323,77 +223,116 @@ func createPipe(router Router) func(*chunkContext) {
 
 // ==== LOAD BALANCER - START
 
-type Router interface {
-	NextServer(uuid uuid.UUID) *net.TCPAddr
-}
-
 type RoutingContexts  struct {
-	current *RoutingContext
-	all     map[string]*RoutingContext
-	mode    string
-	timeout int
+	contextsByVersion *list.List
+	contextsByID      map[string]*RoutingContext
 }
 
-func (routingContexts *RoutingContexts) NextServer(uuid uuid.UUID) *net.TCPAddr {
-	routingContext := routingContexts.current
-	if (uuid != nil && routingContexts.all[uuid.String()] != nil) {
-		routingContext = routingContexts.all[uuid.String()]
+func (routingContexts *RoutingContexts) NextServer(uuidValue uuid.UUID) (*net.TCPAddr, uuid.UUID) {
+	routingContext := routingContexts.contextsByVersion.Front().Value.(*RoutingContext)
+	if (uuidValue != nil && routingContexts.contextsByID[uuidValue.String()] != nil) {
+		routingContext = routingContexts.contextsByID[uuidValue.String()]
 	}
-	return routingContext.NextServer(nil)
+	debugValue := routingContext.NextServer()
+	loggerFactory().Info(fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f]", routingContext.requestCounter, debugValue.IP, debugValue.Port, routingContext.version))
+	return debugValue, routingContext.uuid
 }
 
 func (routingContexts *RoutingContexts) Add(routingContext *RoutingContext) {
-	routingContexts.current = routingContext
-	routingContexts.all[routingContext.uuid.String()] = routingContext
+	if routingContexts.contextsByVersion == nil {
+		routingContexts.contextsByVersion = list.New()
+	}
+	if routingContexts.contextsByID == nil {
+		routingContexts.contextsByID = make(map[string]*RoutingContext)
+	}
+	routingContextToAdd := routingContexts.contextsByID[routingContext.uuid.String()]
+	if routingContextToAdd == nil {
+		insertOrderedByVersion(routingContexts.contextsByVersion, routingContext)
+		routingContexts.contextsByID[routingContext.uuid.String()] = routingContext
+	}
 }
 
-func (routingContexts *RoutingContexts) Delete(uuid uuid.UUID) {
-	delete(routingContexts.all, uuid.String())
+func insertOrderedByVersion(orderedList *list.List, routingContext *RoutingContext) {
+	if orderedList.Front() == nil {
+		orderedList.PushFront(routingContext)
+	} else {
+		inserted := false
+		for element := orderedList.Front(); element != nil && !inserted; element = element.Next() {
+			if element.Value.(*RoutingContext).version <= routingContext.version {
+				orderedList.InsertBefore(routingContext, element)
+				inserted = true
+			}
+		}
+		if !inserted {
+			orderedList.PushBack(routingContext)
+		}
+	}
 }
 
-func (routingContexts *RoutingContexts) Get(uuid uuid.UUID) *RoutingContext {
-	return routingContexts.all[uuid.String()]
+func (routingContexts *RoutingContexts) Delete(uuidValue uuid.UUID) {
+	routingContextToDelete := routingContexts.contextsByID[uuidValue.String()]
+	if routingContextToDelete != nil {
+		deleteFromList(routingContexts.contextsByVersion, uuidValue)
+		delete(routingContexts.contextsByID, uuidValue.String())
+	}
+}
+
+func deleteFromList(orderedList *list.List, uuidValue uuid.UUID) {
+	for element := orderedList.Front(); element != nil; element = element.Next() {
+		if element.Value.(*RoutingContext).uuid.String() == uuidValue.String() {
+			orderedList.Remove(element)
+			break;
+		}
+	}
+}
+
+func (routingContexts *RoutingContexts) Get(uuidValue uuid.UUID) *RoutingContext {
+	return routingContexts.contextsByID[uuidValue.String()]
 }
 
 func (routingContexts *RoutingContexts) String() string {
-	return routingContexts.current.String()
+	return routingContexts.contextsByVersion.Front().Value.(*RoutingContext).String()
 }
 
 type RoutingContext struct {
-	backendAddresses []*net.TCPAddr
-	requestCounter   int64
-	uuid             uuid.UUID
+	backendAddresses    []*net.TCPAddr
+	requestCounter      int64
+	uuid                uuid.UUID
+	version             float64
 }
 
-func (routingContext *RoutingContext) NextServer(uuid uuid.UUID) *net.TCPAddr {
+func (routingContext *RoutingContext) NextServer() *net.TCPAddr {
 	routingContext.requestCounter++
 	return routingContext.backendAddresses[int(routingContext.requestCounter) % len(routingContext.backendAddresses)]
 }
 
 func (routingContext *RoutingContext) String() string {
-	var result string = ""
+	var result string = fmt.Sprintf("version: %.2f [", routingContext.version)
 	for index, address := range routingContext.backendAddresses {
 		if index > 0 {
 			result += ", "
 		}
 		result += fmt.Sprintf("%s", address)
 	}
+	result += "]"
 	return result
 }
 
 type LoadBalancer struct {
-	frontendAddr   *net.TCPAddr
-	router         Router
-	stop           chan bool
+	frontendAddr     *net.TCPAddr
+	routingContexts  *RoutingContexts
+	stop             chan bool
 }
 
 func (proxy *LoadBalancer) String() string {
-	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:   %s\n\tProxied Servers: %s\n}", proxy.frontendAddr, proxy.router)
+	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:   %s\n\tProxied Servers: %s\n}", proxy.frontendAddr, proxy.routingContexts)
 }
 
 func (proxy *LoadBalancer) Start() {
 	var started = make(chan bool)
 	go proxy.acceptLoop(started)
+	// TODO make port configurable
+	go ConfigServer(8080, proxy.routingContexts)
 	<-started
 }
 
@@ -417,7 +356,7 @@ func (proxy *LoadBalancer) acceptLoop(started chan bool) {
 	}()
 
 	for running {
-		loggerFactory().Info("Accept loop IN LOOP - START")
+		loggerFactory().Debug("Accept loop IN LOOP - START")
 
 		// accept connection
 		client, err := listener.Accept()
@@ -436,7 +375,7 @@ func (proxy *LoadBalancer) acceptLoop(started chan bool) {
 
 				// create forward pipe
 				forwardContext := NewForwardPipeChunkContext(client.(*net.TCPConn), pipesComplete)
-				go createPipe(proxy.router)(forwardContext)
+				go createPipe(proxy.routingContexts)(forwardContext)
 
 				// wait for pipes to complete (or quit early)
 				for i := 0; i < 2; i++ {
@@ -457,7 +396,7 @@ func (proxy *LoadBalancer) acceptLoop(started chan bool) {
 
 		}
 
-		loggerFactory().Info("Accept loop IN LOOP - END")
+		loggerFactory().Debug("Accept loop IN LOOP - END")
 	}
 }
 
@@ -579,95 +518,4 @@ func NewBackPipeChunkContext(forwardContext *chunkContext) *chunkContext {
 }
 
 // ==== CHUNK_CONTEXT - END
-
-// ==== PERFORMANCE - START
-
-type performance struct {
-	read     *int64
-	route    *int64
-	write    *int64
-	complete *int64
-}
-
-func trace(startTime time.Time, result *int64) {
-	*result = int64(time.Since(startTime))
-}
-
-var performanceLog = func() *csv.Writer {
-	file, error := os.Create("performance_log.csv")
-
-	if error != nil {
-		panic(error)
-	}
-
-	// New Csv writer
-	writer := csv.NewWriter(file)
-
-	// Headers
-	var new_headers = []string{"count", "read", "route", "write", "complete"}
-	returnError := writer.Write(new_headers)
-	if returnError != nil {
-		loggerFactory().Error("Error writing headers into performance log - %s", returnError)
-	}
-	writer.Flush()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT)
-	signal.Notify(c, syscall.SIGKILL)
-	signal.Notify(c, syscall.SIGTERM)
-	signal.Notify(c, syscall.SIGHUP)
-	signal.Notify(c, syscall.SIGQUIT)
-	go func() {
-		<-c
-		file.Close()
-		os.Exit(1)
-	}()
-
-	return writer
-}()
-
-func writePerformanceLogEntry(context *chunkContext) {
-	performanceLog.Write([]string{
-	strconv.FormatInt(*context.performance.read, 10),
-	strconv.FormatInt(*context.performance.route, 10),
-	strconv.FormatInt(*context.performance.write, 10),
-	strconv.FormatInt(*context.performance.complete, 10)})
-	performanceLog.Flush()
-}
-
-// ==== PERFORMANCE - END
-
-// ==== LOGGER - START
-
-var logLevel *string
-
-var loggerFactory = func() func() *logging.Logger {
-	var logg *logging.Logger = nil
-
-	return func() *logging.Logger {
-		if logg == nil {
-			logg = logging.MustGetLogger("main")
-
-			// Customize the output format
-			logging.SetFormatter(logging.MustStringFormatter("%{level:8s} - %{message}"))
-
-			// Setup one stdout and one syslog backend
-			logBackend := logging.NewLogBackend(os.Stdout, "", log.Ldate|log.Lmicroseconds|log.Lshortfile)
-			logBackend.Color = true
-
-			// Combine them both into one logging backend
-			logging.SetBackend(logBackend)
-
-			// set log level
-			level, _ := logging.LogLevel("WARN")
-			if logLevel != nil {
-				level, _ = logging.LogLevel(*logLevel)
-			}
-			logging.SetLevel(level, "main")
-		}
-		return logg
-	}
-}()
-
-// ==== LOGGER - END
 

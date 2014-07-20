@@ -3,9 +3,27 @@
         "ip": "localhost",
         "port": 1234
     },
-    "servers":[
-        {"ip": "127.0.0.1", "port": 1024},
-        {"ip": "127.0.0.1", "port": 1025},
-        {"ip": "127.0.0.1", "port": 1026}
-    ]
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers": [
+            {
+                "ip": "127.0.0.1",
+                "port": 1024
+            },
+            {
+                "ip": "127.0.0.1",
+                "port": 1025
+            },
+            {
+                "ip": "127.0.0.1",
+                "port": 1026
+            }
+        ],
+        "version": 1.0,
+        "upgradeTransition": {
+            "sessionTimeout": 60
+        }
+    }
 }

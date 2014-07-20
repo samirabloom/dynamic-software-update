@@ -9,7 +9,7 @@ import (
 
 func NewTestWriteChunkContext(data string, err error) (*chunkContext, *mock.MockConn) {
 	mockContext := NewTestChunkContext()
-	mockDestination := mock.NewMockConn(nil, 5)
+	mockDestination := mock.NewMockConn(err, 5)
 	mockContext.data = []byte(data)
 	mockContext.to = mockDestination
 	return mockContext, mockDestination
@@ -24,14 +24,15 @@ func Test_Write_With_Chunk_No_Error(testCtx *testing.T) {
 	initialTotalWriteSize := int64(10)
 	mockContext, mockDestination := NewTestWriteChunkContext("this is the data that is going to be written", nil)
 	mockContext.totalWriteSize = initialTotalWriteSize
+	var expectedError error = nil
 
 	// when
 	write(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data))+initialTotalWriteSize)
-	assertion.AssertDeepEqual("Correct Context Error ", testCtx, mockContext.err, nil)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockDestination.NumberOfWrites, 1)
+	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, int64(len(mockContext.data))+initialTotalWriteSize, mockContext.totalWriteSize)
+	assertion.AssertDeepEqual("Correct Context Error ", testCtx, expectedError, mockContext.err)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 1, mockDestination.NumberOfWrites)
 	assertion.AssertDeepEqual("Correct Written Data", testCtx, mockContext.data, mockDestination.Data[0])
 }
 
@@ -48,9 +49,9 @@ func Test_Write_With_Chunk_With_Error(testCtx *testing.T) {
 	write(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data)))
-	assertion.AssertDeepEqual("Correct Context Error ", testCtx, mockContext.err, io.EOF)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockDestination.NumberOfWrites, 1)
+	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, int64(len(mockContext.data)), mockContext.totalWriteSize)
+	assertion.AssertDeepEqual("Correct Context Error ", testCtx, io.EOF, mockContext.err)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 1, mockDestination.NumberOfWrites)
 	assertion.AssertDeepEqual("Correct Written Data", testCtx, mockContext.data, mockDestination.Data[0])
 }
 
@@ -60,14 +61,15 @@ func Test_Write_With_Chunk_With_Error(testCtx *testing.T) {
 func Test_Write_With_Zero_Chunk(testCtx *testing.T) {
 	// given
 	mockContext, mockDestination := NewTestWriteChunkContext("", nil)
+	var expectedError error = nil
 
 	// when
 	write(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data)))
-	assertion.AssertDeepEqual("Correct Context Error ", testCtx, mockContext.err, nil)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockDestination.NumberOfWrites, 0)
+	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, int64(len(mockContext.data)), mockContext.totalWriteSize)
+	assertion.AssertDeepEqual("Correct Context Error ", testCtx, expectedError, mockContext.err)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 0, mockDestination.NumberOfWrites)
 	assertion.AssertDeepEqual("Correct Written Data", testCtx, string(mockContext.data), string(mockDestination.Data[0]))
 }
 
@@ -88,9 +90,9 @@ func Test_Write_With_Short_Write_Error(testCtx *testing.T) {
 	write(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, mockContext.totalWriteSize, int64(len(mockContext.data) / 2))
-	assertion.AssertDeepEqual("Correct Context Error ", testCtx, mockContext.err, io.ErrShortWrite)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockDestination.NumberOfWrites, 1)
+	assertion.AssertDeepEqual("Correct Total WriteSize", testCtx, int64(len(mockContext.data) / 2), mockContext.totalWriteSize)
+	assertion.AssertDeepEqual("Correct Context Error ", testCtx, io.ErrShortWrite, mockContext.err)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 1, mockDestination.NumberOfWrites)
 	assertion.AssertDeepEqual("Correct Written Data", testCtx, expectedData, mockDestination.Data[0])
 }
 

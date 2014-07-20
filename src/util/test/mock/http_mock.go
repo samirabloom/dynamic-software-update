@@ -4,21 +4,29 @@ import (
 	"net/http"
 )
 
+func NewMockResponseWriter() *MockResponseWriter {
+	return &MockResponseWriter{WritenBodyBytes: make(map[int][]byte), Headers: make(http.Header), ResponseCodes: make(map[int]int)}
+}
+
 type MockResponseWriter struct {
 	WritenBodyBytes map[int][]byte
+	Headers         http.Header
+	ResponseCodes   map[int]int
 }
 
 func (rw *MockResponseWriter) Header() http.Header {
-	return nil;
+	return rw.Headers;
 }
 
 func (rw *MockResponseWriter) Write(data []byte) (int, error) {
-	rw.WritenBodyBytes[len(rw.WritenBodyBytes)] = data
+	currentSize := len(rw.WritenBodyBytes)
+	rw.WritenBodyBytes[currentSize] = make([]byte, len(data))
+	copy(rw.WritenBodyBytes[currentSize], data)
 	return len(data), nil;
 }
 
-func (rw *MockResponseWriter) WriteHeader(int) {
-	return;
+func (rw *MockResponseWriter) WriteHeader(code int) {
+	rw.ResponseCodes[len(rw.ResponseCodes)] = code
 }
 
 type MockBody struct {
@@ -33,7 +41,6 @@ func (body *MockBody) Read(data []byte) (n int, err error) {
 func (body *MockBody) Close() error {
 	return nil;
 }
-
 
 type Writer interface {
 	Write(p []byte) (n int, err error)

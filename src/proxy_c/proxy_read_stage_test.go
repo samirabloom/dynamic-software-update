@@ -34,10 +34,10 @@ func Test_Read_With_No_Chunk_And_EOF_Error(testCtx *testing.T) {
 	read(mockRoute.mockStage, mockComplete.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, mockSource.NumberOfReads, 1)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockSource.NumberOfWrites, 0)
-	assertion.AssertDeepEqual("Correct Route Call Counter", testCtx, mockRoute.mockStageCallCounter, 0)
-	assertion.AssertDeepEqual("Correct Complete Call Counter", testCtx, mockComplete.mockStageCallCounter, 1)
+	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, 1, mockSource.NumberOfReads)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 0, mockSource.NumberOfWrites)
+	assertion.AssertDeepEqual("Correct Route Call Counter", testCtx, 0, mockRoute.mockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Complete Call Counter", testCtx, 1, mockComplete.mockStageCallCounter)
 	assertion.AssertDeepEqual("Correct Error", testCtx, mockSource.Error, io.EOF)
 }
 
@@ -58,10 +58,10 @@ func Test_Read_With_Empty_Chunk_And_Non_EOF_Error(testCtx *testing.T) {
 	read(mockRoute.mockStage, mockComplete.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, mockSource.NumberOfReads, 2)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockSource.NumberOfWrites, 0)
-	assertion.AssertDeepEqual("Correct Route Call Counter", testCtx, mockRoute.mockStageCallCounter, 0)
-	assertion.AssertDeepEqual("Correct Complete Call Counter", testCtx, mockComplete.mockStageCallCounter, 1)
+	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, 2, mockSource.NumberOfReads)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 0, mockSource.NumberOfWrites)
+	assertion.AssertDeepEqual("Correct Route Call Counter", testCtx, 0, mockRoute.mockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Complete Call Counter", testCtx, 1, mockComplete.mockStageCallCounter)
 	assertion.AssertDeepEqual("Correct Error", testCtx, mockSource.Error, io.ErrClosedPipe)
 }
 
@@ -84,14 +84,14 @@ func Test_Read_With_Two_Chunks(testCtx *testing.T) {
 	read(mockRoute.mockStage, mockComplete.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, mockSource.NumberOfReads, 3)
-	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, mockSource.NumberOfWrites, 0)
-	assertion.AssertDeepEqual("Correct Route Call Counter", testCtx, mockRoute.mockStageCallCounter, 2)
-	assertion.AssertDeepEqual("Correct Complete Call Counter", testCtx, mockComplete.mockStageCallCounter, 1)
-	assertion.AssertDeepEqual("Correct Error", testCtx, mockSource.Error, io.EOF)
-	assertion.AssertDeepEqual("Correct First Chunk", testCtx, mockRoute.mockStageChunkContexts[0].data, mockSource.Data[0])
-	assertion.AssertDeepEqual("Correct First Chunk - firstChunk Indicator", testCtx, mockRoute.mockStageChunkContexts[0].firstChunk, true)
-	assertion.AssertDeepEqual("Correct Second Chunk", testCtx, mockRoute.mockStageChunkContexts[1].data, mockSource.Data[1])
-	assertion.AssertDeepEqual("Correct Second Chunk - firstChunk Indicator", testCtx, mockRoute.mockStageChunkContexts[1].firstChunk, false)
-	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, mockContext.totalReadSize, int64(len(mockSource.Data[0]) + len(mockSource.Data[1])))
+	assertion.AssertDeepEqual("Correct Number Of Reads", testCtx, 3, mockSource.NumberOfReads)
+	assertion.AssertDeepEqual("Correct Number Of Writes", testCtx, 0, mockSource.NumberOfWrites)
+	assertion.AssertDeepEqual("Correct Route Call Counter", testCtx, 2, mockRoute.mockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Complete Call Counter", testCtx, 1, mockComplete.mockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Error", testCtx, io.EOF, mockSource.Error)
+	assertion.AssertDeepEqual("Correct First Chunk", testCtx, mockSource.Data[0], mockRoute.mockStageChunkContexts[0].data)
+	assertion.AssertDeepEqual("Correct First Chunk - firstChunk Indicator", testCtx, true, mockRoute.mockStageChunkContexts[0].firstChunk)
+	assertion.AssertDeepEqual("Correct Second Chunk", testCtx, mockSource.Data[1], mockRoute.mockStageChunkContexts[1].data)
+	assertion.AssertDeepEqual("Correct Second Chunk - firstChunk Indicator", testCtx, false, mockRoute.mockStageChunkContexts[1].firstChunk)
+	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, int64(len(mockSource.Data[0]) + len(mockSource.Data[1])), mockContext.totalReadSize)
 }

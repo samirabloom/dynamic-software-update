@@ -4,7 +4,21 @@ import (
 	"net"
 	"code.google.com/p/go-uuid/uuid"
 	"time"
+	"container/list"
+	"fmt"
 )
+
+var uuidGenerator = func(uuidValue uuid.UUID) func() uuid.UUID {
+	return func() uuid.UUID {
+		return uuidValue
+	}
+}(uuid.NewUUID())
+
+func printOrder(orderedList list.List, printPrefix string) {
+	for element := orderedList.Front(); element != nil; element = element.Next() {
+		fmt.Printf("%s - version:\t%f\tuuid:\t%s\n", printPrefix, element.Value.(*RoutingContext).version, element.Value.(*RoutingContext).uuid)
+	}
+}
 
 func NewTestChunkContext() *chunkContext {
 	mockContext := &chunkContext{
