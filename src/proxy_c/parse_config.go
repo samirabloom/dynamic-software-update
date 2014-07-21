@@ -35,19 +35,25 @@ func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*
 
 	tcpProxyLocalAddress, proxyParseErr := parseProxy(jsonConfig)
 	if proxyParseErr == nil {
-		routingContexts, clusterParseErr := parseRoutingContexts(jsonConfig)
-		if clusterParseErr == nil {
-			// create load balancer
-			loadBalancer = &LoadBalancer{
-				frontendAddr: tcpProxyLocalAddress,
-				routingContexts: routingContexts,
-				stop: make(chan bool),
-			}
-			loggerFactory().Info("Parsed config file:\n%s\nas:\n%s", jsonData, loadBalancer)
+		configServicePort, parseConfigServiceErr := parseConfigService(jsonConfig)
+		if parseConfigServiceErr == nil {
+			routingContexts, clusterParseErr := parseRoutingContexts(jsonConfig)
+			if clusterParseErr == nil {
+				// create load balancer
+				loadBalancer = &LoadBalancer{
+					frontendAddr: tcpProxyLocalAddress,
+					configServicePort: configServicePort,
+					routingContexts: routingContexts,
+					stop: make(chan bool),
+				}
+				loggerFactory().Info("Parsed config file:\n%s\nas:\n%s", jsonData, loadBalancer)
 
-			return loadBalancer, nil
+				return loadBalancer, nil
+			} else {
+				return nil, clusterParseErr
+			}
 		} else {
-			return nil, clusterParseErr
+			return nil, parseConfigServiceErr
 		}
 	} else {
 		return nil, proxyParseErr
@@ -75,6 +81,24 @@ func parseProxy(jsonConfig map[string]interface{}) (*net.TCPAddr, error) {
 	}
 
 	return tcpProxyLocalAddress, err
+}
+
+func parseConfigService(jsonConfig map[string]interface{}) (float64, error) {
+	var (
+		err error
+		configServicePort float64
+	)
+
+	if jsonConfig["configService"] != nil {
+		var configServiceConfig map[string]interface{} = jsonConfig["configService"].(map[string]interface{})
+		configServicePort = configServiceConfig["port"].(float64)
+		if configServiceConfig["port"] == nil {
+			errorMessage := "Invalid configService port ["+fmt.Sprintf("%v", configServiceConfig["port"])+"]"
+			loggerFactory().Error(errorMessage)
+			err = errors.New(errorMessage)
+		}
+	}
+	return configServicePort, err
 }
 
 func parseRoutingContexts(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*RoutingContexts, error) {

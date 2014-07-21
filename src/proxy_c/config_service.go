@@ -10,9 +10,9 @@ import (
 	"errors"
 )
 
-func ConfigServer(port int, routeContexts *RoutingContexts) {
+func ConfigServer(port float64, routeContexts *RoutingContexts) {
 	urlRegex := regexp.MustCompile("/server/([a-z0-9-]*){1}")
-	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
+	http.ListenAndServe(":"+strconv.Itoa(int(port)), &RegexpHandler{
 		requestMappings: []*requestMapping{
 		&requestMapping{pattern: regexp.MustCompile("/server"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
 			return uuid.NewUUID()
@@ -103,7 +103,6 @@ func GETHandler(urlRegex *regexp.Regexp) func(*RoutingContexts, http.ResponseWri
 		}
 	}
 }
-
 
 
 func DeleteHandler(urlRegex *regexp.Regexp) func(*RoutingContexts, http.ResponseWriter, *http.Request) {

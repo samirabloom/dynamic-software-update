@@ -320,19 +320,19 @@ func (routingContext *RoutingContext) String() string {
 
 type LoadBalancer struct {
 	frontendAddr     *net.TCPAddr
+	configServicePort float64
 	routingContexts  *RoutingContexts
 	stop             chan bool
 }
 
 func (proxy *LoadBalancer) String() string {
-	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:   %s\n\tProxied Servers: %s\n}", proxy.frontendAddr, proxy.routingContexts)
+	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:   %s\n\tConfigService Port:   %v\n\tProxied Servers: %s\n}", proxy.frontendAddr, proxy.configServicePort, proxy.routingContexts)
 }
 
 func (proxy *LoadBalancer) Start() {
 	var started = make(chan bool)
 	go proxy.acceptLoop(started)
-	// TODO make port configurable
-	go ConfigServer(8080, proxy.routingContexts)
+	go ConfigServer(proxy.configServicePort, proxy.routingContexts)
 	<-started
 }
 
