@@ -14,7 +14,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 	// given - a config server
 	var (
 		serverPort = networkutil.FindFreeLocalSocket(testCtx).Port
-		serverUrl  = "http://127.0.0.1:" + strconv.Itoa(serverPort) + "/server"
+		serverUrl  = "http://127.0.0.1:" + strconv.Itoa(int(serverPort)) + "/server"
 	)
 	go ConfigServer(serverPort, &RoutingContexts{})
 
@@ -22,7 +22,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 
 	// when
 	// - a PUT request
-	uuidResponse, putStatus := networkutil.PUTRequest(serverUrl, "{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1024}, {\"ip\":\"127.0.0.1\", \"port\":1025}], \"version\": 1.1}}")
+	uuidResponse, putStatus := networkutil.PUTRequest(serverUrl, "{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1024}, {\"ip\":\"127.0.0.1\", \"port\":1025}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.1}}")
 
 	// then
 	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "202 Accepted", putStatus)
@@ -38,7 +38,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 
 	// then
 	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "200 OK", getStatus)
-	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\""+uuidResponse+"\",\"version\":1.1}}", jsonResponse)
+	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\""+uuidResponse+"\",\"version\":1.1}}", jsonResponse)
 
 
 

@@ -95,7 +95,7 @@ func Test_Parse_Proxy_When_No_IP_Or_Port(testCtx *testing.T) {
 	// given
 	var (
 		jsonConfig                                = map[string]interface{}{"proxy": nil}
-		expectedError                             = errors.New("Invalid proxy configuration - \"proxy\" JSON field missing or invalid")
+		expectedError                             = errors.New("Invalid proxy configuration - \"proxy\" config missing")
 		expectedTcpProxyLocalAddress *net.TCPAddr = nil
 	)
 	// when

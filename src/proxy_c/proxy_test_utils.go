@@ -37,7 +37,7 @@ func NewTestChunkContext() *chunkContext {
 			write: new(int64),
 			complete: new(int64),
 		},
-		requestUUID: uuid.NewUUID(),
+		routingContext: nil,
 	}
 	return mockContext
 }

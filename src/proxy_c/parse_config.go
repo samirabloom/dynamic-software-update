@@ -12,9 +12,7 @@ import (
 // ==== PARSE CONFIG - START
 
 func loadConfig(configFile *string) (*LoadBalancer, error) {
-	return parseConfigFile(readConfigFile(configFile), parseProxy, parseRoutingContexts(func() uuid.UUID {
-			return uuid.NewUUID()
-		}))
+	return parseConfigFile(readConfigFile(configFile), parseProxy, parseCluster(func() uuid.UUID { return uuid.NewUUID() }))
 }
 
 func readConfigFile(configFile *string) []byte {
@@ -25,7 +23,7 @@ func readConfigFile(configFile *string) []byte {
 	return jsonConfig
 }
 
-func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseRoutingContexts func(map[string]interface{}) (*RoutingContexts, error)) (loadBalancer *LoadBalancer, err error) {
+func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseCluster func(map[string]interface{}) (*RoutingContexts, error)) (loadBalancer *LoadBalancer, err error) {
 	// parse json object
 	var jsonConfig = make(map[string]interface{})
 	err = json.Unmarshal(jsonData, &jsonConfig)
@@ -37,7 +35,7 @@ func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*
 	if proxyParseErr == nil {
 		configServicePort, parseConfigServiceErr := parseConfigService(jsonConfig)
 		if parseConfigServiceErr == nil {
-			routingContexts, clusterParseErr := parseRoutingContexts(jsonConfig)
+			routingContexts, clusterParseErr := parseCluster(jsonConfig)
 			if clusterParseErr == nil {
 				// create load balancer
 				loadBalancer = &LoadBalancer{
@@ -75,7 +73,7 @@ func parseProxy(jsonConfig map[string]interface{}) (*net.TCPAddr, error) {
 			err = errors.New(errorMessage)
 		}
 	} else {
-		errorMessage := "Invalid proxy configuration - \"proxy\" JSON field missing or invalid"
+		errorMessage := "Invalid proxy configuration - \"proxy\" config missing"
 		loggerFactory().Error(errorMessage)
 		err = errors.New(errorMessage)
 	}
@@ -83,25 +81,30 @@ func parseProxy(jsonConfig map[string]interface{}) (*net.TCPAddr, error) {
 	return tcpProxyLocalAddress, err
 }
 
-func parseConfigService(jsonConfig map[string]interface{}) (float64, error) {
+func parseConfigService(jsonConfig map[string]interface{}) (int, error) {
 	var (
 		err error
-		configServicePort float64
+		configServicePort int
 	)
 
 	if jsonConfig["configService"] != nil {
 		var configServiceConfig map[string]interface{} = jsonConfig["configService"].(map[string]interface{})
-		configServicePort = configServiceConfig["port"].(float64)
-		if configServiceConfig["port"] == nil {
-			errorMessage := "Invalid configService port ["+fmt.Sprintf("%v", configServiceConfig["port"])+"]"
+		if configServiceConfig["port"] != nil {
+			configServicePort = int(configServiceConfig["port"].(float64))
+		} else {
+			errorMessage := "Invalid config service configuration - \"port\" is missing from \"configService\" config"
 			loggerFactory().Error(errorMessage)
 			err = errors.New(errorMessage)
 		}
+	} else {
+		errorMessage := "Invalid proxy configuration - \"configService\" config missing"
+		loggerFactory().Error(errorMessage)
+		err = errors.New(errorMessage)
 	}
 	return configServicePort, err
 }
 
-func parseRoutingContexts(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*RoutingContexts, error) {
+func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*RoutingContexts, error) {
 	return func(jsonConfig map[string]interface{}) (*RoutingContexts, error) {
 		var (
 			err error
@@ -126,12 +129,31 @@ func parseRoutingContexts(uuidGenerator func() uuid.UUID) func(map[string]interf
 	}
 }
 
+type TransitionMode int64
+
+const (
+	instantMode TransitionMode = 1
+	sessionMode TransitionMode = 2
+)
+
+var modesCodeToMode = map[string]TransitionMode {
+	"SESSION": sessionMode,
+	"INSTANT": instantMode,
+}
+
+var modesModeToCode = map[TransitionMode]string {
+	sessionMode: "SESSION",
+	instantMode: "INSTANT",
+}
+
 func parseRoutingContext(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*RoutingContext, error) {
 	return func(clusterConfiguration map[string]interface{}) (*RoutingContext, error) {
 		var (
 			err error
 			backendAddresses []*net.TCPAddr
 			version float64
+			sessionTimeout int64
+			mode TransitionMode
 			uuidValue uuid.UUID
 		)
 
@@ -155,11 +177,48 @@ func parseRoutingContext(uuidGenerator func() uuid.UUID) func(map[string]interfa
 				} else {
 					uuidValue = uuidGenerator()
 				}
+
 				versionConfig := clusterConfiguration["version"]
 				if versionConfig != nil {
 					version = versionConfig.(float64)
 				} else {
 					version = 0.0
+				}
+
+				upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]
+				if upgradeTransitionConfig != nil {
+					upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
+
+					modeConfig := upgradeTransition["mode"]
+					if modeConfig != nil {
+						mode = modesCodeToMode[modeConfig.(string)]
+					} else {
+						mode = sessionMode
+					}
+
+					if mode != 0 {
+						sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
+						if mode == sessionMode {
+							if sessionTimeoutConfig != nil {
+								sessionTimeout = int64(sessionTimeoutConfig.(float64))
+							} else {
+								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" is missing from \"upgradeTransition\" config"
+								loggerFactory().Error(errorMessage)
+								err = errors.New(errorMessage)
+							}
+						} else if sessionTimeoutConfig != nil {
+							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is \"INSTANT\""
+							loggerFactory().Error(errorMessage)
+							err = errors.New(errorMessage)
+						}
+					} else {
+						errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"" + modesModeToCode[instantMode] + "\" or \"" + modesModeToCode[sessionMode] + "\""
+						loggerFactory().Error(errorMessage)
+						err = errors.New(errorMessage)
+					}
+				} else {
+					sessionTimeout = 0
+					mode = instantMode
 				}
 			} else {
 				errorMessage := "Invalid cluster configuration - \"servers\" list must contain at least one entry"
@@ -172,7 +231,7 @@ func parseRoutingContext(uuidGenerator func() uuid.UUID) func(map[string]interfa
 			err = errors.New(errorMessage)
 		}
 
-		return &RoutingContext{backendAddresses: backendAddresses, requestCounter: -1, uuid: uuidValue, version: version}, err
+		return &RoutingContext{backendAddresses: backendAddresses, requestCounter: -1, uuid: uuidValue, sessionTimeout: sessionTimeout, mode: mode, version: version}, err
 	}
 }
 
@@ -184,7 +243,7 @@ func serialiseRoutingContext(routingContext *RoutingContext) map[string]interfac
 		for index, backendAddress := range routingContext.backendAddresses {
 			serversConfig[index] = map[string]interface{}{"ip": backendAddress.IP, "port": backendAddress.Port}
 		}
-		jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"uuid": routingContext.uuid.String(), "servers": serversConfig, "version": routingContext.version}}
+		jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"uuid": routingContext.uuid.String(), "servers": serversConfig, "version": routingContext.version, "upgradeTransition": map[string]interface{}{"sessionTimeout": routingContext.sessionTimeout, "mode": modesModeToCode[routingContext.mode]}}}
 	}
 
 	return jsonConfig

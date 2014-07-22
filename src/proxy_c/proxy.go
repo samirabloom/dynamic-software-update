@@ -110,13 +110,18 @@ func route(next func(*chunkContext), router *RoutingContexts, createBackPipe fun
 			if context.clientToServer {
 				var err error
 				submatchs := cookieHeaderRegex.FindSubmatch(context.data)
+				var requestUUID uuid.UUID
 				if len(submatchs) >= 2 {
-					context.requestUUID = uuid.Parse(string(submatchs[1]))
+					requestUUID = uuid.Parse(string(submatchs[1]))
 					loggerFactory().Debug("Route Stage found UUID %s", context)
 				}
 
-				backendAddr, uuidCookieValue := router.NextServer(context.requestUUID)
-				context.requestUUID = uuidCookieValue
+				routingContext := router.NextServer(requestUUID)
+				context.routingContext = routingContext
+
+				backendAddr := routingContext.NextServer()
+				loggerFactory().Info(fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f]", routingContext.requestCounter, backendAddr.IP, backendAddr.Port, routingContext.version))
+
 				context.to, err = net.DialTCP("tcp", nil, backendAddr)
 				if err != nil {
 					loggerFactory().Error("Can't forward traffic to server tcp/%v: %s\n", backendAddr, err)
@@ -130,8 +135,8 @@ func route(next func(*chunkContext), router *RoutingContexts, createBackPipe fun
 
 				go createBackPipe(NewBackPipeChunkContext(context))
 			} else {
-				uuidCookieValue := context.requestUUID
-				setCookieHeader := []byte(fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", uuidCookieValue.String()))
+				routingContext := context.routingContext
+				setCookieHeader := []byte(fmt.Sprintf("Set-Cookie: dynsoftup=%s; Expires=%s;\n", routingContext.uuid.String(), time.Now().Add(time.Second * time.Duration(routingContext.sessionTimeout)).Format(time.RFC1123)))
 				insertLocation := bytes.Index(context.data, []byte("\n"))
 				if insertLocation > 0 {
 					context.data = byteutil.Insert(context.data, insertLocation+len("\n"), setCookieHeader)
@@ -228,14 +233,14 @@ type RoutingContexts  struct {
 	contextsByID      map[string]*RoutingContext
 }
 
-func (routingContexts *RoutingContexts) NextServer(uuidValue uuid.UUID) (*net.TCPAddr, uuid.UUID) {
+func (routingContexts *RoutingContexts) NextServer(uuidValue uuid.UUID) *RoutingContext {
 	routingContext := routingContexts.contextsByVersion.Front().Value.(*RoutingContext)
-	if (uuidValue != nil && routingContexts.contextsByID[uuidValue.String()] != nil) {
-		routingContext = routingContexts.contextsByID[uuidValue.String()]
+	if routingContext.mode != instantMode {
+		if (uuidValue != nil && routingContexts.contextsByID[uuidValue.String()] != nil) {
+			routingContext = routingContexts.contextsByID[uuidValue.String()]
+		}
 	}
-	debugValue := routingContext.NextServer()
-	loggerFactory().Info(fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f]", routingContext.requestCounter, debugValue.IP, debugValue.Port, routingContext.version))
-	return debugValue, routingContext.uuid
+	return routingContext
 }
 
 func (routingContexts *RoutingContexts) Add(routingContext *RoutingContext) {
@@ -298,6 +303,8 @@ type RoutingContext struct {
 	backendAddresses    []*net.TCPAddr
 	requestCounter      int64
 	uuid                uuid.UUID
+	sessionTimeout		int64
+	mode			    TransitionMode
 	version             float64
 }
 
@@ -320,13 +327,13 @@ func (routingContext *RoutingContext) String() string {
 
 type LoadBalancer struct {
 	frontendAddr     *net.TCPAddr
-	configServicePort float64
+	configServicePort int
 	routingContexts  *RoutingContexts
 	stop             chan bool
 }
 
 func (proxy *LoadBalancer) String() string {
-	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:   %s\n\tConfigService Port:   %v\n\tProxied Servers: %s\n}", proxy.frontendAddr, proxy.configServicePort, proxy.routingContexts)
+	return fmt.Sprintf("LoadBalancer{\n\tProxy Address:      %s\n\tConfigService Port: %v\n\tProxied Servers:    %s\n}", proxy.frontendAddr, proxy.configServicePort, proxy.routingContexts)
 }
 
 func (proxy *LoadBalancer) Start() {
@@ -448,7 +455,7 @@ type chunkContext struct {
 	pipeComplete           chan int64
 	firstChunk             bool
 	performance            performance
-	requestUUID            uuid.UUID
+	routingContext         *RoutingContext
 	clientToServer         bool
 }
 
@@ -473,8 +480,8 @@ func (context *chunkContext) String() string {
 	}
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
 	output += fmt.Sprintf("\t totalWriteSize: %d\n", context.totalWriteSize)
-	if context.requestUUID != nil {
-		output += fmt.Sprintf("\t requestUUID: %s\n", context.requestUUID)
+	if context.routingContext != nil {
+		output += fmt.Sprintf("\t routingContext UUID: %s\n", context.routingContext.uuid)
 	}
 	output += "}\n"
 	return output
@@ -493,7 +500,7 @@ func NewForwardPipeChunkContext(from *net.TCPConn, pipeComplete chan int64) *chu
 			write:      new(int64),
 			complete:   new(int64),
 		},
-		requestUUID:    nil,
+		routingContext: nil,
 		clientToServer: true,
 	}
 }
@@ -512,7 +519,7 @@ func NewBackPipeChunkContext(forwardContext *chunkContext) *chunkContext {
 			write:      new(int64),
 			complete:   new(int64),
 		},
-		requestUUID:    forwardContext.requestUUID,
+		routingContext: forwardContext.routingContext,
 		clientToServer: false,
 	}
 }

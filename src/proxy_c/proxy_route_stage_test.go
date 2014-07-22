@@ -7,9 +7,9 @@ import (
 	assertion "util/test/assertion"
 )
 
-func NewTestRouteChunkContext(data string, requestUUID uuid.UUID, clientToServer bool) *chunkContext {
+func NewTestRouteChunkContext(data string, routingContext *RoutingContext, clientToServer bool) *chunkContext {
 	mockContext := NewTestChunkContext()
-	mockContext.requestUUID = requestUUID
+	mockContext.routingContext = routingContext
 	mockContext.data = []byte(data)
 	mockContext.clientToServer = clientToServer
 	return mockContext
@@ -27,12 +27,11 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 		defer listener.Close()
 	}
 	var (
-		expectedUuid    = uuid.NewUUID()
-		mockContext     = NewTestRouteChunkContext("Cookie: dynsoftup="+expectedUuid.String()+";", uuid.NIL, true)
-		mockWrite       = NewMockStage("mockWrite")
-		mockCreatePipe  = NewMockStage("mockCreatePipe")
-		routingContext  = &RoutingContext{backendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, requestCounter: -1, uuid: uuid.NewUUID()}
-		routingContexts = &RoutingContexts{}
+		mockWrite              = NewMockStage("mockWrite")
+		mockCreatePipe         = NewMockStage("mockCreatePipe")
+		routingContext         = &RoutingContext{backendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, requestCounter: -1, uuid: uuid.NewUUID()}
+		routingContexts        = &RoutingContexts{}
+		mockContext            = NewTestRouteChunkContext("Cookie: dynsoftup="+routingContext.uuid.String()+";", routingContext, true)
 	)
 	routingContexts.Add(routingContext)
 	mockCreatePipe.close(1)
@@ -41,7 +40,7 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 	route(mockWrite.mockStage, routingContexts, mockCreatePipe.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct UUID From Request Cookie", testCtx, expectedUuid, mockContext.requestUUID)
+	assertion.AssertDeepEqual("Correct RoutingContext for UUID in Cookie", testCtx, routingContext, mockContext.routingContext)
 	<-mockCreatePipe.mockStageCallChannel
 	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, 1, mockCreatePipe.mockStageCallCounter)
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
@@ -55,14 +54,13 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		uuidValue            = uuid.NewUUID()
-		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", uuid.NewUUID(), false)
 		mockWrite            = NewMockStage("mockWrite")
 		mockCreatePipe       = NewMockStage("mockCreatePipe")
 		initialTotalReadSize = int64(10)
-		expectedCookieHeader = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
 		routingContext       = &RoutingContext{backendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, requestCounter: -1, uuid: uuid.NewUUID()}
 		routingContexts      = &RoutingContexts{}
+		expectedCookieHeader = "Set-Cookie: dynsoftup=" + routingContext.uuid.String() + ";\n"
+		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", routingContext, false)
 	)
 	routingContexts.Add(routingContext)
 
@@ -84,14 +82,13 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		uuidValue            = uuid.NewUUID()
-		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", uuidValue, false)
 		mockWrite            = NewMockStage("mockWrite")
 		mockCreatePipe       = NewMockStage("mockCreatePipe")
 		initialTotalReadSize = int64(10)
-		expectedCookieHeader = "Set-Cookie: dynsoftup=" + uuidValue.String() + ";\n"
 		routingContext       = &RoutingContext{backendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, requestCounter: -1, uuid: uuid.NewUUID()}
 		routingContexts      = &RoutingContexts{}
+		expectedCookieHeader = "Set-Cookie: dynsoftup=" + routingContext.uuid.String() + ";\n"
+		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", routingContext, false)
 	)
 	routingContexts.Add(routingContext)
 	mockContext.totalReadSize = initialTotalReadSize

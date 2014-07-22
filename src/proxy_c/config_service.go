@@ -10,9 +10,9 @@ import (
 	"errors"
 )
 
-func ConfigServer(port float64, routeContexts *RoutingContexts) {
+func ConfigServer(port int, routeContexts *RoutingContexts) {
 	urlRegex := regexp.MustCompile("/server/([a-z0-9-]*){1}")
-	http.ListenAndServe(":"+strconv.Itoa(int(port)), &RegexpHandler{
+	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
 		requestMappings: []*requestMapping{
 		&requestMapping{pattern: regexp.MustCompile("/server"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
 			return uuid.NewUUID()
@@ -62,7 +62,7 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*RoutingContexts, http.Resp
 			} else {
 				clusterConfiguration := jsonConfig["cluster"]
 				if clusterConfiguration != nil {
-					routingContext, err := parseRoutingContext(uuidGenerator)(clusterConfiguration.(map[string]interface {}))
+					routingContext, err := parseRoutingContext(uuidGenerator)(clusterConfiguration.(map[string]interface{}))
 					if err != nil {
 						fmt.Printf("Error parsing cluster configuration:\n\t%s\n", err.Error())
 						http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -86,17 +86,33 @@ func GETHandler(urlRegex *regexp.Regexp) func(*RoutingContexts, http.ResponseWri
 	return func(routeContexts *RoutingContexts, writer http.ResponseWriter, request *http.Request) {
 
 		serverId := urlRegex.FindSubmatch([]byte(request.URL.Path))
-		if len(serverId) >= 2 {
-		}
+
+		var (
+			jsonBody []byte
+			err error
+		)
 
 		uuidValue := string(serverId[1])
-		routeContext := routeContexts.Get(uuid.Parse(uuidValue))
-		jsonBody, err := json.Marshal(serialiseRoutingContext(routeContext));
+		if len(uuidValue) > 0 {
+			routeContext := routeContexts.Get(uuid.Parse(uuidValue))
+			if routeContext != nil {
+				jsonBody, err = json.Marshal(serialiseRoutingContext(routeContext));
+			} else {
+				http.NotFound(writer, request)
+				return
+			}
+		} else {
+			index := 0
+			var routeContextsJSON []map[string]interface{} = make([]map[string]interface{}, routeContexts.contextsByVersion.Len())
+			for element := routeContexts.contextsByVersion.Front(); element != nil; element = element.Next() {
+				routeContextsJSON[index] = serialiseRoutingContext(element.Value.(*RoutingContext))
+				index++
+			}
+			jsonBody, err = json.Marshal(routeContextsJSON);
+		}
 
 		if err != nil {
 			fmt.Println("Error encoding json object %s", uuidValue)
-		} else if routeContext == nil {
-			http.NotFound(writer, request)
 		} else {
 			fmt.Fprintf(writer, "%s", jsonBody)
 			writer.WriteHeader(http.StatusOK)

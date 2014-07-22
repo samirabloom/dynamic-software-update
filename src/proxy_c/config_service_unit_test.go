@@ -16,14 +16,14 @@ func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	// given
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
-		bodyByte              = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1024}, {\"ip\":\"127.0.0.1\", \"port\":1025}], \"version\": 1.1}}")
+		bodyByte              = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1024}, {\"ip\":\"127.0.0.1\", \"port\":1025}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.1}}")
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &RoutingContexts{}
 		serverOne, _          = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _          = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		expectedRouteContexts = &RoutingContexts{}
 	)
-	expectedRouteContexts.Add(&RoutingContext{backendAddresses: []*net.TCPAddr{serverOne, serverTwo}, requestCounter: -1, uuid: uuidGenerator(), version: 1.1})
+	expectedRouteContexts.Add(&RoutingContext{backendAddresses: []*net.TCPAddr{serverOne, serverTwo}, requestCounter: -1, uuid: uuidGenerator(), sessionTimeout: 1, mode: sessionMode, version: 1.1})
 
 	// when
 	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
@@ -37,9 +37,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 	// given
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
-		bodyByte1             = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1011}], \"version\": 1.1}}")
-		bodyByte2             = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1009}], \"version\": 0.9}}")
-		bodyByte3             = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1015}], \"version\": 1.5}}")
+		bodyByte1             = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1011}], \"upgradeTransition\":{\"sessionTimeout\":3}, \"version\": 1.1}}")
+		bodyByte2             = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1009}], \"upgradeTransition\":{\"sessionTimeout\":2}, \"version\": 0.9}}")
+		bodyByte3             = []byte("{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":1015}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.5}}")
 		uuid1                 = uuid.Parse("1127596f-1034-11e4-8334-600308a82411")
 		uuid2                 = uuid.Parse("0927596f-1034-11e4-8334-600308a82409")
 		uuid3                 = uuid.Parse("1527596f-1034-11e4-8334-600308a82415")
@@ -47,9 +47,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 		server2, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
 		expectedRouteContexts = &RoutingContexts{contextsByVersion: list.New(), contextsByID: make(map[string]*RoutingContext)}
-		routingContext1       = &RoutingContext{backendAddresses: []*net.TCPAddr{server1}, requestCounter: -1, uuid: uuid1, version: 1.1}
-		routingContext2       = &RoutingContext{backendAddresses: []*net.TCPAddr{server2}, requestCounter: -1, uuid: uuid2, version: 0.9}
-		routingContext3       = &RoutingContext{backendAddresses: []*net.TCPAddr{server3}, requestCounter: -1, uuid: uuid3, version: 1.5}
+		routingContext1       = &RoutingContext{backendAddresses: []*net.TCPAddr{server1}, requestCounter: -1, uuid: uuid1, sessionTimeout: 3, mode: sessionMode, version: 1.1}
+		routingContext2       = &RoutingContext{backendAddresses: []*net.TCPAddr{server2}, requestCounter: -1, uuid: uuid2, sessionTimeout: 2, mode: sessionMode, version: 0.9}
+		routingContext3       = &RoutingContext{backendAddresses: []*net.TCPAddr{server3}, requestCounter: -1, uuid: uuid3, sessionTimeout: 1, mode: sessionMode, version: 1.5}
 		actualRouteContexts   = &RoutingContexts{}
 	)
 
@@ -81,10 +81,10 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 		serverTwo, _         = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		routeContexts        = &RoutingContexts{}
 		responseWriter       = mock.NewMockResponseWriter()
-		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\"" + uuidValue.String() + "\",\"version\":1.1}}")
+		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\"" + uuidValue.String() + "\",\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"version\":1.1}}")
 		request              = &http.Request{URL: &url.URL{Path: "/server/" + uuidGenerator().String()}}
 	)
-	routeContexts.Add(&RoutingContext{backendAddresses: []*net.TCPAddr{serverOne, serverTwo}, requestCounter: -1, uuid: uuidValue, version: 1.1})
+	routeContexts.Add(&RoutingContext{backendAddresses: []*net.TCPAddr{serverOne, serverTwo}, requestCounter: -1, uuid: uuidValue, sessionTimeout: 1, mode: sessionMode, version: 1.1})
 
 	// when
 	GETHandler(urlRegex)(routeContexts, responseWriter, request)
@@ -115,6 +115,40 @@ func Test_Config_GET_With_Non_Existing_Object(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusNotFound, responseWriter.ResponseCodes[0])
 }
 
+func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
+	// given
+	var (
+		urlRegex             = regexp.MustCompile("/server/([a-z0-9-]*){1}")
+		responseWriter       = mock.NewMockResponseWriter()
+		uuid1                = uuid.Parse("1127596f-1034-11e4-8334-600308a82411")
+		uuid2                = uuid.Parse("0927596f-1034-11e4-8334-600308a82409")
+		uuid3                = uuid.Parse("1527596f-1034-11e4-8334-600308a82415")
+		server1, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1011")
+		server2, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
+		server3, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
+		routingContext1      = &RoutingContext{backendAddresses: []*net.TCPAddr{server1}, requestCounter: -1, uuid: uuid1, sessionTimeout: 1, mode: sessionMode, version: 1.1}
+		routingContext2      = &RoutingContext{backendAddresses: []*net.TCPAddr{server2}, requestCounter: -1, uuid: uuid2, sessionTimeout: 2, mode: sessionMode, version: 0.9}
+		routingContext3      = &RoutingContext{backendAddresses: []*net.TCPAddr{server3}, requestCounter: -1, uuid: uuid3, sessionTimeout: 3, mode: instantMode, version: 1.5}
+		routeContexts        = &RoutingContexts{}
+		expectedResponseBody = []byte("[" +
+			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\",\"sessionTimeout\":3},\"uuid\":\"" + uuid3.String() + "\",\"version\":1.5}}," +
+			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid1.String() + "\",\"version\":1.1}}," +
+			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid2.String() + "\",\"version\":0.9}}" +
+			"]")
+		request              = &http.Request{URL: &url.URL{Path: "/server/"}}
+	)
+	routeContexts.Add(routingContext1)
+	routeContexts.Add(routingContext2)
+	routeContexts.Add(routingContext3)
+
+	// when
+	GETHandler(urlRegex)(routeContexts, responseWriter, request)
+
+	// then
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WritenBodyBytes[0])
+	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusOK, responseWriter.ResponseCodes[0])
+}
+
 func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
 	// given
 	var (
@@ -137,7 +171,7 @@ func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
 }
 
 
-func Test_Config_DELETE_With_Existing_Object_Maintanes_Order(testCtx *testing.T) {
+func Test_Config_DELETE_With_Existing_Object_Maintains_Order(testCtx *testing.T) {
 	// given
 	var (
 		urlRegex              = regexp.MustCompile("/server/([a-z0-9-]*){1}")

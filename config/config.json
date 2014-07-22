@@ -23,6 +23,7 @@
         ],
         "version": 1.0,
         "upgradeTransition": {
+            "mode": "SESSION",
             "sessionTimeout": 60
         }
     }

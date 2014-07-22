@@ -10,6 +10,9 @@
                 "port": 1024
             }
         ],
-        "version": 1.0
+        "version": 1.0,
+        "upgradeTransition": {
+            "sessionTimeout": 60
+        }
     }
 }
