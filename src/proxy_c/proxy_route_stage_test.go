@@ -5,6 +5,7 @@ import (
 	"testing"
 	"code.google.com/p/go-uuid/uuid"
 	assertion "util/test/assertion"
+	"time"
 )
 
 func NewTestRouteChunkContext(data string, routingContext *RoutingContext, clientToServer bool) *chunkContext {
@@ -59,7 +60,7 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 		initialTotalReadSize = int64(10)
 		routingContext       = &RoutingContext{backendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, requestCounter: -1, uuid: uuid.NewUUID()}
 		routingContexts      = &RoutingContexts{}
-		expectedCookieHeader = "Set-Cookie: dynsoftup=" + routingContext.uuid.String() + ";\n"
+		expectedCookieHeader = "Set-Cookie: dynsoftup=" + routingContext.uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", routingContext, false)
 	)
 	routingContexts.Add(routingContext)
@@ -87,7 +88,7 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 		initialTotalReadSize = int64(10)
 		routingContext       = &RoutingContext{backendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, requestCounter: -1, uuid: uuid.NewUUID()}
 		routingContexts      = &RoutingContexts{}
-		expectedCookieHeader = "Set-Cookie: dynsoftup=" + routingContext.uuid.String() + ";\n"
+		expectedCookieHeader = "Set-Cookie: dynsoftup=" + routingContext.uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", routingContext, false)
 	)
 	routingContexts.Add(routingContext)

@@ -89,11 +89,12 @@ func Test_Proxy_Request_With_UUID(testCtx *testing.T) {
 	//   - a example request
 	var (
 		testRequest      = []byte("GET / HTTP/1.1\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
-		expectedResponse = []byte("GET / HTTP/1.1\nSet-Cookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;\nX-EchoServer: " + echoServerAddress.String() + "\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
+		expectedResponse = []byte("GET / HTTP/1.1\nSet-Cookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\nX-EchoServer: " + echoServerAddress.String() + "\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
 	)
 
 	// when
 	actualResponse := sendRequest(testCtx, proxyAddress, testRequest)
+
 
 	// then
 	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponse, actualResponse)
@@ -121,8 +122,8 @@ func Test_Proxy_Load_Balances_Request(testCtx *testing.T) {
 	//   - a example request
 	var (
 		testRequest         = []byte("GET / HTTP/1.1\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
-		expectedResponseOne = []byte("GET / HTTP/1.1\nSet-Cookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;\nX-EchoServer: " + echoServerAddresses[0].String() + "\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
-		expectedResponseTwo = []byte("GET / HTTP/1.1\nSet-Cookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;\nX-EchoServer: " + echoServerAddresses[1].String() + "\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
+		expectedResponseOne = []byte("GET / HTTP/1.1\nSet-Cookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\nX-EchoServer: " + echoServerAddresses[0].String() + "\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
+		expectedResponseTwo = []byte("GET / HTTP/1.1\nSet-Cookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\nX-EchoServer: " + echoServerAddresses[1].String() + "\nUser-Agent: curl/7.30.0\nHost: www.test.co.uk\nAccept: */*\nAccept-Encoding: deflate, gzip\nCookie: dynsoftup=0e5e6c61-0731-11e4-aaec-600308a8245a;")
 	)
 
 	// when
@@ -133,9 +134,9 @@ func Test_Proxy_Load_Balances_Request(testCtx *testing.T) {
 
 
 	// then
-	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponseOne, responseOne)
-	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponseTwo, responseTwo)
-	assertion.AssertDeepEqual("Correct Response", testCtx, expectedResponseOne, responseThree)
+	assertion.AssertDeepEqual("Correct Response one", testCtx, expectedResponseOne, responseOne)
+	assertion.AssertDeepEqual("Correct Response two", testCtx, expectedResponseTwo, responseTwo)
+	assertion.AssertDeepEqual("Correct Response three", testCtx, expectedResponseOne, responseThree)
 
 	// clean-up
 	proxy.Stop()
