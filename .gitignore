@@ -48,3 +48,11 @@ Thumbs.db
 # Eclipse config files #
 ########################
 .project
+
+# Vangrant artifacts #
+######################
+.vagrant
+
+# wrk #
+#######
+wrk

@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 	byteutil "util/byte"
-	"server"
 	"container/list"
 )
 
@@ -31,10 +30,6 @@ func Proxy() {
 	var configFile = flag.String("configFile", cmd+"config.json", "Set the location of the configuration file")
 
 	flag.Parse()
-
-	go server.Server(1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031)
-
-	time.Sleep(1000 * time.Millisecond)
 
 	loadBalancer, err := loadConfig(configFile)
 	if err == nil {

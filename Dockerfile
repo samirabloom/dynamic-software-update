@@ -1,9 +1,9 @@
 #
-# Dynamic Software Upgrade Dockerfile
+# Dynamic Software Update Dockerfile
 #
 
 # Pull base image
-FROM 127.0.0.1:5000/docker-go
+FROM samirabloom/docker-go
 
 # Maintainer details
 MAINTAINER Samira Rabbanian "samira.rabanian@gmail.com"
@@ -18,7 +18,7 @@ RUN go get code.google.com/p/go-uuid/uuid && \
 
 # copy go files to container
 ADD src /dynamic_software_update/src
-ADD src/docker_main.go /dynamic_software_update/
+ADD src/main_run.go /dynamic_software_update/
 
 # setup working directory
 WORKDIR /dynamic_software_update
