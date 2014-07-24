@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	proxy_c.Proxy()
+	proxy_c.CLI()
 }
 

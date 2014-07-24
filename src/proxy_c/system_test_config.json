@@ -1,0 +1,1 @@
+{"proxy":{"ip":"localhost","port":1236},"configService":{"port":1237},"cluster":{"servers":[{"ip":"127.0.0.1","port":1055},{"ip":"127.0.0.1","port":1056}]}}

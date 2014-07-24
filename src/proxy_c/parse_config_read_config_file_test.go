@@ -8,10 +8,9 @@ import (
 func Test_Read_Config_When_File_Exists(testCtx *testing.T) {
 	// given
 	var (
-		fileName          = new(string)
+		fileName          = "test_server_list_config.json"
 		expectedByteArray = []byte("{\n    \"proxy\": {\n        \"ip\": \"localhost\",\n        \"port\": 1234\n    },\n    \"cluster\": {\n        \"servers\": [\n            {\n                \"ip\": \"127.0.0.1\",\n                \"port\": 1024\n            }\n        ],\n        \"version\": 1.0,\n        \"upgradeTransition\": {\n            \"sessionTimeout\": 60\n        }\n    }\n}")
 	)
-	*fileName = "test_server_list_config.json"
 
 	// when
 	actualByteArray := readConfigFile(fileName)
@@ -23,10 +22,9 @@ func Test_Read_Config_When_File_Exists(testCtx *testing.T) {
 func Test_Read_Config_When_File_Not_Exists(testCtx *testing.T) {
 	// given
 	var (
-		fileName                 = new(string)
+		fileName                 = "does_not_exist.json"
 		expectedByteArray []byte = nil
 	)
-	*fileName = "does_not_exist.json"
 
 	// when
 	actualByteArray := readConfigFile(fileName)

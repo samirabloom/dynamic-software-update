@@ -56,3 +56,7 @@ Thumbs.db
 # wrk #
 #######
 wrk
+
+# test generated #
+##################
+system_test_config.json

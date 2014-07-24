@@ -11,14 +11,14 @@ import (
 
 // ==== PARSE CONFIG - START
 
-func loadConfig(configFile *string) (*LoadBalancer, error) {
+func loadConfig(configFile string) (*LoadBalancer, error) {
 	return parseConfigFile(readConfigFile(configFile), parseProxy, parseCluster(func() uuid.UUID { return uuid.NewUUID() }))
 }
 
-func readConfigFile(configFile *string) []byte {
-	jsonConfig, err := ioutil.ReadFile(*configFile)
+func readConfigFile(configFile string) []byte {
+	jsonConfig, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		loggerFactory().Error("Error %s reading config file [%s]", err, *configFile)
+		loggerFactory().Error("Error %s reading config file [%s]", err, configFile)
 	}
 	return jsonConfig
 }

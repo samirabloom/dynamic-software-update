@@ -9,11 +9,10 @@ import (
 func Test_Load_Config_When_File_Valid_Server_list(testCtx *testing.T) {
 	// given
 	var (
-		fileName                          = new(string)
+		fileName                          = "does_not_exist.json"
 		expectedError                     = errors.New("Invalid proxy configuration - \"proxy\" config missing")
 		expectedLoadBalance *LoadBalancer = nil
 	)
-	*fileName = "does_not_exist.json"
 
 	// when
 	actualLoadBalancer, actualError := loadConfig(fileName)

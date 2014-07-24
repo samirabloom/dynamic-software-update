@@ -20,7 +20,7 @@ import (
 
 // ==== MAIN - START
 
-func Proxy() {
+func CLI() {
 	logLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
 
 	var cmd, _ = os.Getwd()
@@ -31,6 +31,10 @@ func Proxy() {
 
 	flag.Parse()
 
+	Proxy(*configFile)
+}
+
+func Proxy(configFile string) {
 	loadBalancer, err := loadConfig(configFile)
 	if err == nil {
 		loadBalancer.Start()
@@ -59,7 +63,6 @@ func read(next func(*chunkContext), complete func(*chunkContext)) func(*chunkCon
 			if readSize > 0 {
 				context.totalReadSize += int64(readSize)
 				next(context)
-				loggerFactory().Debug("Error routing connection %s - %s", context.err, context)
 				if context.firstChunk {
 					context.firstChunk = false
 				}
@@ -467,10 +470,10 @@ func (context *chunkContext) String() string {
 		output += "\t data:\n\t\t"+strings.Replace(string(context.data), "\n", "\n\t\t", -1)
 	}
 	output += "\n"
-	if context.from.(*net.TCPConn) != nil && context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
+	if context.from != nil && context.from.(*net.TCPConn) != nil && context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
 		output += fmt.Sprintf("\t from: %s -> %s\n", context.from.LocalAddr(), context.from.RemoteAddr())
 	}
-	if context.to.(*net.TCPConn) != nil && context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
+	if context.to != nil && context.to.(*net.TCPConn) != nil && context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
 		output += fmt.Sprintf("\t to: %s -> %s\n", context.to.LocalAddr(), context.to.RemoteAddr())
 	}
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
