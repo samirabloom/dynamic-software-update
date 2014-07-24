@@ -12,4 +12,4 @@ MAINTAINER Samira Rabbanian "samira.rabanian@gmail.com"
 ADD . .
 
 # define default command
-CMD ["go", "run", "example_server.go", "-port", "1025"]
+CMD ["go", "run", "go_server.go", "-port", "1025"]
