@@ -25,4 +25,5 @@ RUN javac -cp netty-all-4.0.15.Final.jar TestServer.java
 EXPOSE 8080
 
 # Define default command.
-CMD ["java", "-cp", ".:netty-all-4.0.15.Final.jar", "TestServer"]
+CMD ["bash"]
+#CMD ["java", "-cp", ".:netty-all-4.0.15.Final.jar", "TestServer"]

@@ -20,8 +20,8 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class TestServer {
 
-    public static void main(String[] args) throws InterruptedException {
-        System.out.println("STARTING SERVER FOR HTTP ON PORT: " + 8080);
+    public static void main(final String[] args) throws InterruptedException {
+        System.out.println("STARTING SERVER FOR HTTP ON PORT: " + args[0]);
         NioEventLoopGroup bossGroup = new NioEventLoopGroup();
         NioEventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -35,10 +35,10 @@ public class TestServer {
 
                             pipeline.addLast("logger", new LoggingHandler("TEST_SERVER"));
                             pipeline.addLast("http_codec", new HttpServerCodec());
-                            pipeline.addLast("simple_test_handler", new TestServerHandler());
+                            pipeline.addLast("simple_test_handler", new TestServerHandler(Integer.parseInt(args[0])));
                         }
                     })
-                    .bind(8080).channel().closeFuture().sync();
+                    .bind(Integer.parseInt(args[0])).channel().closeFuture().sync();
         } catch (Exception e) {
             throw new RuntimeException("Exception running test server", e);
         } finally {
@@ -48,6 +48,11 @@ public class TestServer {
     }
 
     private static class TestServerHandler extends SimpleChannelInboundHandler<Object> {
+        int port;
+        public TestServerHandler(int _port){
+            port = _port;
+        }
+
 
         @Override
         public void channelReadComplete(ChannelHandlerContext ctx) {
@@ -63,14 +68,14 @@ public class TestServer {
                 if (req.getUri().equals("/unknown")) {
                     response = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
                 } else {
-                    response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer("response from the netty server".getBytes(Charset.forName("UTF-8"))));
+                    String serverResponse = "Response from netty server on port: " + port+ "\n";
+                    response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(serverResponse.getBytes(Charset.forName("UTF-8"))));
                     response.headers().set(CONTENT_TYPE, "text/plain");
                     response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
                 }
                 ctx.write(response).addListener(ChannelFutureListener.CLOSE);
             }
         }
-
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             cause.printStackTrace();
