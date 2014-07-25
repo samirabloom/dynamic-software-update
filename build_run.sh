@@ -12,8 +12,20 @@ GOPATH=$PWD:$GOPATH
 echo "Using GOROOT=${GOROOT}"
 echo "Using GOPATH=${GOPATH}"
 
+echo "Building example servers"
+go build -o example_server ./example_servers/go_server/go_server.go
+
+echo "Running exmaple servers with 1034, 1035 and 1036"
+./example_server -port="1034" &
+./example_server -port="1035" &
+./example_server -port="1036" &
+
 echo "Building project"
 go build -o dynsoftup ./src/main_run.go
 
 echo "Running main func with logLevel ${logLevel}"
-./dynsoftup -logLevel="${logLevel}" -configFile="config/config_script.json"
+./dynsoftup -logLevel="${logLevel}" -configFile="config/config_script.json" &
+
+trap "pkill example_server; pkill dynsoftup" exit INT TERM
+
+wait

@@ -62,18 +62,8 @@ public class TestServer {
                 FullHttpResponse response;
                 if (req.getUri().equals("/unknown")) {
                     response = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
-                } else if (req.getUri().equals("/zeromq")) {
-                    response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer("it is fun to play with ZeroMQ".getBytes(Charset.forName("UTF-8"))));
-                    response.headers().set("X-ZeroMQ", "a_header_value");
-                    response.headers().set(CONTENT_TYPE, "text/plain");
-                    response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
-                } else if (req.getUri().equals("/netty")) {
-                    response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer("it is also fun to play with Netty".getBytes(Charset.forName("UTF-8"))));
-                    response.headers().set("X-Netty", "a_header_value");
-                    response.headers().set(CONTENT_TYPE, "text/plain");
-                    response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
                 } else {
-                    response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer("Hello World".getBytes(Charset.forName("UTF-8"))));
+                    response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer("response from the netty server".getBytes(Charset.forName("UTF-8"))));
                     response.headers().set(CONTENT_TYPE, "text/plain");
                     response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
                 }

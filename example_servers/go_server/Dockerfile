@@ -1,5 +1,5 @@
 #
-# Dynamic Software Upgrade Server Examples Dockerfile
+# Dynamic Software Upgrade Go Server Dockerfile
 #
 
 # Pull base image

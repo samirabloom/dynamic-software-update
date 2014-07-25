@@ -1,5 +1,5 @@
 #
-# Netty Test Server Dockerfile
+# Dynamic Software Upgrade Netty Server Dockerfile
 #
 
 # Pull base image
@@ -8,9 +8,14 @@ FROM dockerfile/java
 # Maintainer details
 MAINTAINER Samira Rabbanian "samira.rabanian@gmail.com"
 
+
 # Set working directory
 RUN mkdir -p /opt/netty
 WORKDIR /opt/netty
+
+# copy go files to container
+ADD src /opt/netty/src
+ADD src/TestServer.java /opt/netty/
 
 # Download and compile Netty test server
 RUN wget -O netty-all-4.0.15.Final.jar http://search.maven.org/remotecontent?filepath=io/netty/netty-all/4.0.15.Final/netty-all-4.0.15.Final.jar
