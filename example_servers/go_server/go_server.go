@@ -27,7 +27,7 @@ func (h *handle) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	response.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate");
 	response.Header().Set("Pragma", "no-cache");
 	response.Header().Set("Expires", "0");
-	fmt.Fprintf(response, "Port: %d\n", h.Port)
+	fmt.Fprintf(response, "GS Port: %d\n", h.Port)
 	time.Sleep(50 * time.Millisecond)
 	fmt.Fprintf(response, "50 ms, ")
 	response.(http.Flusher).Flush()

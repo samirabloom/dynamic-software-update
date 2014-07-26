@@ -1,10 +1,10 @@
 package main
 
 import (
-	"proxy_c"
+	proxy "proxy"
 )
 
 func main() {
-	proxy_c.CLI()
+	proxy.CLI()
 }
 
