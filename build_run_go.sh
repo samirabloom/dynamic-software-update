@@ -1,7 +1,7 @@
 #!/bin/bash
 
 logLevel=$1
-if [ -z "${logLevel}" ]; then logLevel="WARN"; fi
+if [ -z "${logLevel}" ]; then logLevel="NOTICE"; fi
 
 # note: using this instead of -a flag on go build to only rebuild local packages
 echo "Cleaning previously built packages for current project"
@@ -23,7 +23,7 @@ echo "Running exmaple servers with 1034, 1035 and 1036"
 echo "Building project"
 go build -o dynsoftup ./src/main_run.go
 
-echo "Running main func with logLevel ${logLevel}"
+echo "Running proxy with logLevel ${logLevel}"
 ./dynsoftup -logLevel="${logLevel}" -configFile="config/config_script.json" &
 
 trap "pkill dynsoftup; pkill example_server" exit INT TERM

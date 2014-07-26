@@ -6,6 +6,7 @@
 *.o
 *.so
 dynsoftup
+example_server
 pkg
 
 # Packages #

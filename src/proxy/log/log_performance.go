@@ -64,7 +64,7 @@ var PerformanceLog = func() *csv.Writer {
 			// entries
 			for _, entry := range entries {
 				var (
-					values = make([]string, len(entries[0]))
+					values = make([]string, len(entries))
 					values_counter int
 				)
 				for key := range entry {
