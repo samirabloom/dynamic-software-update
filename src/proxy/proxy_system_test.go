@@ -8,12 +8,6 @@ import (
 	"strconv"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func writeConfigFile(proxyPort int, configPort int, uuid string, serverPorts []int, version string) string {
 	fileName := "/tmp/system_test_config.json"
 	data := "{\"proxy\":{\"ip\":\"localhost\",\"port\":" + strconv.Itoa(proxyPort) + "},\"configService\":{\"port\":" + strconv.Itoa(configPort) + "},\"cluster\":{\"servers\":["
