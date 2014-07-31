@@ -151,7 +151,7 @@ func Test_proxy_system_test_should_load_balance_with_instant_cluster_transition(
 	assertion.AssertDeepEqual("Latest Cluster When Initial Cluster UUID - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[0])+"\n", makeProxyRequest(proxyPort, uuidCookieVersion0_0))
 	assertion.AssertDeepEqual("Latest Cluster When Initial Cluster UUID - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[1])+"\n", makeProxyRequest(proxyPort, uuidCookieVersion0_0))
 
-	// then - send request to previous cluster if they have previous uuid
+	// then - should load balance requests against latest cluster
 	assertion.AssertDeepEqual("Latest Cluster When Updated Cluster UUID - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[0])+"\n", makeProxyRequest(proxyPort, uuidCookieVersion1_1))
 	assertion.AssertDeepEqual("Latest Cluster When Updated Cluster UUID - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[1])+"\n", makeProxyRequest(proxyPort, uuidCookieVersion1_1))
 

@@ -166,4 +166,24 @@ func Test_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
 }
 
+func Test_Parse_Header(testCtx *testing.T) {
+	// given
+	var (
+		parsedHeader = &headerMetrics{}
+		data = []byte("HTTP/1.1 200 OK, Content-Length: 143\n Connection: keep-alive\n Expires: 5\n Content-Type: text/plain; charset=utf-8 \n Transfer-Encoding: chunked\n")
+	)
+	parsedHeader.headers = make(map[string]string)
+
+	// when
+	parseHeader(parsedHeader, data)
+
+	// then expected/actual
+	assertion.AssertDeepEqual("Correct Content-Length", testCtx, int64(len(data)), parsedHeader.contentLength)
+	assertion.AssertDeepEqual("Correct HTTP Status", testCtx, 200, parsedHeader.statusCode)
+	assertion.AssertDeepEqual("Correct Expires", testCtx, int64(5), parsedHeader.expire)
+	assertion.AssertDeepEqual("Correct Transfer-Encoding", testCtx, "chunked", parsedHeader.headers["Transfer-Encoding"])
+	assertion.AssertDeepEqual("Correct Connection", testCtx, "keep-alive", parsedHeader.headers["Connection"])
+	assertion.AssertDeepEqual("Correct Content-Type", testCtx, "Content-Type: text/plain; charset=utf-8 ", parsedHeader.headers["Content-Type"])
+}
+
 

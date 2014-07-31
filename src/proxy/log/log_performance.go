@@ -35,8 +35,6 @@ var PerformanceLog = func() *csv.Writer {
 	// New Csv writer
 	writer := csv.NewWriter(file)
 
-
-
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT)
 	signal.Notify(c, syscall.SIGKILL)

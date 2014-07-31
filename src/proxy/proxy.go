@@ -8,6 +8,8 @@ import (
 	"proxy/log"
 	"code.google.com/p/go-uuid/uuid"
 	"proxy/stages"
+	"flag"
+	"os"
 )
 var uuidGenerator = func(uuidValue uuid.UUID) func() uuid.UUID {
 	return func() uuid.UUID {
@@ -22,6 +24,28 @@ type Proxy struct {
 	configServicePort int
 	clusters          *stages.Clusters
 	stop              chan bool
+}
+
+func NewProxy(configFile string) *Proxy {
+	proxy, err := loadConfig(configFile)
+	if err != nil {
+		log.LoggerFactory().Error("Error parsing config %v", err)
+	}
+	return proxy
+}
+
+func CLI() {
+	log.LogLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
+
+	var cmd, _ = os.Getwd()
+	if !strings.HasSuffix(cmd, "/") {
+		cmd = cmd+"/"
+	}
+	var configFile = flag.String("configFile", cmd+"config.json", "Set the location of the configuration file")
+
+	flag.Parse()
+
+	NewProxy(*configFile).Start(true)
 }
 
 func (proxy *Proxy) String() string {

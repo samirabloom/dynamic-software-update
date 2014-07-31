@@ -37,12 +37,12 @@ working of covering most of the code
 
 1. Finish the remaining unit and integration tests
 
-1. Extend the proxy to record metrics for server responses (to enable
-detection of invalid response)
+1. Extend the proxy to record metrics for server responses (to enable detection of invalid response)
 
-1. Extend the proxy to cover all scenarios described in the report
-submitted on CATE:
+1. Extend the proxy to cover all scenarios described in the report submitted on CATE:
  - Multi-Version Update
- - Rapid Update
- - New Session Update
+ - Rapid Update - DONE
+    - All the requests after the update goes to the new cluster. If the user doesn't define an upgrade mode then the default is instant 
+ - New Session Update - DONE
+    - Any request with no uuid or with new uuid goes to the new cluster, however, any request with the old uuid goes to the old cluster till it's session is timed out
  - Long Term Update

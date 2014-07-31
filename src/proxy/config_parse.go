@@ -8,35 +8,10 @@ import (
 	"fmt"
 	"errors"
 	"proxy/log"
-	"flag"
-	"os"
-	"strings"
 	"proxy/stages"
 )
 
 // ==== PARSE CONFIG - START
-
-func NewProxy(configFile string) *Proxy {
-	proxy, err := loadConfig(configFile)
-	if err != nil {
-		log.LoggerFactory().Error("Error parsing config %v", err)
-	}
-	return proxy
-}
-
-func CLI() {
-	log.LogLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
-
-	var cmd, _ = os.Getwd()
-	if !strings.HasSuffix(cmd, "/") {
-		cmd = cmd+"/"
-	}
-	var configFile = flag.String("configFile", cmd+"config.json", "Set the location of the configuration file")
-
-	flag.Parse()
-
-	NewProxy(*configFile).Start(true)
-}
 
 func loadConfig(configFile string) (*Proxy, error) {
 	return parseConfigFile(readConfigFile(configFile), parseProxy, parseClusters(func() uuid.UUID { return uuid.NewUUID() }))

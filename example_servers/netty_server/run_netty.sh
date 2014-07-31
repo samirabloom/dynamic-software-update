@@ -18,6 +18,7 @@ docker stop example_netty_server_8082 2> /dev/null
 docker rm example_netty_server_8082 2> /dev/null
 
 # run containers
+
 ## port 8080
 docker run -d --name example_netty_server_8080 -p 8080:8080 samirabloom/example_netty_server java -cp .:netty-all-4.0.15.Final.jar TestServer 8080
 
