@@ -33,8 +33,6 @@ func Run(testCtx *testing.T, address *net.TCPAddr) {
 							byteutil.Insert(data[0:readSize], insertLocation+len(searchString), echoServerHeader)
 							readSize += len(echoServerHeader)
 						}
-//						fmt.Printf("\nAfter insert - ES: \n%s\n", data)
-
 						writeSize, writeError := client.Write(data[0:readSize])
 						if writeError != nil {
 							testCtx.Logf("error in echo server: %v\n", writeError.Error())

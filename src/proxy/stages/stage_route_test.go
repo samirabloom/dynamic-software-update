@@ -71,6 +71,7 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 		initialTotalReadSize = int64(10)
 		cluster       = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
 		clusters      = &Clusters{}
+		expectedContentLength = "Content-Length: 40\n"
 		expectedCookieHeader = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", cluster, false)
 	)
@@ -82,9 +83,9 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedCookieHeader+" added"), mockContext.data)
+	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedContentLength+expectedCookieHeader+" added"), mockContext.data)
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
-	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, int64(len(expectedCookieHeader))+initialTotalReadSize, mockContext.totalReadSize)
+	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, int64(len(expectedContentLength)+len(expectedCookieHeader))+initialTotalReadSize, mockContext.totalReadSize)
 }
 
 // test firstChunk and not clientToServer and context.requestUUID
@@ -99,6 +100,7 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 		initialTotalReadSize = int64(10)
 		cluster       = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
 		clusters      = &Clusters{}
+		expectedContentLength = "Content-Length: 41\n"
 		expectedCookieHeader = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", cluster, false)
 	)
@@ -109,9 +111,9 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedCookieHeader+" added\n"), mockContext.data)
+	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+ expectedContentLength + expectedCookieHeader+" added\n"), mockContext.data)
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
-	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, int64(len(expectedCookieHeader))+initialTotalReadSize, mockContext.totalReadSize)
+	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, +int64(len(expectedContentLength)+len(expectedCookieHeader))+initialTotalReadSize, mockContext.totalReadSize)
 
 }
 
