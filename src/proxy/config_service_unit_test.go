@@ -82,7 +82,7 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 		serverTwo, _         = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		routeContexts        = &stages.Clusters{}
 		responseWriter       = mock.NewMockResponseWriter()
-		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\"" + uuidValue.String() + "\",\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"version\":1.1}}")
+		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuidValue.String() + "\",\"version\":1.1}}")
 		request              = &http.Request{URL: &url.URL{Path: "/server/" + uuidGenerator().String()}}
 	)
 	routeContexts.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: 1, Mode: stages.SessionMode, Version: 1.1})
@@ -133,8 +133,8 @@ func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
 		routeContexts        = &stages.Clusters{}
 		expectedResponseBody = []byte("[" +
 			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\",\"sessionTimeout\":3},\"uuid\":\"" + uuid3.String() + "\",\"version\":1.5}}," +
-			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid1.String() + "\",\"version\":1.1}}," +
-			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid2.String() + "\",\"version\":0.9}}" +
+			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid1.String() + "\",\"version\":1.1}}," +
+			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid2.String() + "\",\"version\":0.9}}" +
 			"]")
 		request              = &http.Request{URL: &url.URL{Path: "/server/"}}
 	)

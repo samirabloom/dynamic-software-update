@@ -14,7 +14,7 @@ func Test_server(ports []int) {
 		fmt.Printf("Starting server %d ...\n", port)
 		go http.ListenAndServe(":"+strconv.Itoa(port), &handle{port})
 	}
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 }
 
 type handle struct {

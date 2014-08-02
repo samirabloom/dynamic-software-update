@@ -19,7 +19,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 	)
 	go ConfigServer(serverPort, &stages.Clusters{})
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 
 	// when
 	// - a PUT request

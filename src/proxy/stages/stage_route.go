@@ -99,7 +99,7 @@ func parseHeader(parsedHeader *headerMetrics, data []byte) {
 
 	// checking for the contentLength in the http response
 	parsedHeader.contentLength = int64(len(data))
-	fmt.Printf("\nthe Content-Length found is: %d\n", parsedHeader.contentLength)
+//	fmt.Printf("\nthe Content-Length found is: %d\n", parsedHeader.contentLength)
 	log.LoggerFactory().Debug("Content-Length found is: %s", parsedHeader.contentLength)
 
 	// checking for the status code in the http response
@@ -107,7 +107,7 @@ func parseHeader(parsedHeader *headerMetrics, data []byte) {
 	if len(statusCodeMatches) >= 2 {
 		statusCodeMatch := string(statusCodeMatches[1])
 		parsedHeader.statusCode, _ = strconv.Atoi(statusCodeMatch)
-		fmt.Printf("\nthe statusCode found is: %d\n", parsedHeader.statusCode)
+//		fmt.Printf("\nthe statusCode found is: %d\n", parsedHeader.statusCode)
 		log.LoggerFactory().Debug("statusCode found is: %s", parsedHeader.statusCode)
 	}
 
@@ -117,7 +117,7 @@ func parseHeader(parsedHeader *headerMetrics, data []byte) {
 		expiryMatch := string(expiryMatches[1])
 		expiryHeader, _ := strconv.Atoi(expiryMatch)
 		parsedHeader.expire = int64(expiryHeader)
-		fmt.Printf("\nthe \"Expires\" found is: %d\n", parsedHeader.expire)
+//		fmt.Printf("\nthe \"Expires\" found is: %d\n", parsedHeader.expire)
 		log.LoggerFactory().Debug("\"Expires\" found is: %d", parsedHeader.expire)
 	}
 
@@ -125,7 +125,7 @@ func parseHeader(parsedHeader *headerMetrics, data []byte) {
 	transferEncodingMatches := transferEncodingRegex.FindSubmatch(data)
 	if len(transferEncodingMatches) >= 2 {
 		parsedHeader.headers["Transfer-Encoding"] = string(transferEncodingMatches[1])
-		fmt.Printf("\nthe Transfer-Encoding found is: %s\n", parsedHeader.headers["Transfer-Encoding"])
+//		fmt.Printf("\nthe Transfer-Encoding found is: %s\n", parsedHeader.headers["Transfer-Encoding"])
 		log.LoggerFactory().Debug("Transfer-Encoding found is: %s", parsedHeader.headers["Transfer-Encoding"])
 	}
 
@@ -133,7 +133,7 @@ func parseHeader(parsedHeader *headerMetrics, data []byte) {
 	connectionMatches := connectionRegex.FindSubmatch(data)
 	if len(connectionMatches) >= 2 {
 		parsedHeader.headers["Connection"] = string(connectionMatches[1])
-		fmt.Printf("\nthe Connection found is: %s\n", parsedHeader.headers["Connection"])
+//		fmt.Printf("\nthe Connection found is: %s\n", parsedHeader.headers["Connection"])
 		log.LoggerFactory().Debug("Connection found is: %s", parsedHeader.headers["Connection"])
 	}
 
@@ -141,7 +141,7 @@ func parseHeader(parsedHeader *headerMetrics, data []byte) {
 	contentTypeMatches := contentTypeRegex.FindSubmatch(data)
 	if len(contentTypeMatches) >= 2 {
 		parsedHeader.headers["Content-Type"] = string(contentTypeMatches[0])
-		fmt.Printf("\nthe Content-Type found is: %s\n", parsedHeader.headers["Content-Type"])
+//		fmt.Printf("\nthe Content-Type found is: %s\n", parsedHeader.headers["Content-Type"])
 		log.LoggerFactory().Debug("Content-Type found is: %s\n", parsedHeader.headers["Content-Type"])
 	}
 }

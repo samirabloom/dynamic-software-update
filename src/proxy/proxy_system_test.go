@@ -35,7 +35,7 @@ func makeProxyRequest(proxyPort int, uuidCookie string) string {
 	return body
 }
 
-func Test_proxy_system_test_load_balancing_with_initial_config_file(testCtx *testing.T) {
+func Test_Proxy_System_Test_Load_Balancing_With_Initial_Config_File(testCtx *testing.T) {
 	var (
 		uuidCookieVersion0_0 string = "1027596f-1034-11e4-8334-600308a82410"
 		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
@@ -54,7 +54,7 @@ func Test_proxy_system_test_load_balancing_with_initial_config_file(testCtx *tes
 	assertion.AssertDeepEqual("Initial Config - Correct 4th response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[1])+"\n", makeProxyRequest(proxyPort, ""))
 }
 
-func Test_proxy_system_test_should_load_balance_with_session_cluster_transition(testCtx *testing.T) {
+func Test_Proxy_System_Test_Should_Load_Balance_With_Session_Cluster_Transition(testCtx *testing.T) {
 	var (
 		uuidCookieVersion0_0 string = "1027596f-1034-11e4-8334-600308a82410"
 		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
@@ -110,7 +110,7 @@ func Test_proxy_system_test_should_load_balance_with_session_cluster_transition(
 	assertion.AssertDeepEqual("Initial Cluster When Matching UUID After Two New Clusters - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[1])+"\n", makeProxyRequest(proxyPort, uuidCookieVersion0_0))
 }
 
-func Test_proxy_system_test_should_load_balance_with_instant_cluster_transition(testCtx *testing.T) {
+func Test_Proxy_System_Test_Should_Load_Balance_With_Instant_Cluster_Transition(testCtx *testing.T) {
 	var (
 		uuidCookieVersion0_0 string = "1027596f-1034-11e4-8334-600308a82410"
 		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
@@ -160,7 +160,7 @@ func Test_proxy_system_test_should_load_balance_with_instant_cluster_transition(
 	assertion.AssertDeepEqual("Latest Cluster When Matching Cluster UUID - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[1])+"\n", makeProxyRequest(proxyPort, uuidCookieVersion1_5))
 }
 
-func Test_proxy_system_test_should_update_latest_cluster_with_cluster_removed(testCtx *testing.T) {
+func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(testCtx *testing.T) {
 	var (
 		uuidCookieVersion0_0 string = "1027596f-1034-11e4-8334-600308a82410"
 		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
@@ -223,7 +223,7 @@ func Test_proxy_system_test_should_update_latest_cluster_with_cluster_removed(te
 	assertion.AssertDeepEqual("Initial Cluster After Two Clusters Removed - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[1])+"\n", makeProxyRequest(proxyPort, ""))
 }
 
-func Test_proxy_system_test_should_maintain_version_order_with_multiple_clusters(testCtx *testing.T) {
+func Test_Proxy_System_Test_Should_Maintain_Version_Order_With_Multiple_Clusters(testCtx *testing.T) {
 	var (
 		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
 		configPort int              = networkutil.FindFreeLocalSocket(testCtx).Port

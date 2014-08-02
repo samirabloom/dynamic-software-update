@@ -33,13 +33,13 @@ func AssertDeepEqual(message string, testCtx *testing.T, expected, actual interf
 		if v1.Type() != v2.Type() {
 			testCtx.Fatal(fmt.Errorf(failure_message, message, "type not equal", v1.Type(), v2.Type()))
 		}
-		deepValueEqual(failure_message, message, testCtx, v1, v2, make(map[visit]bool), 0)
+		deepValueEqual(failure_message, message, testCtx, v1, v2, make(map[visit]bool))
 	} else if expected != actual {
 		testCtx.Fatal(fmt.Errorf(failure_message, message, "one value is nil", fmt.Sprintf("%#v", expected), fmt.Sprintf("%#v", actual)))
 	}
 }
 
-func deepValueEqual(failure_message, message string, testCtx *testing.T, expected, actual reflect.Value, visited map[visit]bool, depth int) {
+func deepValueEqual(failure_message, message string, testCtx *testing.T, expected, actual reflect.Value, visited map[visit]bool) {
 
 	if !expected.IsValid() || !actual.IsValid() {
 		testCtx.Fatal(fmt.Errorf(failure_message, message, "not valid value", fmt.Sprintf("%#v", expected), fmt.Sprintf("%#v", actual)))
@@ -48,7 +48,6 @@ func deepValueEqual(failure_message, message string, testCtx *testing.T, expecte
 		testCtx.Fatal(fmt.Errorf(failure_message, message, "type not equal", expected.Type(), actual.Type()))
 	}
 
-	// if depth > 10 { panic("deepValueEqual") }	// for debugging
 	hard := func(k reflect.Kind) bool {
 		switch k {
 		case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
@@ -81,14 +80,13 @@ func deepValueEqual(failure_message, message string, testCtx *testing.T, expecte
 		visited[v] = true
 	}
 
-
 	switch expected.Kind() {
 	case reflect.Array:
 		if expected.Len() != actual.Len() {
 			testCtx.Fatal(fmt.Errorf(failure_message, message, "length not equal", expected.Len(), actual.Len()))
 		}
 		for i := 0; i < expected.Len(); i++ {
-			deepValueEqual(failure_message, message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1)
+			deepValueEqual(failure_message, message, testCtx, expected.Index(i), actual.Index(i), visited)
 		}
 	case reflect.Slice:
 		if expected.IsNil() != actual.IsNil() {
@@ -99,25 +97,25 @@ func deepValueEqual(failure_message, message string, testCtx *testing.T, expecte
 		}
 		if expected.Pointer() != actual.Pointer() {
 			for i := 0; i < expected.Len(); i++ {
-				deepValueEqual(failure_message, message, testCtx, expected.Index(i), actual.Index(i), visited, depth+1)
+				deepValueEqual(failure_message, message, testCtx, expected.Index(i), actual.Index(i), visited)
 			}
 		}
 	case reflect.Interface:
 		if !expected.IsNil() && !actual.IsNil() {
-			deepValueEqual(failure_message, message, testCtx, expected.Elem(), actual.Elem(), visited, depth+1)
+			deepValueEqual(failure_message, message, testCtx, expected.Elem(), actual.Elem(), visited)
 		} else if !(expected.IsNil() && actual.IsNil()) {
 			testCtx.Fatal(fmt.Errorf(failure_message, message, "objects not equal", expected, actual))
 		}
 	case reflect.Ptr:
 		var nilPointer uintptr
 		if expected.Pointer() != nilPointer && actual.Pointer() != nilPointer {
-			deepValueEqual(failure_message, message, testCtx, expected.Elem(), actual.Elem(), visited, depth+1)
+			deepValueEqual(failure_message, message, testCtx, expected.Elem(), actual.Elem(), visited)
 		} else if expected.Pointer() != actual.Pointer() {
 			testCtx.Fatal(fmt.Errorf(failure_message, message, "one pointer is nil and the other is not", fmt.Sprintf("%#v", expected.Pointer()), fmt.Sprintf("%#v", actual.Pointer())))
 		}
 	case reflect.Struct:
 		for i, n := 0, expected.NumField(); i < n; i++ {
-			deepValueEqual(failure_message, message, testCtx, expected.Field(i), actual.Field(i), visited, depth+1)
+			deepValueEqual(failure_message, message, testCtx, expected.Field(i), actual.Field(i), visited)
 		}
 	case reflect.Map:
 		if expected.IsNil() != actual.IsNil() {
@@ -128,7 +126,7 @@ func deepValueEqual(failure_message, message string, testCtx *testing.T, expecte
 		}
 		if expected.Pointer() != actual.Pointer() {
 			for _, k := range expected.MapKeys() {
-				deepValueEqual(failure_message, message, testCtx, expected.MapIndex(k), actual.MapIndex(k), visited, depth+1)
+				deepValueEqual(failure_message, message, testCtx, expected.MapIndex(k), actual.MapIndex(k), visited)
 			}
 		}
 	case reflect.Func:
@@ -151,13 +149,15 @@ func deepValueEqual(failure_message, message string, testCtx *testing.T, expecte
 	case reflect.Int64:
 		compareInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint:
-		compareInt(failure_message, message, testCtx, expected, actual)
+		compareUInt(failure_message, message, testCtx, expected, actual)
+	case reflect.Uint8:
+		compareUInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint16:
-		compareInt(failure_message, message, testCtx, expected, actual)
+		compareUInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint32:
-		compareInt(failure_message, message, testCtx, expected, actual)
+		compareUInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Uint64:
-		compareInt(failure_message, message, testCtx, expected, actual)
+		compareUInt(failure_message, message, testCtx, expected, actual)
 	case reflect.Float32:
 		compareFloat(failure_message, message, testCtx, expected, actual)
 	case reflect.Float64:
@@ -167,6 +167,12 @@ func deepValueEqual(failure_message, message string, testCtx *testing.T, expecte
 		if !bytes.Equal([]byte(fmt.Sprintf("%v", expected)), []byte(fmt.Sprintf("%v", actual))) {
 			testCtx.Fatal(fmt.Errorf(failure_message, message, "values not equal", fmt.Sprintf("%v", expected), fmt.Sprintf("%v", actual)))
 		}
+	}
+}
+
+func compareUInt(failure_message, message string, testCtx *testing.T, expected, actual reflect.Value) {
+	if expected.Uint() != actual.Uint() {
+		testCtx.Fatal(fmt.Errorf(failure_message, message, "integers not equal", expected.Uint(), actual.Uint()))
 	}
 }
 
