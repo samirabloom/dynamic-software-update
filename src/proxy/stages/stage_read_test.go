@@ -19,7 +19,6 @@ func NewTestReadChunkContext(chunks []string, err error) (*ChunkContext, *mock.M
 		totalWriteSize: 0,
 		pipeComplete: make(chan int64, 100),
 		firstChunk: true,
-		cluster: nil,
 	}
 	mockSource := mock.NewMockConn(err, len(chunks))
 	mockContext.from = mockSource

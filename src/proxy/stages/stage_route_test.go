@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func NewTestRouteChunkContext(data string, cluster *Cluster, clientToServer bool) *ChunkContext {
+func NewTestRouteChunkContext(data string, clientToServer bool) *ChunkContext {
 	mockContext := &ChunkContext{
 		description: "",
 		data: make([]byte, 64*1024),
@@ -19,9 +19,7 @@ func NewTestRouteChunkContext(data string, cluster *Cluster, clientToServer bool
 		totalWriteSize: 0,
 		pipeComplete: make(chan int64, 100),
 		firstChunk: true,
-		cluster: nil,
 	}
-	mockContext.cluster = cluster
 	mockContext.data = []byte(data)
 	mockContext.clientToServer = clientToServer
 	return mockContext
@@ -43,7 +41,7 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 		mockCreatePipe  = NewMockStage("mockCreatePipe")
 		cluster  = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
 		clusters = &Clusters{}
-		mockContext     = NewTestRouteChunkContext("Cookie: dynsoftup="+cluster.Uuid.String()+";", cluster, true)
+		mockContext     = NewTestRouteChunkContext("Cookie: dynsoftup="+cluster.Uuid.String()+";", true)
 	)
 	clusters.Add(cluster)
 	mockCreatePipe.close(1)
@@ -52,7 +50,7 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Cluster for UUID in Cookie", testCtx, cluster, mockContext.cluster)
+//	assertion.AssertDeepEqual("Correct Cluster for UUID in Cookie", testCtx, cluster, mockContext.cluster)
 	<-mockCreatePipe.mockStageCallChannel
 	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, 1, mockCreatePipe.mockStageCallCounter)
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
@@ -73,7 +71,7 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 		clusters      = &Clusters{}
 		expectedContentLength = "Content-Length: 40\n"
 		expectedCookieHeader = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
-		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", cluster, false)
+		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added", false)
 	)
 	clusters.Add(cluster)
 
@@ -102,7 +100,7 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 		clusters      = &Clusters{}
 		expectedContentLength = "Content-Length: 41\n"
 		expectedCookieHeader = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
-		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", cluster, false)
+		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", false)
 	)
 	clusters.Add(cluster)
 	mockContext.totalReadSize = initialTotalReadSize
@@ -124,7 +122,7 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
-		mockContext     = NewTestRouteChunkContext("this is a request with no cookie \n added", nil, true)
+		mockContext     = NewTestRouteChunkContext("this is a request with no cookie \n added", true)
 		mockWrite       = NewMockStage("mockWrite")
 		mockCreatePipe  = NewMockStage("mockCreatePipe")
 		cluster  = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
@@ -151,7 +149,7 @@ func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 func Test_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
-		mockContext     = NewTestRouteChunkContext("this is a response with no cookie \n added", nil, false)
+		mockContext     = NewTestRouteChunkContext("this is a response with no cookie \n added", false)
 		mockWrite       = NewMockStage("mockWrite")
 		mockCreatePipe  = NewMockStage("mockCreatePipe")
 		cluster  = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}

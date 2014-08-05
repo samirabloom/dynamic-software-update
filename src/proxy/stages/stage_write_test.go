@@ -19,7 +19,6 @@ func NewTestWriteChunkContext(data string, err error) (*ChunkContext, *mock.Mock
 		totalWriteSize: 0,
 		pipeComplete: make(chan int64, 100),
 		firstChunk: true,
-		cluster: nil,
 	}
 	mockDestination := mock.NewMockConn(err, 5)
 	mockContext.data = []byte(data)

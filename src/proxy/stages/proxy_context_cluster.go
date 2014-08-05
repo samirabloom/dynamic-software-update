@@ -5,21 +5,12 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"net"
 	"fmt"
+	"proxy/log"
 )
 
 type Clusters  struct {
 	ContextsByVersion *list.List
 	ContextsByID      map[string]*Cluster
-}
-
-func (clusters *Clusters) NextServer(uuidValue uuid.UUID) *Cluster {
-	cluster := clusters.ContextsByVersion.Front().Value.(*Cluster)
-	if cluster.Mode != InstantMode {
-		if (uuidValue != nil && clusters.ContextsByID[uuidValue.String()] != nil) {
-			cluster = clusters.ContextsByID[uuidValue.String()]
-		}
-	}
-	return cluster
 }
 
 func (clusters *Clusters) Add(cluster *Cluster) {
@@ -74,6 +65,17 @@ func (clusters *Clusters) Get(uuidValue uuid.UUID) *Cluster {
 	return clusters.ContextsByID[uuidValue.String()]
 }
 
+func (clusters *Clusters) GetByVersionOrder(age int) *Cluster {
+	var element *list.Element
+	for element = clusters.ContextsByVersion.Front(); element != nil; element = element.Next() {
+		if age == 0 {
+			break
+		}
+		age--
+	}
+	return element.Value.(*Cluster)
+}
+
 func (clusters *Clusters) String() string {
 	return clusters.ContextsByVersion.Front().Value.(*Cluster).String()
 }
@@ -89,7 +91,9 @@ type Cluster struct {
 
 func (cluster *Cluster) NextServer() *net.TCPAddr {
 	cluster.RequestCounter++
-	return cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
+	server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
+	log.LoggerFactory().Info(fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f]", cluster.RequestCounter, server.IP, server.Port, cluster.Version))
+	return server
 }
 
 func (cluster *Cluster) String() string {

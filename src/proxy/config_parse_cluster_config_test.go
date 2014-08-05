@@ -16,8 +16,8 @@ func Test_Parse_Cluster_Config_When_Default_Version_And_UpgradeTransition(testCt
 		serverOne, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		expectedClusters *stages.Clusters = &stages.Clusters{}
-	serversConfig = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
-	jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig}}
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig}}
 	)
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 0, Mode: stages.InstantMode, Version: 0.0})
 
@@ -36,8 +36,8 @@ func Test_Parse_Cluster_Config_When_Default_Mode(testCtx *testing.T) {
 		serverOne, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		expectedClusters *stages.Clusters = &stages.Clusters{}
-	serversConfig = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
-	jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"sessionTimeout": float64(60)}, "version": 1.0}}
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"sessionTimeout": float64(60)}, "version": 1.0}}
 	)
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 60, Mode: stages.SessionMode, Version: 1.0})
 
@@ -56,10 +56,30 @@ func Test_Parse_Cluster_Config_When_Config_Valid_No_Defaults(testCtx *testing.T)
 		serverOne, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		expectedClusters *stages.Clusters = &stages.Clusters{}
-	serversConfig = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
-	jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "INSTANT"}, "version": 1.0}}
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "INSTANT"}, "version": 1.0}}
 	)
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), Mode: stages.InstantMode, Version: 1.0})
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Parse_Cluster_Config_When_Concurrent_Transition_Mode(testCtx *testing.T) {
+	// given
+	var (
+		expectedError error               = nil
+		serverOne, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
+		serverTwo, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
+		expectedClusters *stages.Clusters = &stages.Clusters{}
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "CONCURRENT"}, "version": 1.0}}
+	)
+	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), Mode: stages.ConcurrentMode, Version: 1.0})
 
 	// when
 	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
@@ -76,8 +96,8 @@ func Test_Parse_Cluster_Config_When_Config_Valid_With_UUID(testCtx *testing.T) {
 		serverOne, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		expectedClusters *stages.Clusters = &stages.Clusters{}
-	serversConfig = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
-	jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"uuid": "1027596f-1034-11e4-8334-600308a82410", "servers": serversConfig, "version": 1.0}}
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"uuid": "1027596f-1034-11e4-8334-600308a82410", "servers": serversConfig, "version": 1.0}}
 	)
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuid.Parse("1027596f-1034-11e4-8334-600308a82410"), Mode: stages.InstantMode, Version: 1.0})
 

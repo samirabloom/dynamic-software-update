@@ -2,41 +2,27 @@ package stages
 
 import (
 	"fmt"
-	"io"
+	"proxy/tcp"
 	"net"
 	"strings"
 	"time"
 )
 
-type TCPConnection interface {
-	Read(readBuffer []byte) (n int, err error)
-	Write(writeBuffer []byte) (n int, err error)
-	Close() error
-	LocalAddr() net.Addr
-	RemoteAddr() net.Addr
-	SetDeadline(t time.Time) error
-	SetReadDeadline(t time.Time) error
-	SetWriteDeadline(t time.Time) error
-	ReadFrom(r io.Reader) (int64, error)
-	CloseRead() error
-	CloseWrite() error
-	SetLinger(sec int) error
-	SetKeepAlive(keepAlive bool) error
-	SetKeepAlivePeriod(d time.Duration) error
-	SetNoDelay(noDelay bool) error
+type RoutingContext struct {
+	headers []string
 }
 
 type ChunkContext struct {
 	description            string
 	data                   []byte
-	to                     TCPConnection
-	from                   TCPConnection
+	to                     tcp.TCPConnection
+	from                   tcp.TCPConnection
 	err                    error
 	totalReadSize          int64
 	totalWriteSize         int64
 	pipeComplete           chan int64
 	firstChunk             bool
-	cluster                *Cluster
+	routingContext         *RoutingContext
 	clientToServer         bool
 }
 
@@ -69,9 +55,6 @@ func (context *ChunkContext) String() string {
 	}
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
 	output += fmt.Sprintf("\t totalWriteSize: %d\n", context.totalWriteSize)
-	if context.cluster != nil {
-		output += fmt.Sprintf("\t cluster UUID: %s\n", context.cluster.Uuid)
-	}
 	output += "}\n"
 	return output
 }
@@ -83,7 +66,7 @@ func NewForwardPipeChunkContext(from *net.TCPConn, pipeComplete chan int64) *Chu
 		from:           from,
 		pipeComplete:   pipeComplete,
 		firstChunk:     true,
-		cluster: nil,
+		routingContext: nil,
 		clientToServer: true,
 	}
 }
@@ -96,7 +79,7 @@ func NewBackPipeChunkContext(forwardContext *ChunkContext) *ChunkContext {
 		to:             forwardContext.from,
 		pipeComplete:   forwardContext.pipeComplete,
 		firstChunk:     true,
-		cluster: forwardContext.cluster,
+		routingContext: forwardContext.routingContext,
 		clientToServer: false,
 	}
 }

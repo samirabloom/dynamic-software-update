@@ -34,9 +34,9 @@ type TCPConnection interface {
 
 
 type DualTCPConnection struct {
-	expectedStatusCode  int
-	connections         []TCPConnection
-	successfulIndex     int
+	ExpectedStatusCode  int
+	Connections         []TCPConnection
+	SuccessfulIndex     int
 }
 
 func NewDualTCPConnection(expectedStatusCode int, addresses ...*net.TCPAddr) *DualTCPConnection {
@@ -49,18 +49,18 @@ func NewDualTCPConnection(expectedStatusCode int, addresses ...*net.TCPAddr) *Du
 		connections[index] = connection
 	}
 	return &DualTCPConnection{
-		expectedStatusCode: expectedStatusCode,
-		connections:        connections,
-		successfulIndex:    -1,
+		ExpectedStatusCode: expectedStatusCode,
+		Connections:        connections,
+		SuccessfulIndex:    -1,
 	}
 
 }
 
 func (dualTCPConnection *DualTCPConnection) Read(readBuffer []byte) (int, error) {
-	if dualTCPConnection.successfulIndex == -1 {
+	if dualTCPConnection.SuccessfulIndex == -1 {
 		return dualTCPConnection.readMultiple(readBuffer)
 	} else {
-		return dualTCPConnection.connections[dualTCPConnection.successfulIndex].Read(readBuffer)
+		return dualTCPConnection.Connections[dualTCPConnection.SuccessfulIndex].Read(readBuffer)
 	}
 }
 
@@ -70,14 +70,14 @@ func (dualTCPConnection *DualTCPConnection) readMultiple(readBuffer []byte) (int
 		groupErr error
 		groupReadBuffer []byte
 	)
-	for index, connection := range dualTCPConnection.connections {
+	for index, connection := range dualTCPConnection.Connections {
 		connectionReadBuffer := make([]byte, len(readBuffer))
 		count, err := connection.Read(connectionReadBuffer)
-		if readSuccessful(connectionReadBuffer, dualTCPConnection.expectedStatusCode) {
+		if readSuccessful(connectionReadBuffer, dualTCPConnection.ExpectedStatusCode) {
 			groupCount = count
 			groupErr = err
 			groupReadBuffer = connectionReadBuffer
-			dualTCPConnection.successfulIndex = index
+			dualTCPConnection.SuccessfulIndex = index
 		}
 		// allow for all reads to fail
 		if groupErr == nil {
@@ -108,7 +108,7 @@ func (dualTCPConnection *DualTCPConnection) Write(writeBuffer []byte) (int, erro
 		maxCount int
 		errorsList string
 	)
-	for index, connection := range dualTCPConnection.connections {
+	for index, connection := range dualTCPConnection.Connections {
 		count, err := connection.Write(writeBuffer)
 		if err != nil {
 			if len(errorsList) > 0 {
@@ -130,17 +130,21 @@ func (dualTCPConnection *DualTCPConnection) Write(writeBuffer []byte) (int, erro
 func (dualTCPConnection *DualTCPConnection) String() string {
 	var output string = ""
 	output += "\n{\n"
-	for index, connection := range dualTCPConnection.connections {
+	for index, connection := range dualTCPConnection.Connections {
 		output += fmt.Sprintf("\t connections[%d]: %s -> %s\n", index, connection.LocalAddr(), connection.RemoteAddr())
 	}
 	output += "}\n"
 	return output
 }
 
-func (dualTCPConnection *DualTCPConnection) Close() {
-	for _, connection := range dualTCPConnection.connections {
-		connection.Close()
+func (dualTCPConnection *DualTCPConnection) Close() error {
+	for _, connection := range dualTCPConnection.Connections {
+		err := connection.Close()
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (dualTCPConnection *DualTCPConnection) LocalAddr() net.Addr {
@@ -154,7 +158,7 @@ func (dualTCPConnection *DualTCPConnection) RemoteAddr() net.Addr {
 }
 
 func (dualTCPConnection *DualTCPConnection) SetDeadline(time time.Time) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetDeadline(time)
 		if err != nil {
 			return err
@@ -164,7 +168,7 @@ func (dualTCPConnection *DualTCPConnection) SetDeadline(time time.Time) error {
 }
 
 func (dualTCPConnection *DualTCPConnection) SetReadDeadline(time time.Time) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetReadDeadline(time)
 		if err != nil {
 			return err
@@ -174,7 +178,7 @@ func (dualTCPConnection *DualTCPConnection) SetReadDeadline(time time.Time) erro
 }
 
 func (dualTCPConnection *DualTCPConnection) SetWriteDeadline(time time.Time) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetWriteDeadline(time)
 		if err != nil {
 			return err
@@ -189,7 +193,7 @@ func (dualTCPConnection *DualTCPConnection) ReadFrom(reader io.Reader) (int64, e
 }
 
 func (dualTCPConnection *DualTCPConnection) CloseRead() error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.CloseRead()
 		if err != nil {
 			return err
@@ -199,7 +203,7 @@ func (dualTCPConnection *DualTCPConnection) CloseRead() error {
 }
 
 func (dualTCPConnection *DualTCPConnection) CloseWrite() error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.CloseWrite()
 		if err != nil {
 			return err
@@ -209,7 +213,7 @@ func (dualTCPConnection *DualTCPConnection) CloseWrite() error {
 }
 
 func (dualTCPConnection *DualTCPConnection) SetLinger(seconds int) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetLinger(seconds)
 		if err != nil {
 			return err
@@ -219,7 +223,7 @@ func (dualTCPConnection *DualTCPConnection) SetLinger(seconds int) error {
 }
 
 func (dualTCPConnection *DualTCPConnection) SetKeepAlive(keepAlive bool) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetKeepAlive(keepAlive)
 		if err != nil {
 			return err
@@ -229,7 +233,7 @@ func (dualTCPConnection *DualTCPConnection) SetKeepAlive(keepAlive bool) error {
 }
 
 func (dualTCPConnection *DualTCPConnection) SetKeepAlivePeriod(duration time.Duration) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetKeepAlivePeriod(duration)
 		if err != nil {
 			return err
@@ -239,7 +243,7 @@ func (dualTCPConnection *DualTCPConnection) SetKeepAlivePeriod(duration time.Dur
 }
 
 func (dualTCPConnection *DualTCPConnection) SetNoDelay(noDelay bool) error {
-	for _, connection := range dualTCPConnection.connections {
+	for _, connection := range dualTCPConnection.Connections {
 		err := connection.SetNoDelay(noDelay)
 		if err != nil {
 			return err
