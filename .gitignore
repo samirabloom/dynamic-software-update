@@ -61,3 +61,13 @@ wrk
 # test generated #
 ##################
 system_test_config.json
+
+# latex #
+#########
+*.aux
+*.log
+*.out
+*.pdf
+*.synctex.gz
+*.toc
+*.dvi

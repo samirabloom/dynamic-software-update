@@ -1,0 +1,629 @@
+\documentclass[a4paper,11pt,twoside]{article}
+\usepackage[left=2.5cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+
+\usepackage[nodayofweek]{datetime}
+\longdate
+\setcounter{tocdepth}{2}
+
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\pagestyle{fancyplain}
+
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{ multicol }
+\usepackage[title,titletoc,toc]{appendix}
+\fancyhf{}
+
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
+
+\usepackage[title,titletoc,toc]{appendix}
+\fancyhf{}
+\lhead{\fancyplain{}{Highly Reliable Upgrading of Software Containers}}
+%\rhead{\fancyplain{}{\today}}
+\cfoot{\fancyplain{}{\thepage}}
+
+\newenvironment{Figure}
+  {\par\medskip\noindent\minipage{\linewidth}}
+  {\endminipage\par\medskip}
+
+\title{Highly Reliable Upgrading of Software Containers\\\Large{--- Literature Survey \& Progress Report ---}}
+\author{Samira Rabbanian\\
+  samira.rabbanian13@ imperial.ac.uk \\
+  \small{Supervisor: Dr.\ Cristian Cadar}\\
+  \small{Imperial College London}}
+
+\begin{document}
+\maketitle
+
+
+\begin{titlepage}
+    \begin{center}
+        \vspace*{2cm}
+        
+        \large
+        {Imperial College London}\\
+        \large
+         \vspace*{0.5cm}
+        {Department of Computing}
+        
+        \vspace{4.5 cm}
+        \large
+        {Highly Reliable Upgrading of Software Containers}\\
+        {by}\\
+        {Samira Rabbanian (SR)}
+        
+        \vspace{4.5cm}
+        
+
+  	\large {Submitted in partial fulfilment of the requirements for the MSc Degree in Computing Science of Imperial College London }\\
+  	
+\vspace*{1.5 cm}  	
+  \large{September 2014}\\ 
+           
+    \end{center}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+\section{Introduction}
+
+Reliable software is important in many sectors such as E-commerce, healthcare, banking, air traffic control and nuclear control.
+
+In safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In E-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
+
+All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive. In addition, no existing system or technique is considered robust enough to be used widely for fully automated continuous delivery of upgrades into production.
+ 
+This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.\\  
+
+\section{Overview}
+Software reliability is compromised of the following main activities:
+
+  \begin{list}{-}{}
+  \itemsep0em
+  \item Error prevention 
+  
+  \item Fault detection and removal
+  
+  \item Fault resilience
+  \end{list}
+
+\noindent
+The Institute of Electrical and Electronics Engineers (IEEE) defines reliability as "the ability of a system or component to perform its required functions under stated conditions for a specified period of time". 
+This section of the report will describe different approaches and technologies used to achieve and maintain software reliability, specifically to support the activities mentioned above. 
+
+\subsection{Software High Availability }\label{subsec:rules}
+System availability is the percentage of time the system is available to users. A highly available application is fault tolerant and reliable. A reliable system ensures that failure of a single component in the system does not cause failure of the entire application. In a reliable system data updates are not lost and the most recent data is available within acceptable tolerances. 
+
+
+\subsection{Software Update} 
+
+Once faults, such as bugs and security vulnerabilities, have been detected software must be updated to remove these faults. Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP) \footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.
+
+Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, updating or patching software is not risk free as stated by Fred Brooks in The Mythical Man-Month. \\
+
+\noindent\textit{ "The fundamental problem with program maintenance is that fixing a defect has a substantial (20-50\%) chance of introducing another. So the whole process is two steps forward and one step back"}  
+
+\hfill \textbf{Fred Brooks, Turing Award Winner (1999) – The Mythical Man-Month} \\
+
+Software update typically requires restarting of the system that is to be updated. This can happen in two ways either the system is stopped, the update is applied and the system is restarted. Alternatively the update is applied while the system is still running and then the application is restarted. In the second scenario the system's binary code on persistent storage (\textit{e.g.} disk) is updated while the system is running in memory before it is restarted and the new binary code is loaded into memory \cite{Java}. 
+
+In both cases performing the code update requires the system to be restarted resulting in a period of unavailability. Many applications are performing critical life saving functions and cannot be interrupted, for example, nuclear control systems, air-traffic controllers or hospital life-support software. In addition, other applications have an extremely high downtime cost such as E-commerce, telecommunications and banking systems \cite{fly}. It is therefore extremely important to support seamless upgrade where the system stays fully available during the upgrade. 
+
+Dynamic software update also known as live software update is the process of updating parts of a program without having to interrupt its execution. Dynamic system updates can be performed at either a hardware level or a software level. Hardware based dynamic updating are based on hardware redundancy. Systems such as Tandem Nonstop \cite{Tandem} used in the healthcare and banking industries support dynamic hardware updating and resilience to hardware failure. Detailed techniques and approaches that support dynamic software update are described in section \ref{DSU}. 
+
+
+\subsection{Reliable Software Architectures} \label{Architectures}
+There are multiple architectures that increase high availability and support dynamic software update. These include application clustering, active-passive architectures, data replication and clustered databases.
+
+\subsubsection{Application Clustering}
+A common practice to increase availability and fault tolerance is using a cluster of multiple application (or component) instances \cite{Clustring}. Most commonly a load balancer is used to distribute the load between nodes in the cluster by pushing requests to each node \cite{balancer}. For example, a load balancer can receive requests for a web application and distribute the requests between different web services so that the load is distributed across all web services. Alternatively, the nodes within the cluster can pull requests as each node becomes available. For instance, a request queue on a Message Oriented Middleware (MOM) or a message broker such as ActiveMQ \footnote{ \url{http://activemq.apache.org/}} or RabbitMQ \footnote{ \url{http://www.rabbitmq.com/}} can be used to allow nodes to pull requests (Section \ref{MOM}).
+
+When application requests are balancing across multiple nodes, if a single application (or component) instance fails, other nodes in the cluster will still be available to process requests. This clustering approach therefore improves overall application availability. In addition, a clustering approach provides an increased ability to handle spikes in load. Spikes in load are spread across multiple nodes reducing their impacts on any given server. Moreover, an application that is deployed as a cluster is typically easy to scale horizontally by adding additional nodes because it has been designed to run as a cluster \cite{Clustring}.
+
+One common approach widely used in industry to support dynamic software update is a content switching load balancer (\textit{e.g.} F5 \footnote{\url{https://f5.com/}}, Citrix  NetScaler \footnote{\url{http://www.citrix.com/products/netscaler-application-delivery-controller/overview.html}}) in front of an application cluster \cite{balancer}. To perform such an upgrade the cluster is typically split into two halves called A and B. First all load is drained from A by preventing any new requests (\textit{e.g.} business transactions) from being processed. Once A has completed processing all existing requests, it is upgraded and restarted. Now A can start to accept new requests and B is drained and subsequently upgraded. However, this approach is slow and not free from risk as it requires manual interaction with the load balancer to split the cluster and re-route traffic between each step.
+
+\subsubsection{Active-Passive Architecture}
+In addition to clustering another common approach to increase software reliability is to have an active-passive architecture where there are two application instances  (or two application clusters). One of the application instances (or application clusters) is actively receiving requests while the other is passive and it is not processing any load \cite{active_passive}. This arrangement improves reliability because if the active instance starts to behave incorrectly or crashes, all requests can be immediately routed to the passive instance, resulting in the passive instance becoming active. A content switching router can be used to automate the routing of requests to the passive instance as soon as it detects the active instance is no longer correctly processing requests. This architecture can also be used to support reliable dynamic software updates. The passive instance can be updated first and requests can slowly start to be routed to the passive instance. During this period if the software update applied to the passive instance fails or causes it to crash, all requests can be immediately routed back to the active instance. However, this approach is wasteful since a complete backup application instance or backup application cluster is required. In addition, this approach is slow and it is not free from risk as it requires manual interaction with the load balancer to re-route traffic.
+
+\subsubsection{Data Replication}
+Data replication can also be used to increase software reliability. Conventional SQL Relation Database Management Systems (RDBMS) typically do not operate in a cluster \cite{Replication}. This is because managing ACID transactions and locking across multiple nodes in a cluster requires commit and rollback to be coordinated across multiple nodes. In addition, consistencies, such as foreign key relationships, must be managed across multiple nodes where the parent and child of the foreign key relationship may be on separate nodes. Although clustered RDBMS do exist, it is expensive, complex and can be error prone. Alternatively, to improve software reliability data can be replicated to a backup database. This works in a similar way to the active-passive architecture where one database is used to process active requests and a second database is only receiving replicated changes and not directly responding to requests. If the active database fails or crashes the passive database can immediately start processing requests and becomes the new active database  \cite{Replication}.
+
+To support dynamic updating of databases, data replication can be used where a backup database receives a replicated copy of the changes made to the primary database. This supports dynamic update in a similar way to the active-passive architecture where software updates can be initially applied to the replicated database; once this is completed, the passive database can replace the active database (and the replication direction is reversed). If the software update fails or causes the database to crash, the non-updated database is still available and can immediately start processing requests again.
+
+\subsubsection{Clustered Databases}
+As the requirements for high availability and high scalability have increased, there has been a shift from using conventional SQL RDBMS to clustered NoSQL databases. In addition, shared database integration is no longer a common technique as it is now widely recognized to break encapsulation and introduce high-coupling. Hence, it is no longer as important for databases to provide strong data integrity. NoSQL databases are designed with clustering and high availability as a priority over strong data integrity and locking \cite{NoSQL}. Therefore, NoSQL databases run in large clusters and replicate data between multiple nodes making them very resilient to failure of one or more nodes. In addition, they are also able to handle rapid increases in load by spreading the load across multiple nodes in the cluster. As NoSQL databases do not provide strong data integrity, it is typically much simpler to dynamically apply updates. For example a document database may store documents in the form of JavaScript Object Notation (JSON) \footnote{\url{http://www.json.org/}}. When the data model is updated by adding or removing fields, no changes to the database are required. Instead applications reading or writing documents are expected to handle different document formats in a flexible way. If such a change was required in a RDBMS, the table structure would need to be modified. The modification is a highly risky activity in a live database and would typically require application downtime and a full database backup.
+
+\subsection{Reliable Software Techniques}
+In addition to architectures that support software reliability, there are also techniques that are commonly used to increase reliability of applying software updates. These include automated deployment, configuration as code and continuous delivery.
+
+\subsubsection{Automated Deployment}
+Automated deployment is used to reduce the cost and the risk associated to installing or updating software. Such an approach is particularly important for cluster or active-passive architectures where the same application must be installed or updated repeatedly. Automated deployment involves using fully scripting application installation or update processes including any operating system (OS) installation, package installation, application installation and configuration \cite{Automated}. There are several tools that are commonly used for automated deployment such as Puppet \footnote{\url{https://puppetlabs.com/}}, Chef \footnote{\url{http://www.getchef.com/chef/}}, Ansible \footnote{\url{http://www.ansible.com/home}} and Salt \footnote{\url{http://www.saltstack.com/enterprise/}}.
+
+\subsubsection{Configuration As Code}
+Configuration as code is a technique used to ensure all environment configuration and settings for an application installation or update are written as code often in the form of an automated deployment script. Such an approach ensures that applications are deployed with the correct environment configuration and that the development team and infrastructure team can easily agree the required configuration \cite{Continuous Delivery}. This approach reduces the risk of deployment by ensuring configuration settings can be tested and reapplied identically every time. In addition, such an approach allows configuration changes to be versioned and changed in-line with the application code or any software updates guaranteeing that the correct configuration for a given update is applied.
+
+\subsubsection{Continuous Delivery}
+Continuous delivery is a software development approach that ensures application updates can be deployed to production at any point throughout the development life cycle. To support continuous delivery a pipeline is typically used to promote application updates automatically through several stages from initial development through to production \cite{Continuous Delivery}. Continuous delivery supports reliable software update by ensuring that each update has been applied to multiple stages prior to reaching production. In addition, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
+
+
+\section{Related Work}
+Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. This section summarizes different approaches that have been proposed over the past forty years for highly reliable dynamic software upgrade.
+
+\subsection{Dynamic Software Update Systems} \label{DSU}
+In the past decades several systems have been developed to support dynamic software updates. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
+
+\subsubsection{Code Update}
+Systems such as Ksplice \cite{Ksplice}, OPUS \cite{{opus}} , DynaMOS \cite{Dynamos}, and POLUS \cite{PLOUS}  replace the old code with a small piece of code, called trampoline. Trampoline executes the replaced instruction and then will jump to the function's new version. One of the main weaknesses of using this mechanism is that the trampoline requires a writable code segment, which makes the application vulnerable to code injection attack \cite{Ksplice}. 
+
+Ginseng \cite{Ginseng} and K42 \cite{K42} systems use indirection instead of trampolines. Ginseng uses binary rewriting to direct function calls into calls via function pointers, while K42's OS uses indirection through an object translation table. In the aforementioned systems updates occur by redirecting indirection targets to the new version. However, using this technique can add overhead to normal execution process. 
+
+Dynamic software update systems mentioned above affect code updates at the granularity of individual functions or objects. However, those systems are not capable of updating functions that contain event-handling loops or functions like \textit{main} that rarely end. Hence, systems such as Kitsune  \cite{Kitsune}, UpStare  \cite{UpStare}, Ekiden  \cite{Eiken}, which focus on updating the whole program rather than individual functions have been developed. UpStare uses a stack reconstitution update mechanism. In this mechanism the running application automatically unrolls the call stack when an update occurs, while saving all stack frames. It then modifies the call back by replacing old functions with their new version, and at the same time mapping data structures in the old frames to their new versions. In contrast, Kitsune and Ekiden both use a manual approach by relying on the programmer to migrate control to the correct equivalent point in the new version of the program.
+
+
+\subsubsection{Data Update} 
+
+Most dynamic software update systems handle the data update by using object replacement. The system or the developer allocates replacement objects and initialize them using data from the old version. Ginseng uses type-wrapping approach. In this approach the programs are compiled so that \textit{struct}s have an added version field and extra “slop” space to allow for future extensions. Transformation of old objects will be initiated by inserting calls to mediator functions which access updated objects. Ksplice and DynaMOS do not change the old objects but allocate shadow data structures containing only the new fields. Shadow data structures have the advantage of changing fewer functions by an update. When a new field is added to a \textit{struct}, only the code using that field is affected but not all the code that uses the \textit{struct}. 
+
+
+\subsection{Dynamic Software Update Safety}
+Choosing when to safely apply updates has been one of the main concerns of the prior work on dynamic software updating. Some solutions rely on no updates to active code, \textit{i.e.} no thread is running that code, and no thread's stack refers to it, (\cite{Safety 32}, \cite{Ksplice}, \cite{K42}, \cite{Safety 43} ). This restriction reduces post-update errors but it does not eliminate them, and additionally imposes strong restrictions on the form of an update and how quickly it can be applied. Moreover, some researchers suggest that no updated code should access data generated prior to the update being applied (\cite{Safety 213}, \cite{Safety 214}, \cite{Safety 267}). This technique ensures that updates with type difference do not pose a threat to type safety. The final approach suggested by researchers is using transactions in a distributed or local context to enforce stronger timing constrains (\cite{Safety 173}, \cite{Safety 215}, \cite{Safety 279}). However, it is currently been shown that update timing may not be a main concern and a few programmer-designed update points are typically sufficient to determine safe and timely update states (\cite{Safety 213}, \cite{Kitsune}, \cite{Safety 131}, \cite{Safety 108}). 
+
+\subsection{Software Update Using Multi-Version Framework} \label{upgrade1} 
+The idea of N-version programming, also known as multi-version programming, was originally introduced in 1970s. This method is defined as the independent generation of more than two functionally equivalent programs. Separate developers develop each version of the program all using the same initial specification. These versions will be run concurrently in the application environment. Each version will handle identical inputs and the output of all the versions will be collected and the voting scheme are used to decide which version(s) of the program behave correctly \cite{N-version programming}. N-version programming technique was originally proposed as a method of providing reliable and fault tolerance software. This methodology has inspired many researchers to propose new techniques for development of reliable software applications 
+
+In 1999 Cook \textit{et al.} introduced a multi-version framework called Hercules for the highly reliable upgrading of software components \cite{Cook}. In this framework instead of removing the old version of a component, multiple versions of the same component are kept running in parallel and the behavior of each version is utilized. This approach allows the system integrity to be maintained in the presence of bugs introduced due to the new version of the component. Therefore, Hercules ensures reliability by keeping existing versions of the component running and the old version is only fully removed when the new version has satisfied all its rules. Additionally, Berger and Zorn proposed a replica framework each with a different randomized layout of objects within the heap to provide probabilistic memory safety \cite{Berger}. Furthermore Veeraraghavan et al. suggested running multiple replicas with complementary thread schedules to avoid errors in multi-threaded programs \cite{Veeraraghavan}. 
+
+More recently, Hosek \textit{et al.} proposed a novel framework called Mx, which takes advantage of the idle resources made available by multi-core platforms, and allows applications to survive crash errors introduced by incorrect software updates (\cite{Cadar1}, \cite{Cadar2}). Similar to Hercules, Mx achieves reliability by running the old and new version of an application concurrently. The fundamental difference between the two frameworks is that Hercules requires the programmer to define the functionality of each component version, whilst Mx targets crash bugs and is fully automated. Additionally, in the latter system all versions are live at all times and when Mx detects that one of the versions is not behaving correctly or has crashed, the correctly behaving version is used to handle all software requests. This allows appropriate actions to be taken at a convenient moment; at this point, the incorrectly behaving version can be fixed or restarted. 
+
+
+\section{Background}
+This section explains and justifies the technologies that will be used in the implementation of the dynamic software update system proposed in section \ref{Implementation}.
+ 
+\subsection{Efficient Cluster Management} 
+
+As described in section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
+
+\subsubsection{Virtualization} 
+
+Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system \footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
+
+The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.
+
+
+\noindent
+\textbf{Hypervisor Virtualization}\\
+\noindent
+Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware \footnote{\url{http://www.vmware.com/}} or VirtualBox \footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\\
+
+
+\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=1]{Hypervisor}
+  \caption{Hypervisor Type 1 vs. Type 2 \cite{Hypervisors}}
+  \label{Hypervisor}
+\end{figure}
+\vspace{-15pt}
+
+\noindent
+\textbf{Container Virtualization} 
+
+\noindent
+Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2) \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \\
+
+
+\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=1]{containervsvm}
+  \caption{Containers vs. Traditional Virtual Machines \textsuperscript{\ref{AAA}}}%\footnotemark %\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
+  \label{vm vs container}  
+\end{figure}
+\vspace{-18pt}
+
+\footnotetext{ \label{AAA}\url{https://www.docker.io/the_whole_story/}} 
+
+\noindent
+\\\textbf{\textit{Linux Containers}}
+
+\noindent
+Container virtualization has been developed independently for different operating systems such as Linux OpenVZ \footnote{\url{http://openvz.org/Main_Page}}, Solaris Containers \footnote{\url{http://www.oracle.com/technetwork/server-storage/solaris/containers-169727.html}}, FreeBSD Jails \footnote{\url{http://www.freebsd.org/cgi/man.cgi?jail}}. A popular example is Linux Containers (LXC) \footnote{\label{LCX} \url{https://linuxcontainers.org/}} that allows a complete copy of the Linux OS to run in a container without the overhead of running a type-2 hypervisor. LXC uses kernel namespaces, AppArmor \footnote{\url{https://wiki.ubuntu.com/AppArmor}}, SELinux \footnote{\url{http://selinuxproject.org/page/Main_Page}}, chroots, and Control groups to provide container virtualization. 
+
+\noindent
+Kernel namespaces is used for virtualization of:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item Process identifiers
+  \item Network interface controllers, firewall rules and routing tables
+  \item Hostname
+  \item Filesystem layouts 
+  \item Interprocess communication
+  \end{list}
+
+\noindent 
+Control groups is used to provide:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item Resource limiting to control use of resources such as memory
+  \item Prioritization to control the share of the CPU being used
+  \item Accounting to measure how much resources are being used
+  \end{list}
+
+\noindent
+Chroots, also know as “chroot jails”, are used to change the apparent root directory in the filesystem ensuring applications cannot view files and folders outside of the chroot.
+
+AppArmor and SELinux are used to improve security and ensure that applications cannot break out of the LXC \cite{security}.
+
+LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system \footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \\
+
+%\textsuperscript{\ref{LCX}}
+
+\noindent
+\textbf{\textit{Docker}}
+
+\noindent
+Docker is an open source application (or framework) that extend and simplifies LXC to provide Linux Containers. Docker allows easy creation of lightweight, portable, self-sufficient containers. Docker extends LXC by providing many features that make it is easier to develop, deploy, automate and share containers \footnote{\label{dockerB} \url{https://www.docker.io/the_whole_story/}}. Docker simplifies containerization supporting techniques such as Continuous Delivery by allowing a Docker container built and tested on a developer's laptop to be run anywhere. Docker containers can run on bare metal servers, virtual machines, OpenStack \footnote{\url{https://www.openstack.org/}} clusters or on a service provider's infrastructure such as Digital Ocean \footnote{\url{https://www.digitalocean.com/}}. 
+
+Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems. A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git \footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another (Figure \ref{docker}). 
+
+In addition,  Docker provides a scripting language for creating containers and images based on other images. The script, called a Dockerfile, defines the differences between the new image and the previous base image. Dockerfiles allow the execution of shell commands, the configuration of processes to run when the container is started and control over the public interface of the container including exposed ports and directories. 
+
+Docker also provides a registry of containers called the Docker Index. It allows containers to be publicly shared. The index contains images created by committing a filesystem layer and images created by the Docker Index build system using a Dockerfile \cite{docker2}.
+   
+With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately \footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \\
+
+\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=1]{docker}
+  \caption{Basic Docker Function \textsuperscript{\ref{dockerC}}} %\footnotemark
+  \label{docker}
+\end{figure}
+\vspace{-18pt}
+
+%\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
+
+\subsection{CoreOS} \label{CoreOS}
+CoreOS is an open source lightweight operating system based on the Linux Kernel which is designed for security, consistency and relability \footnote {\label{coreos} \url {https://coreos.com/using-coreos/}}. CoreOS does not support any package management tools such as apt \footnote{\url{https://help.ubuntu.com/12.04/serverguide/apt-get.html}} or yum \footnote {\url{http://yum.baseurl.org/}} instead it is a base OS for Docker containers. Therefore, any application can run on CoreOS, using a Docker container. CoreOS has an active/passive dual-partition scheme, similar to ChromeOS \footnote{\url{http://www.chromium.org/chromium-os}} , which is used to update the OS as a single unit instead of package by package. Initially, the system is booted into an active partition, once a new update is detected it is downloaded and installed to the passive parition. To ensure the installation does not affect the running system, it is rate limited using Linux cgroups. The system will switch to the partition with the latest update once it is rebooted \footnote {\label{coreos} \url {https://coreos.com/using-coreos/}}. CoreOS also has several tools to support simple cluster deployment including:
+
+  \begin{list}{-}{}
+  \itemsep0em
+  \item \underline{etcd} - An open source distributed key value store that handles distributed locking and master election
+  
+  \item \underline{fleet} - A combination of systemd (a system management daemon for Linux kernal) and etcd to provide a distributed init system that supports the control of system services across a cluster. Fleet is a particularly effective method of querying and installing Docker container clusters across a CoreOS cluster.
+  \end{list}
+
+\noindent
+
+
+
+\subsection{Messaging Systems} \label{MOM}
+Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ) \footnote{\label{ZeroMQ} \url{http://zeromq.org/}} are the most common messaging standards. 
+
+\subsubsection{Broker-Based Messaging Systems} 
+AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
+
+\subsubsection{Zero Broker Messaging Systems} 
+In a broker-less messaging system each application directly talks to other applications without any middleware, hence, there are no bottlenecks associated with these systems. The application can manage and maintain its own messaging infrastructure and so encapsulation and separation of concerns are increased.
+
+ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications \footnote{\label{ZeroMQ} \url{http://zeromq.org/}}. 
+
+ZeroMQ provide sockets that carry atomic messages across various transports such as TCP or UDP and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
+
+More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ \footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist.  
+
+\section{Design} \label{Design}
+To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2 \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
+
+In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
+
+This project proposes a simple lightweight system to support reliable dynamic software updates suitable for continuous delivery into production. In the proposed system the updated version will run concurrently with previous stable versions. The updated system will be monitored automatically and if the system behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
+
+Four mechanisms will be supported to enable different reliable update strategies depending on the specific software requirements.
+
+\underline{Rapid Update} -  In this mechanism the updated version of software will immediately process all requests. The non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+
+\underline{New Session Update} - This update mechanism will only switch new sessions to the updated version. A new session will be identified by no requests being received from a client within a configured time period. As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
+
+\underline{Long Term Update} - This mechanism will switch new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
+
+\underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
+
+In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{system} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+
+\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.70]{proposed_solution_2}
+  \caption{Component interactions within the proposed  dynamic software update system}
+  \label{system}
+\end{figure}
+\vspace{-18pt}
+\noindent
+The following technology stack has been chosen for the dynamic software update system:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer
+  \item CoreOS as a lightweight operating system to host Docker containers
+  
+  \item Etcd as a highly available distributed key value store used for shared configuration and as a software version registry
+  
+  \item Go \footnote{\url{http://golang.org/}} programming language because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Go will be used to build the content switching load balancer
+  
+  \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware  
+
+    \end{list}
+
+\section{Implementation} \label{Implementation}
+To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented as described in this section.  
+
+\subsection{Message Based Proxy Using ZeroMQ}
+\noindent
+The first proxy that supports dynamic software update was a HTTP reverse proxy  based on ZeroMQ messaging system. The proxy was written in Go programming language. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}.
+
+The ZeroMQ load balancing HTTP reverse proxy is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
+ 
+\begin{list}{-}{}
+  \itemsep0em
+  \item \textbf{upstream} is responsible for receiving HTTP requests and replying with the HTTP response.
+  
+  \item \textbf{router} is responsible for distributing the request across four downstream threads.
+  
+  \item \textbf{downstream} is responsible for sending HTTP requests to the two Docker containers containing the Netty web services and receiving the responses.
+\end{list}
+
+quantitative analysis of the ZeroMQ based proxy showed that a messaging system is not the correct choice for a proxy acting as a dynamic software update system. Hence, messaging system free proxies were developed as described in the next sections.
+
+%\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.70]{prototype_2}
+  \caption{ZeroMQ, Go and Docker Prototype}
+  \label{prototype}
+\end{figure}
+\vspace{-18pt}
+
+\subsection{Socket Based Proxy With Content Counting}
+\noindent
+Socket based proxy is implemented using raw Go sockets without a messaging system. This proxy uses the Transfer-Encoding and Content-Length HTTP header fields to detect the end of a request or response. Quantitative analysis of this proxy described in section xxxx showed significant performance overhead. Therefore, another version of the socket based proxy was developed as described in the next section.    
+
+\subsection{TCP Socket Based Proxy With End Of File}
+The final version of the proxy developed using TCP sockets. This proxy does not use any messaging systems and it uses the End of File (EOF) signal to detect the end of a request or response. The TCP socket based proxy is arranged as shown in Figure xxx and performs the following functions:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item \textbf{Accept Loop} accepts incoming HTTP connections on a listener and creates a forward pipe for each request.
+
+  \item \textbf{Forward Pipe} creates the read, route, write and complete stages of the proxy for processing the request.
+  \begin{list}{-}{}
+  \itemsep0em
+  \item \textbf{Read} stage reads the requests from the HTTP connection and passes the read data to the route stage. When there is no more data to be read from the connection, the read stage will call the complete stage.
+
+  \item \textbf{Route} stage \\
+  			-  -  - load balancer and send the requests to the correct instance of the cluster\\
+  			-  -  - create backward pipe\\
+  			-  -  - set cookie headers\\
+  			-  -  - parse the headers for metrics\\
+  
+  \item \textbf{Write} stage writs the request received from the route stage to the server that is chosen in the route stage.
+  \item \textbf{Complete} stage shuts down the writing and reading sides of the TCP connection when the request has been read and written to the server. 
+  
+\end{list}
+  \item \textbf{Backward Pipe} creates the same stages as the forward pipe for the response. The read stage of the backward pipe reads the response from the server, and the write stage writes the response to the HTTP connection.
+\end{list}
+
+\subsection{Upgrade strategies}
+xxxxx
+
+\subsubsection{config service for upgrade} 
+
+\subsection{Dockerising the proxy}
+Talk about how I dockerised the proxy
+why didn't use fleet system and coreOS? 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Evaluation}
+The system to support dynamic software update will be evaluated as described below.
+
+\subsection{Qualitative Analysis}
+\noindent
+\underline{Handling Incorrect Behavior } - To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
+
+\noindent
+\underline{Automated Software Update} - To prove the suitability of the proposed system for continuous delivery, application updates will be performed using both a bash script \footnote{\url{http://www.tldp.org/LDP/abs/html/}} and a puppet manifest \footnote{\url{https://puppetlabs.com/}}. Puppet has been chosen since it is the most widely used automated deployment tool. In addition bash has been chosen since all automated deployment tools have the ability to run bash commands. 
+
+
+\subsection{Quantitative Analysis}
+\noindent
+\underline{Load Test} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
+
+\noindent
+\underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
+
+\noindent
+\underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
+
+\noindent
+\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version.
+
+\section{Project Plan \& Progress Summary}
+This section lists the tasks required to develop a reliable dynamic software update system as described in section \ref{Implementation}. The tasks have been separated by those that have been completed and those that are still outstanding.
+ 
+\noindent 
+\underline{Completed Tasks}
+
+1.	Literature review
+
+2.	Prototype technology stack\\
+\noindent 
+\underline{Outstanding Tasks}
+
+%\noindent 
+3.	Productionize prototype by adding unit and integration tests
+
+4.	Support dynamic registration of containers in etcd
+ 
+5.	Support automated deployment of new containers
+ 
+6.	Rapid update mechanism
+ 
+7.	Create load and saturation performance tests
+
+8.	Monitor updated system behavior (\textit{i.e.} response size and time)
+
+9.	Immediate switch back after update failure
+
+10.	Create crash tests and integration tests for step 9
+
+11.	New session update mechanism
+
+12. Multi-version update mechanism
+
+12.	Long term update mechanism
+
+13.	New session switch back after update failure\\
+
+
+
+\clearpage
+
+\begin{thebibliography}{1}
+
+ \bibitem {Java} Alessandro Orso, Anup Rao, and Mary J. Harrold. {\em A Technique for Dynamic Updating of Java Software.}, CSM Proceedings of the International Conference on Software, 2002.
+ 
+  \bibitem {fly} M. E. Segal and O. Frieder. {\em On-the-ﬂy program modification: Systems for dynamic updating.} IEEE Software, 1993.
+
+   \bibitem {Tandem}  A. Thakur. {\em Analysis of failures in the Tandem NonStop-UX Operating System.}, Proceedings., Sixth International Symposium on Software Reliability Engineering, 1995. 
+   
+    \bibitem {Clustring} Ohba, Mitsuru. {\em Software reliability analysis models.}, IBM Journal of Research and Development, 1984.
+    
+    \bibitem {active_passive} {\em Using passive replicates in Delta-4 to provide dependable distributed computing.}, Fault-Tolerant Computing, 1989. 
+    
+     \bibitem {Replication} Swarup Acharya , Swarup Acharya , Stanley B. Zdonik , Stanley B. Zdonik. {\em An Efficient Scheme for Dynamic Data Replication.}, Tech Report, 1993. 
+   
+	 \bibitem {NoSQL} Jaroslav Pokorny. {\em NoSQL databases: a step to database scalability in web environment.}, International Journal of Web Information Systems, 2013. 
+	 
+	\bibitem {Automated} Akhil Sahai, Calton Pu, Gueyoung Jung, Qinyi Wu, Wenchang Yan, Galen S. Swint. {\em Towards Automated Deployment of Built-to-Order Systems.}, Ambient Networks, 2005  
+	  
+  \bibitem {Continuous Delivery}  Jez Humble, David Farley. {\em Continuous Delivery: Reliable Software Releases Through Build, Test, and Deployment Automation.}, Addison-Wesley Professional Publisher, 2010.     
+   
+   \bibitem {balancer}  George Apostolopoulos, David Aubespin, Vinod Peris, Prashant Pradhan, Debanjan Saha {\em Design, implementation and performance of a content-based switch.}, Nineteenth Annual Joint Conference of the IEEE Computer and Communications Societies, 2000.
+   
+  \bibitem {Ksplice} J. Arnold and M. F. Kaashoek. {\em Ksplice: automatic rebootless kernel updates.}, EuroSys, 2009.
+  
+   \bibitem {opus} G. Altekar, I. Bagrak, P. Burstein, and A. Schultz. {\em OPUS: Online patches and updates for security.}, USENIX Security, 2005.
+
+
+  \bibitem{Dynamos} K. Makris and K. D. Ryu. {\em Dynamic and Adaptive Updates of Non-Quiescent Subsystems in Commodity Operating System Kernels.}, EuroSys, 2007. 
+  
+  \bibitem {PLOUS} H. Chen, J. Yu, C. Hang, B. Zang, and P.-C. Yew. {\em Dynamic software updating using a relaxed consistency model.}, IEEE Transactions on Software Engineering, 2011.
+
+  \bibitem {Ginseng} I. Neamtiu, M. Hicks, G. Stoyle, and M. Oriol. {\em Practical dynamic software updating for C.}, PLDI, 2006.
+  
+  \bibitem {K42} A. Baumann, J. Appavoo, D. D. Silva, J. Kerr, O. Krieger, and R. W. Wisniewski. {\em Providing dynamic update in an operating system.} USENIX ATC, 2005. 
+
+  \bibitem {UpStare} K. Makris and R. Bazzi. {\em Immediate Multi-Threaded Dynamic Software Updates Using Stack Reconstruction.}, USENIX ATC, 2009.
+
+ \bibitem {Eiken} C. M. Hayden, E. K. Smith, M. Hicks, and J. S. Foster. {\em State transfer for clear and efficient runtime upgrades.}, HotSWUp, 2011.
+ 
+  \bibitem {Kitsune} C. M. Hayden, E. K. Smith, M. Denchev, M. Hicks, and J. S. Foster, {\em “Kitsune: Efficient, general-purpose dynamic software updating for C,”}, OOPSLA, 2012.
+  
+  \bibitem {Safety 32} Gautam Altekar, Ilya Bagrak, Paul Burstein, and Andrew Schultz. {\em OPUS: Online patches and updates for security.}, USENIX Security Symp, 2005. 
+
+  \bibitem {Safety 43} Andrew Baumann, Jonathan Appavoo, Robert W. Wisniewski, Dilma Da Silva, Orran Krieger, and Gernot Heiser. {\em Reboots are for hardware: Chal- lenges and solutions to updating an operating system on the fly.}, USENIX Annual Tech. Conf., 2007. 
+  
+  \bibitem {Safety 214} Iulian Neamtiu, Michael Hicks, Gareth Stoyle, and Manuel Oriol. {\em Practical dynamic software updating for C.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
+
+  \bibitem {Safety 213} Iulian Neamtiu and Michael Hicks. {\em Safe and timely updates to multi-threaded programs.} ACM SIGPLAN Conf. on Programming Language Design and Implementation,  2009.
+
+  \bibitem {Safety 267} Gareth Stoyle, Michael Hicks, Gavin Bierman, Peter Sewell, and Iulian Neamtiu. Mutatis mutandis: {\em Safe and predictable dynamic software updating.}, ACM Trans. Program. Lang. Syst., 29(4), 2007.
+  
+  \bibitem {Safety 131} ] C. M Hayden, E. K Smith, M. Hicks, and J. S Foster. {\em State transfer for clear and efficient runtime updates.}, In Proc. of the Third Int’l Workshop on Hot Topics in Software Upgrades, pages 179–184, 2011.
+
+  \bibitem {Safety 108} Cristiano Giuffrida, Anton Kuijsten, and Andrew S. Tanenbaum. {\em Enhanced operating system security through efficient and fine-grained address space randomization.}, USENIX Security Symp., 2012.
+
+  \bibitem {Safety 215} Iulian Neamtiu, Michael Hicks, Jeffrey S. Foster, and Polyvios Pratikakis. {\em Contextual effects for version-consistent dynamic software updating and safe concurrent programming.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2008. 
+
+  \bibitem {Safety 173} Jeff Kramer and Jeff Magee. {\em The evolving philosophers problem: Dynamic change management.}, IEEE Trans. Softw. Eng., 1990. 
+
+ \bibitem {Safety 279} Yves Vandewoude, Peter Ebraert, Yolande Berbers, and Theo D’Hondt. {\em Tranquility: A low disruptive alternative to quiescence for ensuring safe dynamic updates.}, IEEE Trans. Softw. Eng., 2007.
+
+\bibitem {Safety 108} Cristiano Giuffrida, Anton Kuijsten, and Andrew S. Tanenbaum. {\em Enhanced operating system security through efficient and fine-grained address space randomization.}, USENIX Security Symp., 2012.
+
+ \bibitem {Cook} Jonathan E. Cook and	Jeffrey A. Dage. {\em “Highly reliable upgrading of components”}, ICSE Conf. on Proceedings of the 21st international conference on Software engineering, 1999.
+
+ \bibitem {Berger} Emery D Berger and Benjamin Zorn. {\em DieHard: probabilistic memory safety for unsafe languages.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
+ 
+ \bibitem {Veeraraghavan} Kaushik Veeraraghavan, Peter M. Chen, Jason Flinn, and Satish Narayanasamy. {\em detecting and surviving data races using complementary schedules}, SOSP, 2011. 
+ 
+ \bibitem {Cadar1} Petr Hosek and Cristian Cadar. {\em Safe software updates via multi-version ex- ecution.}, Int’l Conf. on Software Eng., pages 612–621, 2013.
+ 
+ \bibitem {Cadar2} Cristian Cadar and Petr Hosek. {\em Multi-version software updates.}, In Proc. of the Fourth Int’l Workshop on Hot Topics in Software Upgrades, 2012.
+
+ 	\bibitem{N-version programming} Liming. Chen and Algirdas Avizienis. {\em  “N-version programming: A fault-tolerance approach to reliability of software operation”}, in FTCS, 1978. 
+   
+	\bibitem{virtualization} N.M. Mosharaf Kabir Chowdhurya,1, Raouf Boutaba b. {\em A survey of network virtualization}, Computer Networks, 2010.
+   
+	\bibitem {Hypervisors2} Thomas C. Bressoud, Fred B. Schneider. {\em Hypervisor-based fault tolerance.}, ACM 	Transactions on Computer System, 1996.
+	   
+  	\bibitem{Hypervisors} Bhanu P Tholeti. {\em Hypervisors, virtualization, and the cloud: Learn about hypervisors, system virtualization, and how it works in a cloud environment}, IBM, 2011. 
+
+	 \bibitem {container} Steven J Vaughan-Nichols. {\em New Approach to Virtualization Is a Lightweight.}, Computer, 2006.  
+	 
+	  \bibitem {security} Jyotiprakash Sahoo. {\em Virtualization: A Survey on Concepts, Taxonomy and Associated Security Issues.}, Computer and Network Technology, 2010.
+  
+   \bibitem {docker2} Dirk Merkel. {\em Docker: Lightweight Linux Containers for Consistent Development and Deployment.}, Linux Journal, 2014.
+	
+	\bibitem{AMPQ} Steve Vinoski. {\em Advanced Message Queuing Protocol}, IEEE Internet Computing, 2006. 
+
+    \bibitem{JMS} Mark Hapner, Rich Burridge, Rahul Sharma, Joseph Fialli, Kate Stout. {\em Java Message Service}, In Oracle America, Inc., 2012.
+
+\bibitem{broker} Aneesh Raj, P. Sreenivasa Kumar, {\em "Branch Sequencing Based XML Message Broker Architecture,"}, IEEE 23rd International Conference on Data Engineering, 2007.  
+  
+  \end{thebibliography}
+
+
+
+
+\end{document}
+
