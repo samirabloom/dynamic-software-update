@@ -341,7 +341,7 @@ In all four mechanisms the behavior of the updated software will be automaticall
 \vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.70]{proposed_solution_2}
+     \includegraphics[scale=0.70]{proposed_solution}
   \caption{Component interactions within the proposed  dynamic software update system}
   \label{system}
 \end{figure}
@@ -385,7 +385,7 @@ quantitative analysis of the ZeroMQ based proxy showed that a messaging system i
 %\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.70]{prototype_2}
+     \includegraphics[scale=0.70]{prototype}
   \caption{ZeroMQ, Go and Docker Prototype}
   \label{prototype}
 \end{figure}
@@ -417,13 +417,44 @@ The final version of the proxy developed using TCP sockets. This proxy does not 
   \item \textbf{Complete} stage shuts down the writing and reading sides of the TCP connection when the request has been read and written to the server. 
   
 \end{list}
-  \item \textbf{Backward Pipe} creates the same stages as the forward pipe for the response. The read stage of the backward pipe reads the response from the server, and the write stage writes the response to the HTTP connection.
+  \item \textbf{Back Pipe} creates the same stages as the forward pipe for the response. The read stage of the backward pipe reads the response from the server, and the write stage writes the response to the HTTP connection.
 \end{list}
 
-\subsection{Upgrade strategies}
-xxxxx
-
 \subsubsection{config service for upgrade} 
+A RESTFUL configuration service was developed and implemented into the proxy to support different upgrade scenarios explained in section xxx. This RESTFUL service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software update. The user sends the updated version of the cluster to the RESTFUL server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 
+
+\subsection{Upgrade strategies}
+As it was described in section xxx, the proxy supports different update strategies. Firstly, the proxy will be started on a default configuration defined in a JSON file. The JSON file has three different sections defined as "proxy", "configService" and "cluster". The proxy and configService sections define the Internet Protocol (IP) and the port addresses that the proxy and the RESTFUL configuration service will be running on. The cluster section defines the IP and port addresses of the servers in the cluster. 
+
+as well as defining the IP and port address of the running cluster, the cluster section in the configuration file has several optional sections as follow:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item \textbf{version}: the user can define the version of the cluster. If  no version is defined, version 0.0 will be chosen as the default one.      
+
+  \item \textbf{upgradeTransition}: this configuration defines which of the upgrade scenarios (section xxx) will be applied to the updated cluster. If the user defines the session mode, it is necessary to define a time out for the session update.
+  \item \textbf{cluster}
+\end{list}
+
+
+
+
+
+ 
+
+
+\underline{Rapid Update} - In this mechanism the updated version of software will immediately process all requests. The non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+
+\underline{New Session Update} - This update mechanism will only switch new sessions to the updated version. A new session will be identified by no requests being received from a client within a configured time period. As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
+
+\underline{Long Term Update} - This mechanism will switch new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
+
+\underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
+
+
+
+ 
+
 
 \subsection{Dockerising the proxy}
 Talk about how I dockerised the proxy
