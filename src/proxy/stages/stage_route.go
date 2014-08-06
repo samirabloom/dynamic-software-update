@@ -22,18 +22,12 @@ var (
 	requestUUIDHeaderRegex    = regexp.MustCompile("Cookie: .*dynsoftup=([a-z0-9-]*);.*")
 	transitionUUIDHeaderRegex = regexp.MustCompile("Cookie: .*transition=([a-z0-9-]*);.*")
 	statusCodeRegex           = regexp.MustCompile("HTTP/[0-9].[0-9] ([a-z0-9-]*) .*")
-	expiryRegex               = regexp.MustCompile("Expires: ([0-9-]*)")
-	transferEncodingRegex     = regexp.MustCompile("Transfer-Encoding: ([a-z0-9-]*)")
-	connectionRegex           = regexp.MustCompile("Connection: ([a-z0-9-]*)")
-	contentTypeRegex          = regexp.MustCompile("Content-Type: ([a-z/a-z-]*);.*")
-
 )
 
 type headerMetrics struct {
 	contentLength    int64
 	statusCode       int
-	expire           int64
-	headers        map[string]string
+	headers          map[string]string
 }
 
 func hashToPercentage(hash string) int64 {
@@ -47,13 +41,19 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 		defer log.Trace("route", time.Now())
 		log.LoggerFactory().Debug("Route Stage START - %s", context)
 		if context.firstChunk {
+			fmt.Println("firstChunk")
+
 			if context.clientToServer {  // on the request
+
+				fmt.Println("clientToServer")
 
 				var err error
 				cluster := clusters.GetByVersionOrder(0)
 
 				switch {
 				case cluster.Mode == SessionMode || cluster.Mode == GradualMode: {
+
+					fmt.Println("SessionMode or GradualMode")
 
 					// find uuid cookie
 					submatchs := requestUUIDHeaderRegex.FindSubmatch(context.data)
@@ -65,6 +65,8 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 
 					switch {
 					case cluster.Mode == SessionMode: {
+						fmt.Println("SessionMode")
+
 						// load cluster using uuid cookie
 						if (requestUUID != nil && clusters.ContextsByID[requestUUID.String()] != nil) {
 							cluster = clusters.ContextsByID[requestUUID.String()]
@@ -74,6 +76,8 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 						context.routingContext.headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s; Expires=%s;\n", cluster.Uuid.String(), time.Now().Add(time.Second*time.Duration(cluster.SessionTimeout)).Format(time.RFC1123))
 					}
 					case cluster.Mode == GradualMode: {
+						fmt.Println("GradualMode")
+
 						// find transition uuid cookie
 						submatchs := transitionUUIDHeaderRegex.FindSubmatch(context.data)
 						var transitionUUID uuid.UUID
@@ -106,6 +110,8 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 					context.to, err = net.DialTCP("tcp", nil, cluster.NextServer())
 				}
 				case cluster.Mode == ConcurrentMode: {
+					fmt.Println("ConcurrentMode")
+
 					var (
 						previousVersionConnection, latestVersionConnection tcp.TCPConnection
 					)
@@ -124,6 +130,8 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 					}
 				}
 				default: {
+					fmt.Println("default mode")
+
 					// handle instant mode
 					context.to, err = net.DialTCP("tcp", nil, cluster.NextServer())
 				}
@@ -142,10 +150,11 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 				go createBackPipe(NewBackPipeChunkContext(context))
 
 			} else { // on the response
+				fmt.Println("NOT clientToServer")
 
 				var parsedHeader = &headerMetrics{}
 				parsedHeader.headers = make(map[string]string)
-				parseHeader(parsedHeader, context.data)
+				parseMetrics(parsedHeader, context.data)
 
 				if context.routingContext != nil && len(context.routingContext.headers) > 0 { // if any headers to add
 					insertLocation := bytes.Index(context.data, []byte("\n"))
@@ -169,55 +178,32 @@ func isConnectionRefused(err error) bool {
 	return strings.HasSuffix(err.Error(), "connection refused")
 }
 
-func parseHeader(parsedHeader *headerMetrics, data []byte) {
+func parseMetrics(parsedHeader *headerMetrics, response []byte) {
 
 	// checking for the contentLength in the http response
-	parsedHeader.contentLength = int64(len(data))
-	//	fmt.Printf("\nthe Content-Length found is: %d\n", parsedHeader.contentLength)
-	log.LoggerFactory().Debug("Content-Length found is: %s", parsedHeader.contentLength)
+	contentLengthHeader := parseHeader("Content-Length", response)
+	if len(contentLengthHeader) > 0 {
+		parsedHeader.contentLength, _ = strconv.ParseInt(contentLengthHeader, 10, 64)
+	}
 
 	// checking for the status code in the http response
-	statusCodeMatches := statusCodeRegex.FindSubmatch(data)
+	statusCodeMatches := statusCodeRegex.FindSubmatch(response)
 	if len(statusCodeMatches) >= 2 {
-		statusCodeMatch := string(statusCodeMatches[1])
-		parsedHeader.statusCode, _ = strconv.Atoi(statusCodeMatch)
-		//		fmt.Printf("\nthe statusCode found is: %d\n", parsedHeader.statusCode)
-		log.LoggerFactory().Debug("statusCode found is: %s", parsedHeader.statusCode)
+		parsedHeader.statusCode, _ = strconv.Atoi(string(statusCodeMatches[1]))
 	}
 
-	// checking for "Expires" in the http response
-	expiryMatches := expiryRegex.FindSubmatch(data)
-	if len(expiryMatches) >= 2 {
-		expiryMatch := string(expiryMatches[1])
-		expiryHeader, _ := strconv.Atoi(expiryMatch)
-		parsedHeader.expire = int64(expiryHeader)
-		//		fmt.Printf("\nthe \"Expires\" found is: %d\n", parsedHeader.expire)
-		log.LoggerFactory().Debug("\"Expires\" found is: %d", parsedHeader.expire)
-	}
+	parsedHeader.headers["Expires"] = parseHeader("Expires", response)
+	parsedHeader.headers["Transfer-Encoding"] = parseHeader("Transfer-Encoding", response)
+	parsedHeader.headers["Connection"] = parseHeader("Connection", response)
+	parsedHeader.headers["Content-Type"] = parseHeader("Content-Type", response)
+}
 
-	// checking for Transfer-Encoding in the http response
-	transferEncodingMatches := transferEncodingRegex.FindSubmatch(data)
-	if len(transferEncodingMatches) >= 2 {
-		parsedHeader.headers["Transfer-Encoding"] = string(transferEncodingMatches[1])
-		//		fmt.Printf("\nthe Transfer-Encoding found is: %s\n", parsedHeader.headers["Transfer-Encoding"])
-		log.LoggerFactory().Debug("Transfer-Encoding found is: %s", parsedHeader.headers["Transfer-Encoding"])
-	}
-
-	// checking for Connection in the http response
-	connectionMatches := connectionRegex.FindSubmatch(data)
-	if len(connectionMatches) >= 2 {
-		parsedHeader.headers["Connection"] = string(connectionMatches[1])
-		//		fmt.Printf("\nthe Connection found is: %s\n", parsedHeader.headers["Connection"])
-		log.LoggerFactory().Debug("Connection found is: %s", parsedHeader.headers["Connection"])
-	}
-
-	// checking for Content-Type in the http response
-	contentTypeMatches := contentTypeRegex.FindSubmatch(data)
+func parseHeader(headerName string, response []byte) string {
+	contentTypeMatches := regexp.MustCompile(headerName + ": ([a-z/a-z-; =0-9]*)").FindSubmatch(response)
 	if len(contentTypeMatches) >= 2 {
-		parsedHeader.headers["Content-Type"] = string(contentTypeMatches[0])
-		//		fmt.Printf("\nthe Content-Type found is: %s\n", parsedHeader.headers["Content-Type"])
-		log.LoggerFactory().Debug("Content-Type found is: %s\n", parsedHeader.headers["Content-Type"])
+		return string(contentTypeMatches[1])
 	}
+	return ""
 }
 
 // ==== ROUTE - END
