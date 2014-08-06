@@ -44,7 +44,6 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 			fmt.Println("firstChunk")
 
 			if context.clientToServer {  // on the request
-
 				fmt.Println("clientToServer")
 
 				var err error
@@ -52,7 +51,6 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 
 				switch {
 				case cluster.Mode == SessionMode || cluster.Mode == GradualMode: {
-
 					fmt.Println("SessionMode or GradualMode")
 
 					// find uuid cookie
