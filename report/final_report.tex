@@ -208,7 +208,7 @@ Operating system virtualization that is called hypervisor virtualization allows 
   \caption{Hypervisor Type 1 vs. Type 2 \cite{Hypervisors}}
   \label{Hypervisor}
 \end{figure}
-\vspace{-15pt}
+%\vspace{-15pt}
 
 \noindent
 \textbf{Container Virtualization} 
@@ -336,7 +336,7 @@ Four mechanisms will be supported to enable different reliable update strategies
 
 \underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
 
-In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{system} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
 
 \vspace{-8pt}
 \begin{figure}[!ht]
@@ -346,6 +346,8 @@ In all four mechanisms the behavior of the updated software will be automaticall
   \label{system}
 \end{figure}
 \vspace{-18pt}
+
+
 \noindent
 The following technology stack has been chosen for the dynamic software update system:
 
@@ -396,13 +398,13 @@ quantitative analysis of the ZeroMQ based proxy showed that a messaging system i
 Socket based proxy is implemented using raw Go sockets without a messaging system. This proxy uses the Transfer-Encoding and Content-Length HTTP header fields to detect the end of a request or response. Quantitative analysis of this proxy described in section xxxx showed significant performance overhead. Therefore, another version of the socket based proxy was developed as described in the next section.    
 
 \subsection{TCP Socket Based Proxy With End Of File}
-The final version of the proxy developed using TCP sockets. This proxy does not use any messaging systems and it uses the End of File (EOF) signal to detect the end of a request or response. The TCP socket based proxy is arranged as shown in Figure xxx and performs the following functions:
+The final version of the proxy developed using TCP sockets. This proxy does not use any messaging systems and it uses the End of File (EOF) signal to detect the end of a request or response. The TCP socket based proxy is arranged as shown in Figure \ref{proxy} and described in the following sections.
 
-\begin{list}{-}{}
-  \itemsep0em
-  \item \textbf{Accept Loop} accepts incoming HTTP connections on a listener and creates a forward pipe for each request.
 
-  \item \textbf{Forward Pipe} creates the read, route, write and complete stages of the proxy for processing the request.
+\subsubsection{Accept Loop} 
+Accepts Loop stage  incoming HTTP connections on a listener and creates a forward pipe for each request.
+
+\subsubsection{Forward Pipe} creates the read, route, write and complete stages of the proxy for processing the request.
   \begin{list}{-}{}
   \itemsep0em
   \item \textbf{Read} stage reads the requests from the HTTP connection and passes the read data to the route stage. When there is no more data to be read from the connection, the read stage will call the complete stage.
@@ -413,43 +415,46 @@ The final version of the proxy developed using TCP sockets. This proxy does not 
   			-  -  - set cookie headers\\
   			-  -  - parse the headers for metrics\\
   
-  \item \textbf{Write} stage writs the request received from the route stage to the server that is chosen in the route stage.
+  \item \textbf{Write} stage writs the request received from the route stage to an instance of the cluster that is chosen in the route stage.
   \item \textbf{Complete} stage shuts down the writing and reading sides of the TCP connection when the request has been read and written to the server. 
   
 \end{list}
-  \item \textbf{Back Pipe} creates the same stages as the forward pipe for the response. The read stage of the backward pipe reads the response from the server, and the write stage writes the response to the HTTP connection.
-\end{list}
+\subsubsection{Back Pipe} 
+creates the same stages as the forward pipe for the response. The read stage of the back pipe reads the response from the server, and the write stage writes the response to the HTTP connection.
 
-\subsubsection{config service for upgrade} 
-A RESTFUL configuration service was developed and implemented into the proxy to support different upgrade scenarios explained in section xxx. This RESTFUL service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software update. The user sends the updated version of the cluster to the RESTFUL server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 
 
-\subsection{Upgrade strategies}
-As it was described in section xxx, the proxy supports different update strategies. Firstly, the proxy will be started on a default configuration defined in a JSON file. The JSON file has three different sections defined as "proxy", "configService" and "cluster". The proxy and configService sections define the Internet Protocol (IP) and the port addresses that the proxy and the RESTFUL configuration service will be running on. The cluster section defines the IP and port addresses of the servers in the cluster. 
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.70]{proxy}
+  \caption{TCP Socket Based Proxy Design}
+  \label{prototype}
+\end{figure}
+\vspace{-18pt}
 
-as well as defining the IP and port address of the running cluster, the cluster section in the configuration file has several optional sections as follow:
+\subsection{REST Configuration Service} 
+A REST configuration service was developed and implemented into the proxy (Figure \ref{proxy}) to support different upgrade scenarios explained in section xxx. This REST service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software updates. The user sends the updated version of the cluster to the REST server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 
+
+As it was described in section xxx, the proxy supports different update strategies. Firstly, the proxy will be started on a default configuration defined in a JSON file. The JSON file has three different sections defined as "proxy", "configService" and "cluster". The proxy and configService sections define the Internet Protocol (IP) and the port addresses that the proxy and the REST configuration service will be running on. The cluster section defines the IP and port addresses of the servers in the cluster. 
+
+As well as defining the IP and port addresses of the running clusters, the cluster section has several optional sections as follow:
 
 \begin{list}{-}{}
   \itemsep0em
-  \item \textbf{version}: the user can define the version of the cluster. If  no version is defined, version 0.0 will be chosen as the default one.      
+  \item \textbf{version}: The user can define the version of the cluster. If  no version is defined, version 0.0 will be chosen as the default one.      
 
-  \item \textbf{upgradeTransition}: this configuration defines which of the upgrade scenarios (section xxx) will be applied to the updated cluster. If the user defines the session mode, it is necessary to define a time out for the session update.
-  \item \textbf{cluster}
+  \item \textbf{upgradeTransition}: This configuration defines which of the upgrade scenarios (section xxx) will be applied to the updated cluster. If the user defines the session mode, it is necessary to define a time out for the session update.
 \end{list}
 
+\subsection{Upgrade Strategies}
+\underline{Rapid Update} - In this mechanism the updated version of software will immediately process all requests. To apply the Rapid Update, the "upgradeTransition" section of the configuration file will be defined as "Instant" and as soon as the updated version start running it will immediately process all requests. The non-updated version will however remain running. If the user decide to delete the updated version of the software or if the updated version does not behave correctly the non-updated version will be immediately available to process requests. Different versions of the software will be available in the version order and the newest version will always process the request and if the most updated one is not available the next most updated one will be available unless specified otherwise.  
+
+\underline{New Session Update} - This update mechanism will be defined as "Session" in the "upgradeTransition" section of the configuration file and will only switch new sessions to the updated version. Each request sent to the system will be given a cookie and the cookie will have a session time defined by the user. A new session will be identified by no requests being received from a client within the user defined session time.  As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly or the updated system is deleted.
+
+\underline{Multi-Version Update} - This update mechanism is defined as "concurrent"  "upgradeTransition" section of the configuration file. In the  this mechanism the most updated and the next most updated versions of the software run concurrently and  process identical requests for new sessions. The requests will be sent to both the old and the new versions and the characteristics of the response from the new version will be compared to the old version. if the responses are identical, only the response from the new version will be send to the client. Otherwise the response from the new version will be dropped and the old version's response will be used. xxxxxxxxxxxx If the response from both versions are incorrect, bot of the responses from the older version will be used.... xxxxxxxxxxxxxxxx  
 
 
+\underline{Long Term Update} - xxxxxxxxxxxxxxxxxxxxxxxx xx    xxx  x This mechanism will switch new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
 
-
- 
-
-
-\underline{Rapid Update} - In this mechanism the updated version of software will immediately process all requests. The non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
-
-\underline{New Session Update} - This update mechanism will only switch new sessions to the updated version. A new session will be identified by no requests being received from a client within a configured time period. As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
-
-\underline{Long Term Update} - This mechanism will switch new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
-
-\underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
 
 
 
@@ -461,7 +466,7 @@ Talk about how I dockerised the proxy
 why didn't use fleet system and coreOS? 
 
 
-
+\subsection{How To Run Proxy?????} 
 
 
 
