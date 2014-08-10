@@ -111,3 +111,18 @@ curl -vvv http://$(boot2docker ip 2>/dev/null):1234 -H 'Cookie: dynsoftup=0e5e6c
 # from wrk
 ./wrk -t200 -c200 -d10 --latency http://$(boot2docker ip 2>/dev/null):1234
 ```
+
+# Gradual Transition UUID to Percentages
+
+- a37a290f-2088-11e4-b3a6-600308a8245e => 1
+- a37a2633-2088-11e4-b3a6-600308a8245e => 2
+- 952c8557-2088-11e4-87e3-600308a8245e => 3
+- 10671a7f-2087-11e4-bf9e-600308a8245e => 4
+- a37a25b4-2088-11e4-b3a6-600308a8245e => 5
+- 6024b0c6-2089-11e4-a4ef-600308a8245e => 8
+- 6024b0a9-2089-11e4-a4ef-600308a8245e => 9
+- 73f9e08a-2089-11e4-b5af-600308a8245e => 10
+- 73f9dfb0-2089-11e4-b5af-600308a8245e => 12
+- 106719e4-2087-11e4-bf9e-600308a8245e => 80
+- a37a2717-2088-11e4-b3a6-600308a8245e => 85
+- a37a2826-2088-11e4-b3a6-600308a8245e => 90

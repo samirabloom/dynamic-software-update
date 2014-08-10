@@ -1,0 +1,56 @@
+stage based design:
+staged based design approach was used to improve code design, simplicity, clarity, flexibility and to support good test coverage.  The stage based approach promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection.  These resulted in the following benefits:
+	- encapsulation and separation of concerns
+		- separating logic for each functional area into a single component resulted in simple isolated code that focused on one topic, making it clear and easier to understand
+		- simplified testing by allowing each test to be focused on a specific area e.g. reading data from a socket and dealing with different errors and situations that can occur
+	- inversion-of-control and dependency injection
+		- supported incremental development where new modules were plugged-in / configured (one by one) while the remaining modules all worked together
+			- first read and write stage
+			- next complete stage was added
+			- finally routing was added
+		- simplified testing by allowing the code-under-test to be isolated by mocking all dependencies
+		- simplified testing by allowing the mocking of different error sitations behaviour that would be impossible to test without all dependencies to be mocked
+
+testing:
+ - unit
+  - all functionality was tested at a unit level
+  - inversion-of-control and dependency-injection was used to allow all dependencies to be injected into each component - this allowed all dependencies to be mocked
+  - unit tests covered all positive and negative cases resulting in X% line coverage and Y% branch coverage overall
+ - integration
+  - to ensure each independent component integrated correctly integration tests where written that tested groups of components, e.g. the config service
+  - list groups of components tested
+ - system
+  - to ensure the complete system worked correctly system tests where written that covered complete user scenarios 
+  - list scenarios tested
+
+when designing the proxy the following language chooses where considered:
+- C / C++
+ - fast +
+ - very low level APIs -
+ - manual memory management -
+ - full control over memory allocation +
+ - no garbage collection -
+- Java
+ - not as fast (i.e. require interpreter) -
+ - high level APIs +
+ - no memory management +
+ - no control over memory allocation -
+ - garbage collection +
+- Go
+ - fast +
+ - high level APIs +
+ - no memory management +
+ - some control over memory allocation (i.e. pointers, etc) +
+ - garbage collection +
+- Python
+ - ?? too slow
+ - ?? runs in interpreter
+
+
+HTTP 
+- Content-Length header
+	- HTTP & headers
+- Chunked transfer with Content-Length
+	- 
+- Chunked transfer with Transfer-Encoding: chunked
+

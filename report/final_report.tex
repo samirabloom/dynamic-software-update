@@ -336,12 +336,12 @@ Four mechanisms will be supported to enable different reliable update strategies
 
 \underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
 
-In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution.png} (Figure \ref{proposed_solution.png} ) demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
 
 \vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.70]{proposed_solution}
+     \includegraphics[scale=0.70]{proposed_solution.png}
   \caption{Component interactions within the proposed  dynamic software update system}
   \label{system}
 \end{figure}
@@ -429,7 +429,7 @@ creates the same stages as the forward pipe for the response. The read stage of 
   \caption{TCP Socket Based Proxy Design}
   \label{prototype}
 \end{figure}
-\vspace{-18pt}
+% \vspace{-18pt}
 
 \subsection{REST Configuration Service} 
 A REST configuration service was developed and implemented into the proxy (Figure \ref{proxy}) to support different upgrade scenarios explained in section xxx. This REST service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software updates. The user sends the updated version of the cluster to the REST server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 

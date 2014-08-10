@@ -5,24 +5,28 @@ import (
 	"net/http"
 	"fmt"
 	"time"
+	"regexp"
 )
 
 // ==== TEST_SERVER - START
 
-func Test_server(ports []int) {
+func Test_server(ports []int, crash bool) {
 	for _, port := range ports {
-		fmt.Printf("Starting server %d ...\n", port)
-		go http.ListenAndServe(":"+strconv.Itoa(port), &handle{port})
+		go http.ListenAndServe(":"+strconv.Itoa(port), &handle{port: port, crash: crash})
 	}
 	time.Sleep(150 * time.Millisecond)
 }
 
 type handle struct {
-	Port int
+	port int
+	crash bool
 }
 
 func (h *handle) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	fmt.Fprintf(response, "Port: %d\n", h.Port)
+	if (h.crash && regexp.MustCompile("/crash").MatchString(request.URL.Path)) {
+		panic("simulating server crash")
+	}
+	fmt.Fprintf(response, "Port: %d\n", h.port)
 
 }
 

@@ -3,7 +3,6 @@ package stages
 import (
 	"fmt"
 	"proxy/tcp"
-	"net"
 	"strings"
 	"time"
 )
@@ -29,7 +28,7 @@ type ChunkContext struct {
 func (context *ChunkContext) Close() {
 	// close sockets
 	context.from.Close()
-	if context.to != nil && context.to.(*net.TCPConn) != nil {
+	if context.to != nil {
 		context.to.Close()
 	}
 }
@@ -47,10 +46,10 @@ func (context *ChunkContext) String() string {
 		output += "\t data:\n\t\t"+strings.Replace(string(context.data), "\n", "\n\t\t", -1)
 	}
 	output += "\n"
-	if context.from != nil && context.from.(*net.TCPConn) != nil && context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
+	if context.from != nil && context.from.LocalAddr() != nil && context.from.RemoteAddr() != nil {
 		output += fmt.Sprintf("\t from: %s -> %s\n", context.from.LocalAddr(), context.from.RemoteAddr())
 	}
-	if context.to != nil && context.to.(*net.TCPConn) != nil && context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
+	if context.to != nil && context.to.LocalAddr() != nil && context.to.RemoteAddr() != nil {
 		output += fmt.Sprintf("\t to: %s -> %s\n", context.to.LocalAddr(), context.to.RemoteAddr())
 	}
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.totalReadSize)
@@ -59,7 +58,7 @@ func (context *ChunkContext) String() string {
 	return output
 }
 
-func NewForwardPipeChunkContext(from *net.TCPConn, pipeComplete chan int64) *ChunkContext {
+func NewForwardPipeChunkContext(from tcp.TCPConnection, pipeComplete chan int64) *ChunkContext {
 	return &ChunkContext{
 		description:    "forwardpipe",
 		data:           make([]byte, 64*1024),

@@ -60,18 +60,22 @@ var PerformanceLog = func() *csv.Writer {
 			writer.Flush()
 
 			// entries
-			for _, entry := range entries {
-				var (
-					values = make([]string, len(entries))
-					values_counter int
-				)
-				for key := range entry {
-					values[values_counter] = strconv.FormatInt(entry[key], 10)
-					values_counter++
-				}
-				returnError := writer.Write(values)
-				if returnError != nil {
-					LoggerFactory().Error("Error writing values into performance log - %s", returnError)
+			if len(entries) > 0 {
+				for _, entry := range entries {
+					var (
+						values = make([]string, len(entries))
+						values_counter int
+					)
+					for key := range entry {
+						if len(values) > values_counter {
+							values[values_counter] = strconv.FormatInt(entry[key], 10)
+						}
+						values_counter++
+					}
+					returnError := writer.Write(values)
+					if returnError != nil {
+						LoggerFactory().Error("Error writing values into performance log - %s", returnError)
+					}
 				}
 			}
 			writer.Flush()

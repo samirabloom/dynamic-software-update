@@ -19,8 +19,8 @@ import (
 // ==== ROUTE - START
 
 var (
-	requestUUIDHeaderRegex    = regexp.MustCompile("Cookie: .*dynsoftup=([a-z0-9-]*);.*")
-	transitionUUIDHeaderRegex = regexp.MustCompile("Cookie: .*transition=([a-z0-9-]*);.*")
+	requestUUIDHeaderRegex    = regexp.MustCompile("Cookie:.*dynsoftup=([a-z0-9-]*).*")
+	transitionUUIDHeaderRegex = regexp.MustCompile("Cookie:.*transition=([a-z0-9-]*).*")
 	statusCodeRegex           = regexp.MustCompile("HTTP/[0-9].[0-9] ([a-z0-9-]*) .*")
 )
 
@@ -41,18 +41,14 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 		defer log.Trace("route", time.Now())
 		log.LoggerFactory().Debug("Route Stage START - %s", context)
 		if context.firstChunk {
-			fmt.Println("firstChunk")
 
 			if context.clientToServer {  // on the request
-				fmt.Println("clientToServer")
 
 				var err error
 				cluster := clusters.GetByVersionOrder(0)
 
 				switch {
 				case cluster.Mode == SessionMode || cluster.Mode == GradualMode: {
-					fmt.Println("SessionMode or GradualMode")
-
 					// find uuid cookie
 					submatchs := requestUUIDHeaderRegex.FindSubmatch(context.data)
 					var requestUUID uuid.UUID
@@ -63,8 +59,6 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 
 					switch {
 					case cluster.Mode == SessionMode: {
-						fmt.Println("SessionMode")
-
 						// load cluster using uuid cookie
 						if (requestUUID != nil && clusters.ContextsByID[requestUUID.String()] != nil) {
 							cluster = clusters.ContextsByID[requestUUID.String()]
@@ -74,8 +68,6 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 						context.routingContext.headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s; Expires=%s;\n", cluster.Uuid.String(), time.Now().Add(time.Second*time.Duration(cluster.SessionTimeout)).Format(time.RFC1123))
 					}
 					case cluster.Mode == GradualMode: {
-						fmt.Println("GradualMode")
-
 						// find transition uuid cookie
 						submatchs := transitionUUIDHeaderRegex.FindSubmatch(context.data)
 						var transitionUUID uuid.UUID
@@ -84,32 +76,36 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 							log.LoggerFactory().Debug("Route Stage found transition UUID %s", context)
 						}
 
-						// load cluster using uuid cookie
-						percentage := hashToPercentage(transitionUUID.String())
-
-						if percentage >= cluster.RequestCounter {
-							// do not latest cluster
-							if (requestUUID != nil && clusters.ContextsByID[requestUUID.String()] != nil) {
-								cluster = clusters.ContextsByID[requestUUID.String()]
-							}
-						}
-
-						if transitionUUID != nil {
+						if transitionUUID == nil {
 							transitionUUID = uuid.NewUUID()
 						}
 
+						// determine transation percentage for request
+						percentage := hashToPercentage(transitionUUID.String())
+
+						multiplier := 1 // todo make multiplier configurable
+						cluster.TransitionCounter += int64(1*multiplier)
+						if percentage >= cluster.TransitionCounter {
+							// do not latest cluster
+							if (requestUUID != nil && clusters.ContextsByID[requestUUID.String()] != nil) {
+								cluster = clusters.ContextsByID[requestUUID.String()]
+							} else {
+								cluster = clusters.GetByVersionOrder(1)
+							}
+						}
+
 						context.routingContext = &RoutingContext{headers: make([]string, 2)}
-						context.routingContext.headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;", cluster.Uuid.String())
-						context.routingContext.headers[1] = fmt.Sprintf("Set-Cookie: transition=%s;", transitionUUID.String())
+						context.routingContext.headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", cluster.Uuid.String())
+						context.routingContext.headers[1] = fmt.Sprintf("Set-Cookie: transition=%s;\n", transitionUUID.String())
+
 					}
 					}
 
 					// create connection
 					context.to, err = net.DialTCP("tcp", nil, cluster.NextServer())
+
 				}
 				case cluster.Mode == ConcurrentMode: {
-					fmt.Println("ConcurrentMode")
-
 					var (
 						previousVersionConnection, latestVersionConnection tcp.TCPConnection
 					)
@@ -128,8 +124,6 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 					}
 				}
 				default: {
-					fmt.Println("default mode")
-
 					// handle instant mode
 					context.to, err = net.DialTCP("tcp", nil, cluster.NextServer())
 				}
@@ -148,8 +142,6 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 				go createBackPipe(NewBackPipeChunkContext(context))
 
 			} else { // on the response
-				fmt.Println("NOT clientToServer")
-
 				var parsedHeader = &headerMetrics{}
 				parsedHeader.headers = make(map[string]string)
 				parseMetrics(parsedHeader, context.data)

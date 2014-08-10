@@ -8,23 +8,28 @@ import (
 	"io"
 )
 
+type Header struct {
+	Name  string
+	Value string
+}
+
 func PUTRequest(url string, json string) (body, status string) {
-	return MakeRequest("PUT", url, strings.NewReader(json), "")
+	return MakeRequest("PUT", url, strings.NewReader(json))
 }
 
 func GETRequest(url string) (body, status string) {
-	return MakeRequest("GET", url, nil, "")
+	return MakeRequest("GET", url, nil)
 }
 
-func GETCookiedRequest(url string, uuidCookie string) (body, status string) {
-	return MakeRequest("GET", url, nil, uuidCookie)
+func GETRequestWithHeaders(url string, headers ...*Header) (body, status string) {
+	return MakeRequest("GET", url, nil, headers...)
 }
 
 func DELETERequest(url string) (body, status string) {
-	return MakeRequest("DELETE", url, nil, "")
+	return MakeRequest("DELETE", url, nil)
 }
 
-func MakeRequest(method, url string, request io.Reader, uuidCookie string) (body, status string) {
+func MakeRequest(method, url string, request io.Reader, headers ...*Header) (body, status string) {
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, request)
 	if err != nil {
@@ -32,8 +37,10 @@ func MakeRequest(method, url string, request io.Reader, uuidCookie string) (body
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Connection", "close")
-	if len(uuidCookie) > 0 {
-		req.Header.Add("Cookie", "dynsoftup="+uuidCookie+";")
+	for _, header := range headers {
+		if header != nil {
+			req.Header.Add(header.Name, header.Value)
+		}
 	}
 	resp, err := client.Do(req)
 	defer resp.Body.Close()

@@ -24,9 +24,10 @@ type handle struct {
 }
 
 func (h *handle) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	response.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate");
+	response.Header().Set("Cache-Control", "private, no-cache, no-store, must-revalidate, max-age=0, proxy-revalidate, s-maxage=0");
 	response.Header().Set("Pragma", "no-cache");
 	response.Header().Set("Expires", "0");
+	response.Header().Set("Vary", "*");
 	response.Header().Set("Connection", "keep-alive");
 	fmt.Fprintf(response, "GS Port: %d\n", h.Port)
 	time.Sleep(50 * time.Millisecond)

@@ -83,6 +83,7 @@ func (clusters *Clusters) String() string {
 type Cluster struct {
 	BackendAddresses      []*net.TCPAddr
 	RequestCounter        int64
+	TransitionCounter     int64
 	Uuid                  uuid.UUID
 	SessionTimeout        int64
 	Mode                  TransitionMode
