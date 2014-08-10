@@ -20,11 +20,11 @@ func Test_Parse_Proxy_When_Config_Valid(testCtx *testing.T) {
 	)
 
 	// when
-	tcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
+	actualTcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualErr)
-	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, tcpProxyLocalAddress)
+	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, actualTcpProxyLocalAddress)
 }
 
 func Test_Parse_Proxy_When_No_IP(testCtx *testing.T) {
@@ -36,11 +36,11 @@ func Test_Parse_Proxy_When_No_IP(testCtx *testing.T) {
 		expectedTcpProxyLocalAddress *net.TCPAddr = nil
 	)
 	// when
-	tcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
+	actualTcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualErr)
-	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, tcpProxyLocalAddress)
+	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, actualTcpProxyLocalAddress)
 }
 
 func Test_Parse_Proxy_When_IP_Invalid(testCtx *testing.T) {
@@ -52,11 +52,11 @@ func Test_Parse_Proxy_When_IP_Invalid(testCtx *testing.T) {
 		expectedTcpProxyLocalAddress *net.TCPAddr = nil
 	)
 	// when
-	tcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
+	actualTcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualErr)
-	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, tcpProxyLocalAddress)
+	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, actualTcpProxyLocalAddress)
 }
 
 func Test_Parse_Proxy_When_No_Port(testCtx *testing.T) {
@@ -68,11 +68,11 @@ func Test_Parse_Proxy_When_No_Port(testCtx *testing.T) {
 		expectedTcpProxyLocalAddress *net.TCPAddr = nil
 	)
 	// when
-	tcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
+	actualTcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualErr)
-	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, tcpProxyLocalAddress)
+	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, actualTcpProxyLocalAddress)
 }
 
 func Test_Parse_Proxy_When_Port_Invalid(testCtx *testing.T) {
@@ -84,11 +84,11 @@ func Test_Parse_Proxy_When_Port_Invalid(testCtx *testing.T) {
 		expectedTcpProxyLocalAddress *net.TCPAddr = nil
 	)
 	// when
-	tcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
+	actualTcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualErr)
-	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, tcpProxyLocalAddress)
+	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, actualTcpProxyLocalAddress)
 }
 
 func Test_Parse_Proxy_When_No_IP_Or_Port(testCtx *testing.T) {
@@ -99,11 +99,11 @@ func Test_Parse_Proxy_When_No_IP_Or_Port(testCtx *testing.T) {
 		expectedTcpProxyLocalAddress *net.TCPAddr = nil
 	)
 	// when
-	tcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
+	actualTcpProxyLocalAddress, actualErr := parseProxy(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualErr)
-	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, tcpProxyLocalAddress)
+	assertion.AssertDeepEqual("Correct Local Proxy Address", testCtx, expectedTcpProxyLocalAddress, actualTcpProxyLocalAddress)
 }
 
 

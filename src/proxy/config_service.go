@@ -58,27 +58,24 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*stages.Clusters, http.Resp
 			fmt.Printf("Error decoding json request:\n\t%s\n", err.Error())
 			http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
-			if jsonConfig == nil {
-				fmt.Printf("Error parsing cluster configuration invalid JSON\n")
-				http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			} else {
-				clusterConfiguration := jsonConfig["cluster"]
-				if clusterConfiguration != nil {
-					cluster, err := parseCluster(uuidGenerator)(clusterConfiguration.(map[string]interface{}))
-					if err != nil {
-						fmt.Printf("Error parsing cluster configuration:\n\t%s\n", err.Error())
-						http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-					} else {
-						routeContexts.Add(cluster)
-						log.LoggerFactory().Info(fmt.Sprintf("Received new cluster configuration:\n%s", body[0:size]))
-						writer.WriteHeader(http.StatusAccepted)
-						fmt.Fprintf(writer, "%s", cluster.Uuid)
-					}
+			clusterConfiguration := jsonConfig["cluster"]
+			if clusterConfiguration != nil {
+				fmt.Printf("clusterConfiguration: %#v %s\n", clusterConfiguration, clusterConfiguration)
+				cluster, err := parseCluster(uuidGenerator)(clusterConfiguration.(map[string]interface{}))
+				fmt.Printf("err: %#v %s\n", err, err)
+				if err != nil {
+					fmt.Printf("Error parsing cluster configuration:\n\t%s\n", err.Error())
+					http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 				} else {
-					errorMessage := "Invalid cluster configuration - \"cluster\" config missing"
-					log.LoggerFactory().Error(errorMessage)
-					err = errors.New(errorMessage)
+					routeContexts.Add(cluster)
+					log.LoggerFactory().Info(fmt.Sprintf("Received new cluster configuration:\n%s", body[0:size]))
+					writer.WriteHeader(http.StatusAccepted)
+					fmt.Fprintf(writer, "%s", cluster.Uuid)
 				}
+			} else {
+				errorMessage := "Invalid cluster configuration - \"cluster\" config missing"
+				log.LoggerFactory().Error(errorMessage)
+				err = errors.New(errorMessage)
 			}
 		}
 	}
@@ -113,9 +110,7 @@ func GETHandler(urlRegex *regexp.Regexp) func(*stages.Clusters, http.ResponseWri
 			jsonBody, err = json.Marshal(routeContextsJSON);
 		}
 
-		if err != nil {
-			fmt.Println("Error encoding json object %s", uuidValue)
-		} else {
+		if err == nil {
 			fmt.Fprintf(writer, "%s", jsonBody)
 			writer.WriteHeader(http.StatusOK)
 		}

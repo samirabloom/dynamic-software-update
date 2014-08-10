@@ -81,13 +81,14 @@ func (clusters *Clusters) String() string {
 }
 
 type Cluster struct {
-	BackendAddresses      []*net.TCPAddr
-	RequestCounter        int64
-	TransitionCounter     int64
-	Uuid                  uuid.UUID
-	SessionTimeout        int64
-	Mode                  TransitionMode
-	Version               float64
+	BackendAddresses                []*net.TCPAddr
+	RequestCounter                  int64
+	TransitionCounter               float64
+	PercentageTransitionPerRequest  float64
+	Uuid                            uuid.UUID
+	SessionTimeout                  int64
+	Mode                            TransitionMode
+	Version                         float64
 }
 
 func (cluster *Cluster) NextServer() *net.TCPAddr {

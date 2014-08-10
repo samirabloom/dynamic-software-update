@@ -48,9 +48,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 		server2, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
 		expectedRouteContexts = &stages.Clusters{ContextsByVersion: list.New(), ContextsByID: make(map[string]*stages.Cluster)}
-		cluster1       = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server1}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 3, Mode: stages.SessionMode, Version: 1.1}
-		cluster2       = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server2}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: stages.SessionMode, Version: 0.9}
-		cluster3       = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server3}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 1, Mode: stages.SessionMode, Version: 1.5}
+		cluster1              = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server1}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 3, Mode: stages.SessionMode, Version: 1.1}
+		cluster2              = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server2}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: stages.SessionMode, Version: 0.9}
+		cluster3              = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server3}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 1, Mode: stages.SessionMode, Version: 1.5}
 		actualRouteContexts   = &stages.Clusters{}
 	)
 
@@ -71,6 +71,60 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 
 	// then
 	assertion.AssertDeepEqual("Correct Object Added To Clusters In Version Order", testCtx, expectedRouteContexts, actualRouteContexts)
+}
+
+func Test_Config_PUT_With_Valid_Cluster_Configuration_Object(testCtx *testing.T) {
+	// given
+	var (
+		responseWriter        = mock.NewMockResponseWriter()
+		bodyByte              = []byte("{\"cluster\": {\"servers\": []}}")
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		actualRouteContexts   = &stages.Clusters{}
+		expectedRouteContexts = &stages.Clusters{}
+	)
+
+	// when
+	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+
+	// then
+	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
+}
+
+func Test_Config_PUT_When_Invalid_JSON(testCtx *testing.T) {
+	// given
+	var (
+		responseWriter        = mock.NewMockResponseWriter()
+		bodyByte              = []byte("{invalid}")
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		actualRouteContexts   = &stages.Clusters{}
+		expectedRouteContexts = &stages.Clusters{}
+	)
+
+	// when
+	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+
+	// then
+	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
+}
+
+func Test_Config_PUT_When_Empty_JSON(testCtx *testing.T) {
+	// given
+	var (
+		responseWriter        = mock.NewMockResponseWriter()
+		bodyByte              = []byte("{}")
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		actualRouteContexts   = &stages.Clusters{}
+		expectedRouteContexts = &stages.Clusters{}
+	)
+
+	// when
+	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+
+	// then
+	assertion.AssertDeepEqual("Correct Response Code", testCtx, 0, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
 }
 
 func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
@@ -127,12 +181,12 @@ func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
 		server1, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1011")
 		server2, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
-		cluster1      = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server1}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 1, Mode: stages.SessionMode, Version: 1.1}
-		cluster2      = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server2}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: stages.SessionMode, Version: 0.9}
-		cluster3      = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server3}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 3, Mode: stages.InstantMode, Version: 1.5}
+		cluster1             = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server1}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 1, Mode: stages.SessionMode, Version: 1.1}
+		cluster2             = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server2}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: stages.SessionMode, Version: 0.9}
+		cluster3             = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server3}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 3, Mode: stages.InstantMode, Version: 1.5}
 		routeContexts        = &stages.Clusters{}
 		expectedResponseBody = []byte("[" +
-			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\",\"sessionTimeout\":3},\"uuid\":\"" + uuid3.String() + "\",\"version\":1.5}}," +
+			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\"},\"uuid\":\"" + uuid3.String() + "\",\"version\":1.5}}," +
 			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid1.String() + "\",\"version\":1.1}}," +
 			"{\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid2.String() + "\",\"version\":0.9}}" +
 			"]")
@@ -185,9 +239,9 @@ func Test_Config_DELETE_With_Existing_Object_Maintains_Order(testCtx *testing.T)
 		server2, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
 		expectedRouteContexts = &stages.Clusters{ContextsByVersion: list.New(), ContextsByID: make(map[string]*stages.Cluster)}
-		cluster1       = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server1}, RequestCounter: -1, Uuid: uuid1, Version: 1.1}
-		cluster2       = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server2}, RequestCounter: -1, Uuid: uuid2, Version: 0.9}
-		cluster3       = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server3}, RequestCounter: -1, Uuid: uuid3, Version: 1.5}
+		cluster1              = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server1}, RequestCounter: -1, Uuid: uuid1, Version: 1.1}
+		cluster2              = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server2}, RequestCounter: -1, Uuid: uuid2, Version: 0.9}
+		cluster3              = &stages.Cluster{BackendAddresses: []*net.TCPAddr{server3}, RequestCounter: -1, Uuid: uuid3, Version: 1.5}
 		actualRouteContexts   = &stages.Clusters{}
 	)
 	actualRouteContexts.Add(cluster1)

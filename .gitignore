@@ -61,6 +61,7 @@ wrk
 # test generated #
 ##################
 system_test_config.json
+coverage.html
 
 # latex #
 #########

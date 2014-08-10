@@ -126,3 +126,12 @@ curl -vvv http://$(boot2docker ip 2>/dev/null):1234 -H 'Cookie: dynsoftup=0e5e6c
 - 106719e4-2087-11e4-bf9e-600308a8245e => 80
 - a37a2717-2088-11e4-b3a6-600308a8245e => 85
 - a37a2826-2088-11e4-b3a6-600308a8245e => 90
+
+# Test Coverage
+
+export PATH=$PATH:$GOPATH/bin
+export GOPATH=$GOPATH:`PWD`
+
+go get github.com/axw/gocov/gocov
+go get gopkg.in/matm/v1/gocov-html
+gocov test -v proxy | gocov-html > coverage.html

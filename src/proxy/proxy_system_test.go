@@ -4,31 +4,8 @@ import (
 	"testing"
 	networkutil "util/test/network"
 	assertion "util/test/assertion"
-	"io/ioutil"
 	"strconv"
 )
-
-func writeConfigFile(proxyPort int, configPort int, uuid string, serverPorts []int, version string) string {
-	fileName := "/tmp/system_test_config.json"
-	data := "{\"proxy\":{\"ip\":\"localhost\",\"port\":" + strconv.Itoa(proxyPort) + "},\"configService\":{\"port\":" + strconv.Itoa(configPort) + "},\"cluster\":{\"servers\":["
-	for index, serverPort := range serverPorts {
-		if index > 0 {
-			data += ","
-		}
-		data += "{\"ip\":\"127.0.0.1\",\"port\":"+strconv.Itoa(serverPort)+"}"
-	}
-	data += "]"
-	if len(uuid) > 0 {
-		data += ",\"uuid\":\""+uuid+"\""
-	}
-	if len(version) > 0 {
-		data += ", \"version\": "+version
-	}
-	data += "}}"
-
-	ioutil.WriteFile(fileName, []byte(data), 0644)
-	return fileName
-}
 
 func makeProxyRequest(proxyPort int, path string, sessionUuidCookie string, gradualTransitionUuidCookie string) string {
 	var (

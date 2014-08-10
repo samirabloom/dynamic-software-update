@@ -3,13 +3,42 @@ package proxy
 import (
 	"testing"
 	assertion "util/test/assertion"
+	"strconv"
+	"io/ioutil"
 )
+
+func writeConfigFile(proxyPort int, configPort int, uuid string, serverPorts []int, version string) string {
+	fileName := "/tmp/system_test_config.json"
+	data := "{\"proxy\":{\"ip\":\"localhost\",\"port\":" + strconv.Itoa(proxyPort) + "},\"configService\":{\"port\":" + strconv.Itoa(configPort) + "},\"cluster\":{\"servers\":["
+	for index, serverPort := range serverPorts {
+		if index > 0 {
+			data += ","
+		}
+		data += "{\"ip\":\"127.0.0.1\",\"port\":"+strconv.Itoa(serverPort)+"}"
+	}
+	data += "]"
+	if len(uuid) > 0 {
+		data += ",\"uuid\":\""+uuid+"\""
+	}
+	if len(version) > 0 {
+		data += ", \"version\": "+version
+	}
+	data += "}}"
+
+	ioutil.WriteFile(fileName, []byte(data), 0644)
+	return fileName
+}
 
 func Test_Read_Config_When_File_Exists(testCtx *testing.T) {
 	// given
 	var (
-		fileName          = "config_parse_read_config_file_test_config.json"
-		expectedByteArray = []byte("{\n    \"proxy\": {\n        \"ip\": \"localhost\",\n        \"port\": 1234\n    },\n    \"cluster\": {\n        \"servers\": [\n            {\n                \"ip\": \"127.0.0.1\",\n                \"port\": 1024\n            }\n        ],\n        \"version\": 1.0,\n        \"upgradeTransition\": {\n            \"sessionTimeout\": 60\n        }\n    }\n}")
+		proxyPort int     = 1234
+		configPort int    = 4321
+		uuid string       = "a37a290f-2088-11e4-b3a6-600308a8245e"
+		serverPorts []int = []int{1024, 1025}
+		version string    = "0.5"
+		fileName          = writeConfigFile(proxyPort, configPort, uuid, serverPorts, version)
+		expectedByteArray = []byte("{\"proxy\":{\"ip\":\"localhost\",\"port\":1234},\"configService\":{\"port\":4321},\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\"a37a290f-2088-11e4-b3a6-600308a8245e\", \"version\": 0.5}}")
 	)
 
 	// when

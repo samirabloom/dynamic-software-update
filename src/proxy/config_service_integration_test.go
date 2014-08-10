@@ -68,4 +68,3 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 	// then
 	assertion.AssertDeepEqual("Correct DELETE Status", testCtx, "404 Not Found", deleteAfterDeleteStatus)
 }
-

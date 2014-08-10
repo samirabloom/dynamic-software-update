@@ -89,6 +89,26 @@ func Test_Parse_Cluster_Config_When_Concurrent_Transition_Mode(testCtx *testing.
 	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
 }
 
+func Test_Parse_Cluster_Config_When_Gradual_Transition_Mode(testCtx *testing.T) {
+	// given
+	var (
+		expectedError error               = nil
+		serverOne, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
+		serverTwo, _                      = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
+		expectedClusters *stages.Clusters = &stages.Clusters{}
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "GRADUAL", "percentageTransitionPerRequest": float64(0.01)}, "version": 1.0}}
+	)
+	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), Mode: stages.GradualMode, PercentageTransitionPerRequest: float64(0.01), Version: 1.0})
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
 func Test_Parse_Cluster_Config_When_Config_Valid_With_UUID(testCtx *testing.T) {
 	// given
 	var (
@@ -140,6 +160,56 @@ func Test_Parse_Cluster_When_Server_List_Empty(testCtx *testing.T) {
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
 	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualRouter)
+}
+
+func Test_Parse_Cluster_Config_When_Gradual_Transition_Mode_And_No_PercentageTransition(testCtx *testing.T) {
+	// given
+	var (
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "GRADUAL"}, "version": 1.0}}
+		expectedError error               = errors.New("Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\"")
+		expectedClusters *stages.Clusters = nil
+	)
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Parse_Cluster_Config_When_Session_Mode_And_No_Timeout(testCtx *testing.T) {
+	// given
+	var (
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "SESSION"}, "version": 1.0}}
+		expectedError error               = errors.New("Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\"")
+		expectedClusters *stages.Clusters = nil
+	)
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Parse_Cluster_Config_When_Servers_List_Missing(testCtx *testing.T) {
+	// given
+	var (
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"upgradeTransition": map[string]interface{}{"mode": "INSTANT"}, "version": 1.0}}
+		expectedError error               = errors.New("Invalid cluster configuration - \"servers\" list missing from \"cluster\" config")
+		expectedClusters *stages.Clusters = nil
+	)
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
 }
 
 func Test_Parse_Cluster_When_No_IP(testCtx *testing.T) {
@@ -227,12 +297,12 @@ func Test_Parse_Cluster_Config_When_Invalid_Mode(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
 }
 
-func Test_Parse_Cluster_Config_When_Invalid_Mode_Timeout_Combination(testCtx *testing.T) {
+func Test_Parse_Cluster_Config_When_Invalid_Instance_Mode_Timeout_Combination(testCtx *testing.T) {
 	// given
 	var (
 		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
 		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "INSTANT", "sessionTimeout": float64(60)}, "version": 1.0}}
-		expectedError error               = errors.New("Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is \"INSTANT\"")
+		expectedError error               = errors.New("Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\"")
 		expectedClusters *stages.Clusters = nil
 	)
 
@@ -242,4 +312,127 @@ func Test_Parse_Cluster_Config_When_Invalid_Mode_Timeout_Combination(testCtx *te
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
 	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Parse_Cluster_Config_When_Invalid_Concurrent_Mode_Timeout_Combination(testCtx *testing.T) {
+	// given
+	var (
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "CONCURRENT", "sessionTimeout": float64(60)}, "version": 1.0}}
+		expectedError error               = errors.New("Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\"")
+		expectedClusters *stages.Clusters = nil
+	)
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Parse_Cluster_Config_When_Invalid_Instance_Mode_TransitionPerRequest_Combination(testCtx *testing.T) {
+	// given
+	var (
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "INSTANT", "percentageTransitionPerRequest": float64(0.01)}, "version": 1.0}}
+		expectedError error               = errors.New("Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\"")
+		expectedClusters *stages.Clusters = nil
+	)
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Parse_Cluster_Config_When_Invalid_Concurrent_Mode_TansitionPerRequest_Combination(testCtx *testing.T) {
+	// given
+	var (
+		serversConfig                     = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		jsonConfig                        = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "CONCURRENT", "percentageTransitionPerRequest": float64(0.01)}, "version": 1.0}}
+		expectedError error               = errors.New("Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\"")
+		expectedClusters *stages.Clusters = nil
+	)
+
+	// when
+	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+
+	// then
+	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Routing Contexts", testCtx, expectedClusters, actualClusters)
+}
+
+func Test_Serialise_Cluster_When_Instant_Mode(testCtx *testing.T) {
+	// given
+	var (
+		serverOne, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
+		serverTwo, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
+		uuidValue               = uuidGenerator()
+		serversConfig           = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		expectedJsonConfig      = map[string]interface{}{"cluster": map[string]interface{}{"uuid": uuidValue.String(), "servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "INSTANT"}, "version": 1.0}}
+		cluster *stages.Cluster = &stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, Uuid: uuidValue, Mode: stages.InstantMode, Version: 1.0}
+	)
+
+	// when
+	actualJsonConfig := serialiseCluster(cluster)
+
+	// then
+	assertion.AssertDeepEqual("Correct JSON config", testCtx, expectedJsonConfig, actualJsonConfig)
+}
+
+func Test_Serialise_Cluster_When_Session_Mode(testCtx *testing.T) {
+	// given
+	var (
+		serverOne, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
+		serverTwo, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
+		uuidValue               = uuidGenerator()
+		serversConfig           = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		expectedJsonConfig      = map[string]interface{}{"cluster": map[string]interface{}{"uuid": uuidValue.String(), "servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "SESSION", "sessionTimeout": int64(10)}, "version": 1.0}}
+		cluster *stages.Cluster = &stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, Uuid: uuidValue, SessionTimeout: int64(10), Mode: stages.SessionMode, Version: 1.0}
+	)
+
+	// when
+	actualJsonConfig := serialiseCluster(cluster)
+
+	// then
+	assertion.AssertDeepEqual("Correct JSON config", testCtx, expectedJsonConfig, actualJsonConfig)
+}
+
+func Test_Serialise_Cluster_When_Gradual_Mode(testCtx *testing.T) {
+	// given
+	var (
+		serverOne, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
+		serverTwo, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
+		uuidValue               = uuidGenerator()
+		serversConfig           = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		expectedJsonConfig      = map[string]interface{}{"cluster": map[string]interface{}{"uuid": uuidValue.String(), "servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "GRADUAL", "percentageTransitionPerRequest": float64(0.01)}, "version": 1.0}}
+		cluster *stages.Cluster = &stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, Uuid: uuidValue, PercentageTransitionPerRequest: float64(0.01), Mode: stages.GradualMode, Version: 1.0}
+	)
+
+	// when
+	actualJsonConfig := serialiseCluster(cluster)
+
+	// then
+	assertion.AssertDeepEqual("Correct JSON config", testCtx, expectedJsonConfig, actualJsonConfig)
+}
+
+func Test_Serialise_Cluster_When_Concurrent_Mode(testCtx *testing.T) {
+	// given
+	var (
+		serverOne, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
+		serverTwo, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
+		uuidValue               = uuidGenerator()
+		serversConfig           = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
+		expectedJsonConfig      = map[string]interface{}{"cluster": map[string]interface{}{"uuid": uuidValue.String(), "servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "CONCURRENT"}, "version": 1.0}}
+		cluster *stages.Cluster = &stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, Uuid: uuidValue, Mode: stages.ConcurrentMode, Version: 1.0}
+	)
+
+	// when
+	actualJsonConfig := serialiseCluster(cluster)
+
+	// then
+	assertion.AssertDeepEqual("Correct JSON config", testCtx, expectedJsonConfig, actualJsonConfig)
 }

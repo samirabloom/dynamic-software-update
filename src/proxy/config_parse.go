@@ -14,7 +14,7 @@ import (
 // ==== PARSE CONFIG - START
 
 func loadConfig(configFile string) (*Proxy, error) {
-	return parseConfigFile(readConfigFile(configFile), parseProxy, parseClusters(func() uuid.UUID { return uuid.NewUUID() }))
+	return parseConfigFile(readConfigFile(configFile), parseProxy, parseConfigService, parseClusters(func() uuid.UUID { return uuid.NewUUID() }))
 }
 
 func readConfigFile(configFile string) []byte {
@@ -25,7 +25,7 @@ func readConfigFile(configFile string) []byte {
 	return jsonConfig
 }
 
-func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseClusters func(map[string]interface{}) (*stages.Clusters, error)) (proxy *Proxy, err error) {
+func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseConfigService func(map[string]interface{}) (int, error), parseClusters func(map[string]interface{}) (*stages.Clusters, error)) (proxy *Proxy, err error) {
 	// parse json object
 	var jsonConfig = make(map[string]interface{})
 	err = json.Unmarshal(jsonData, &jsonConfig)
@@ -138,6 +138,7 @@ func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (
 			backendAddresses []*net.TCPAddr
 			version float64
 			sessionTimeout int64
+			percentageTransitionPerRequest float64
 			mode stages.TransitionMode
 			uuidValue uuid.UUID
 		)
@@ -187,12 +188,27 @@ func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (
 							if sessionTimeoutConfig != nil {
 								sessionTimeout = int64(sessionTimeoutConfig.(float64))
 							} else {
-								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" is missing from \"upgradeTransition\" config"
+								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
 								log.LoggerFactory().Error(errorMessage)
 								err = errors.New(errorMessage)
 							}
 						} else if sessionTimeoutConfig != nil {
-							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is \"INSTANT\""
+							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
+							log.LoggerFactory().Error(errorMessage)
+							err = errors.New(errorMessage)
+						}
+
+						percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
+						if mode == stages.GradualMode {
+							if percentageTransitionPerRequestConfig != nil {
+								percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
+							} else {
+								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
+								log.LoggerFactory().Error(errorMessage)
+								err = errors.New(errorMessage)
+							}
+						} else if percentageTransitionPerRequestConfig != nil {
+							errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
 							log.LoggerFactory().Error(errorMessage)
 							err = errors.New(errorMessage)
 						}
@@ -203,6 +219,7 @@ func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (
 					}
 				} else {
 					sessionTimeout = 0
+					percentageTransitionPerRequest = 0
 					mode = stages.InstantMode
 				}
 			} else {
@@ -216,7 +233,7 @@ func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (
 			err = errors.New(errorMessage)
 		}
 
-		return &stages.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, Mode: mode, Version: version}, err
+		return &stages.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, PercentageTransitionPerRequest: percentageTransitionPerRequest, Mode: mode, Version: version}, err
 	}
 }
 
@@ -226,9 +243,18 @@ func serialiseCluster(cluster *stages.Cluster) map[string]interface{} {
 	if cluster != nil {
 		var serversConfig []interface{} = make([]interface{}, len(cluster.BackendAddresses))
 		for index, backendAddress := range cluster.BackendAddresses {
-			serversConfig[index] = map[string]interface{}{"ip": backendAddress.IP, "port": backendAddress.Port}
+			serversConfig[index] = map[string]interface{}{"ip": backendAddress.IP.String(), "port": backendAddress.Port}
 		}
-		jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"uuid": cluster.Uuid.String(), "servers": serversConfig, "version": cluster.Version, "upgradeTransition": map[string]interface{}{"sessionTimeout": cluster.SessionTimeout, "mode": stages.ModesModeToCode[cluster.Mode]}}}
+		upgradeTransition := map[string]interface{}{"mode": stages.ModesModeToCode[cluster.Mode]}
+		switch cluster.Mode {
+		case stages.SessionMode: {
+			upgradeTransition = map[string]interface{}{"mode": stages.ModesModeToCode[cluster.Mode], "sessionTimeout": cluster.SessionTimeout}
+		}
+		case stages.GradualMode: {
+			upgradeTransition = map[string]interface{}{"mode": stages.ModesModeToCode[cluster.Mode], "percentageTransitionPerRequest": cluster.PercentageTransitionPerRequest}
+		}
+		}
+		jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"uuid": cluster.Uuid.String(), "servers": serversConfig, "version": cluster.Version, "upgradeTransition": upgradeTransition}}
 	}
 
 	return jsonConfig
