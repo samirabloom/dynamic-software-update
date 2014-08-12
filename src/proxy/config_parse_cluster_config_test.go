@@ -22,7 +22,7 @@ func Test_Parse_Cluster_Config_When_Default_Version_And_UpgradeTransition(testCt
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 0, Mode: stages.InstantMode, Version: 0.0})
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -42,7 +42,7 @@ func Test_Parse_Cluster_Config_When_Default_Mode(testCtx *testing.T) {
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 60, Mode: stages.SessionMode, Version: 1.0})
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -62,7 +62,7 @@ func Test_Parse_Cluster_Config_When_Config_Valid_No_Defaults(testCtx *testing.T)
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), Mode: stages.InstantMode, Version: 1.0})
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -82,7 +82,7 @@ func Test_Parse_Cluster_Config_When_Concurrent_Transition_Mode(testCtx *testing.
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), Mode: stages.ConcurrentMode, Version: 1.0})
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -102,7 +102,7 @@ func Test_Parse_Cluster_Config_When_Gradual_Transition_Mode(testCtx *testing.T) 
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuidGenerator(), Mode: stages.GradualMode, PercentageTransitionPerRequest: float64(0.01), Version: 1.0})
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -122,7 +122,7 @@ func Test_Parse_Cluster_Config_When_Config_Valid_With_UUID(testCtx *testing.T) {
 	expectedClusters.Add(&stages.Cluster{BackendAddresses: []*net.TCPAddr{serverOne, serverTwo}, RequestCounter: -1, Uuid: uuid.Parse("1027596f-1034-11e4-8334-600308a82410"), Mode: stages.InstantMode, Version: 1.0})
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -138,7 +138,7 @@ func Test_Parse_Cluster_When_Cluster_Nil(testCtx *testing.T) {
 	)
 
 	// when
-	actualRouter, err := parseClusters(uuidGenerator)(jsonConfig)
+	actualRouter, err := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, err, expectedError)
@@ -155,7 +155,7 @@ func Test_Parse_Cluster_When_Server_List_Empty(testCtx *testing.T) {
 	)
 
 	// when
-	actualRouter, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualRouter, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -172,7 +172,7 @@ func Test_Parse_Cluster_Config_When_Gradual_Transition_Mode_And_No_PercentageTra
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -189,7 +189,7 @@ func Test_Parse_Cluster_Config_When_Session_Mode_And_No_Timeout(testCtx *testing
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -205,7 +205,7 @@ func Test_Parse_Cluster_Config_When_Servers_List_Missing(testCtx *testing.T) {
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -222,7 +222,7 @@ func Test_Parse_Cluster_When_No_IP(testCtx *testing.T) {
 	)
 
 	// when
-	actualRouter, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualRouter, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -239,7 +239,7 @@ func Test_Parse_Cluster_When_IP_Invalid(testCtx *testing.T) {
 	)
 
 	// when
-	actualRouter, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualRouter, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -256,7 +256,7 @@ func Test_Parse_Cluster_When_No_Port(testCtx *testing.T) {
 	)
 
 	// when
-	actualRouter, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualRouter, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -273,7 +273,7 @@ func Test_Parse_Cluster_When_Port_Invalid(testCtx *testing.T) {
 	)
 
 	// when
-	actualRouter, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualRouter, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -290,7 +290,7 @@ func Test_Parse_Cluster_Config_When_Invalid_Mode(testCtx *testing.T) {
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -307,7 +307,7 @@ func Test_Parse_Cluster_Config_When_Invalid_Instance_Mode_Timeout_Combination(te
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -324,7 +324,7 @@ func Test_Parse_Cluster_Config_When_Invalid_Concurrent_Mode_Timeout_Combination(
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -341,7 +341,7 @@ func Test_Parse_Cluster_Config_When_Invalid_Instance_Mode_TransitionPerRequest_C
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)
@@ -358,7 +358,7 @@ func Test_Parse_Cluster_Config_When_Invalid_Concurrent_Mode_TansitionPerRequest_
 	)
 
 	// when
-	actualClusters, actualError := parseClusters(uuidGenerator)(jsonConfig)
+	actualClusters, actualError := parseClusters(uuidGenerator, false)(jsonConfig)
 
 	// then
 	assertion.AssertDeepEqual("Correct Proxy Error", testCtx, expectedError, actualError)

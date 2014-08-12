@@ -74,6 +74,9 @@
 
 \tableofcontents
 \clearpage
+\section{Abstract}
+
+\clearpage
 \section{Introduction}
 
 Reliable software is important in many sectors such as E-commerce, healthcare, banking, air traffic control and nuclear control.
@@ -84,6 +87,8 @@ All companies and organizations use software applications to run their business,
  
 This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.\\  
 
+
+\clearpage
 \section{Overview}
 Software reliability is compromised of the following main activities:
 
@@ -155,6 +160,7 @@ Configuration as code is a technique used to ensure all environment configuratio
 Continuous delivery is a software development approach that ensures application updates can be deployed to production at any point throughout the development life cycle. To support continuous delivery a pipeline is typically used to promote application updates automatically through several stages from initial development through to production \cite{Continuous Delivery}. Continuous delivery supports reliable software update by ensuring that each update has been applied to multiple stages prior to reaching production. In addition, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
 
 
+\clearpage
 \section{Related Work}
 Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. This section summarizes different approaches that have been proposed over the past forty years for highly reliable dynamic software upgrade.
 
@@ -185,6 +191,7 @@ In 1999 Cook \textit{et al.} introduced a multi-version framework called Hercule
 More recently, Hosek \textit{et al.} proposed a novel framework called Mx, which takes advantage of the idle resources made available by multi-core platforms, and allows applications to survive crash errors introduced by incorrect software updates (\cite{Cadar1}, \cite{Cadar2}). Similar to Hercules, Mx achieves reliability by running the old and new version of an application concurrently. The fundamental difference between the two frameworks is that Hercules requires the programmer to define the functionality of each component version, whilst Mx targets crash bugs and is fully automated. Additionally, in the latter system all versions are live at all times and when Mx detects that one of the versions is not behaving correctly or has crashed, the correctly behaving version is used to handle all software requests. This allows appropriate actions to be taken at a convenient moment; at this point, the incorrectly behaving version can be fixed or restarted. 
 
 
+\clearpage
 \section{Background}
 This section explains and justifies the technologies that will be used in the implementation of the dynamic software update system proposed in section \ref{Implementation}.
  
@@ -367,6 +374,7 @@ The Status-Line consists of the HTTP version followed by a numeric status code a
 
  
 
+\clearpage
 \section{Design} \label{Design}
 To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2 \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
 
@@ -413,6 +421,7 @@ The following technology stack has been chosen for the dynamic software update s
 
     \end{list}
 
+\clearpage
 \section{Implementation} \label{Implementation}
 To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented using GO programming language as described in this section. 
 
@@ -430,7 +439,7 @@ The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sock
 \end{list}
 
 
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked, ZeroMQ DEALER socket in the router treats each chunk as a separate message and for example it distributes each chunk of the same request to different servers. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer.
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked (Section \ref{Requests}), ZeroMQ DEALER socket in the router treats each chunk as a separate message and it distributes each chunk of the same request or response to different recipients. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer. Therefore, the aforementioned proxy was not advanced further to support dynamic software update and an alternative one was sought to be developed. 
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -442,7 +451,10 @@ Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests o
 \vspace{-18pt}
 
 \subsection{Socket Based Proxy With Content Counting}
-Socket based proxy is implemented using raw Go sockets without a messaging system. This proxy uses the Transfer-Encoding and Content-Length HTTP header fields to detect the end of a request or response. Quantitative analysis of this proxy described in section xxxx showed significant performance overhead. Therefore, another version of the socket based proxy was developed as described in the next section.    
+As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a fast and efficient dynamic software system. Hence, a new proxy was implemented using raw Go sockets. In this approach the proxy  
+
+
+This proxy uses the Transfer-Encoding and Content-Length HTTP header fields to detect the end of a request or response. Quantitative analysis of this proxy described in section xxxx showed significant performance overhead. Therefore, another version of the socket based proxy was developed as described in the next section.    
 
 \subsection{TCP Socket Based Proxy With End Of File}
 The final version of the proxy developed using TCP sockets. This proxy does not use any messaging systems and it uses the End of File (EOF) signal to detect the end of a request or response. The TCP socket based proxy is arranged as shown in Figure \ref{proxy} and described in the following sections.
@@ -544,7 +556,7 @@ why didn't use fleet system and coreOS?
 
 
 
-
+\clearpage
 \section{Evaluation}
 The system to support dynamic software update will be evaluated as described below.
 
@@ -569,6 +581,8 @@ The system to support dynamic software update will be evaluated as described bel
 \noindent
 \underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version.
 
+
+\clearpage
 \section{Conclusions \& Future Plans}
 xxxxxxxxx\\
 xxxxxxxxx\\
@@ -576,9 +590,9 @@ xxxxxxxxx\\
 
 
 
+
+
 \clearpage
-
-
 \begin{thebibliography}{1}
 
  \bibitem {Java} Alessandro Orso, Anup Rao, and Mary J. Harrold. {\em A Technique for Dynamic Updating of Java Software.}, CSM Proceedings of the International Conference on Software, 2002.

@@ -14,7 +14,7 @@ import (
 // ==== PARSE CONFIG - START
 
 func loadConfig(configFile string) (*Proxy, error) {
-	return parseConfigFile(readConfigFile(configFile), parseProxy, parseConfigService, parseClusters(func() uuid.UUID { return uuid.NewUUID() }))
+	return parseConfigFile(readConfigFile(configFile), parseProxy, parseConfigService, parseClusters(func() uuid.UUID { return uuid.NewUUID() }, true))
 }
 
 func readConfigFile(configFile string) []byte {
@@ -106,7 +106,7 @@ func parseConfigService(jsonConfig map[string]interface{}) (int, error) {
 	return configServicePort, err
 }
 
-func parseClusters(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*stages.Clusters, error) {
+func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}) (*stages.Clusters, error) {
 	return func(jsonConfig map[string]interface{}) (*stages.Clusters, error) {
 		var (
 			err error
@@ -116,7 +116,7 @@ func parseClusters(uuidGenerator func() uuid.UUID) func(map[string]interface{}) 
 
 		clusterConfiguration := jsonConfig["cluster"]
 		if clusterConfiguration != nil {
-			router, err = parseCluster(uuidGenerator)(clusterConfiguration.(map[string]interface{}))
+			router, err = parseCluster(uuidGenerator, initialCluster)(clusterConfiguration.(map[string]interface{}))
 			if err == nil {
 				clusters = &stages.Clusters{}
 				clusters.Add(router)
@@ -131,7 +131,7 @@ func parseClusters(uuidGenerator func() uuid.UUID) func(map[string]interface{}) 
 	}
 }
 
-func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (*stages.Cluster, error) {
+func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}) (*stages.Cluster, error) {
 	return func(clusterConfiguration map[string]interface{}) (*stages.Cluster, error) {
 		var (
 			err error
@@ -173,49 +173,55 @@ func parseCluster(uuidGenerator func() uuid.UUID) func(map[string]interface{}) (
 
 				upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]
 				if upgradeTransitionConfig != nil {
-					upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
-
-					modeConfig := upgradeTransition["mode"]
-					if modeConfig != nil {
-						mode = stages.ModesCodeToMode[modeConfig.(string)]
-					} else {
-						mode = stages.SessionMode
-					}
-
-					if mode != 0 {
-						sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
-						if mode == stages.SessionMode {
-							if sessionTimeoutConfig != nil {
-								sessionTimeout = int64(sessionTimeoutConfig.(float64))
-							} else {
-								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
-								log.LoggerFactory().Error(errorMessage)
-								err = errors.New(errorMessage)
-							}
-						} else if sessionTimeoutConfig != nil {
-							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
-							log.LoggerFactory().Error(errorMessage)
-							err = errors.New(errorMessage)
-						}
-
-						percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
-						if mode == stages.GradualMode {
-							if percentageTransitionPerRequestConfig != nil {
-								percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
-							} else {
-								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
-								log.LoggerFactory().Error(errorMessage)
-								err = errors.New(errorMessage)
-							}
-						} else if percentageTransitionPerRequestConfig != nil {
-							errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
-							log.LoggerFactory().Error(errorMessage)
-							err = errors.New(errorMessage)
-						}
-					} else {
-						errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"" + stages.ModesModeToCode[stages.InstantMode] + "\" or \"" + stages.ModesModeToCode[stages.SessionMode] + "\""
+					if initialCluster {
+						errorMessage := "Invalid cluster configuration - \"upgradeTransition\" can not be specified for the intial cluster"
 						log.LoggerFactory().Error(errorMessage)
 						err = errors.New(errorMessage)
+					} else {
+						upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
+
+						modeConfig := upgradeTransition["mode"]
+						if modeConfig != nil {
+							mode = stages.ModesCodeToMode[modeConfig.(string)]
+						} else {
+							mode = stages.SessionMode
+						}
+
+						if mode != 0 {
+							sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
+							if mode == stages.SessionMode {
+								if sessionTimeoutConfig != nil {
+									sessionTimeout = int64(sessionTimeoutConfig.(float64))
+								} else {
+									errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
+									log.LoggerFactory().Error(errorMessage)
+									err = errors.New(errorMessage)
+								}
+							} else if sessionTimeoutConfig != nil {
+								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
+								log.LoggerFactory().Error(errorMessage)
+								err = errors.New(errorMessage)
+							}
+
+							percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
+							if mode == stages.GradualMode {
+								if percentageTransitionPerRequestConfig != nil {
+									percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
+								} else {
+									errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
+									log.LoggerFactory().Error(errorMessage)
+									err = errors.New(errorMessage)
+								}
+							} else if percentageTransitionPerRequestConfig != nil {
+								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
+								log.LoggerFactory().Error(errorMessage)
+								err = errors.New(errorMessage)
+							}
+						} else {
+							errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"" + stages.ModesModeToCode[stages.InstantMode] + "\" or \"" + stages.ModesModeToCode[stages.SessionMode] + "\""
+							log.LoggerFactory().Error(errorMessage)
+							err = errors.New(errorMessage)
+						}
 					}
 				} else {
 					sessionTimeout = 0

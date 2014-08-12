@@ -22,6 +22,9 @@ echo "Running exmaple servers with 1034, 1035 and 1036"
 ./example_server -port="1037" &
 ./example_server -port="1038" &
 ./example_server -port="1039" &
+./example_server -port="1040" &
+./example_server -port="1041" &
+./example_server -port="1042" &
 
 echo "Building project"
 go build -o dynsoftup ./src/main_run.go

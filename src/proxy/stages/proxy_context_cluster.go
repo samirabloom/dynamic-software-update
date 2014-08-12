@@ -94,7 +94,14 @@ type Cluster struct {
 func (cluster *Cluster) NextServer() *net.TCPAddr {
 	cluster.RequestCounter++
 	server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
-	log.LoggerFactory().Info(fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f]", cluster.RequestCounter, server.IP, server.Port, cluster.Version))
+	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f] mode: [%s]", cluster.RequestCounter, server.IP, server.Port, cluster.Version, ModesModeToCode[cluster.Mode])
+	if cluster.PercentageTransitionPerRequest > 0 {
+		message += fmt.Sprintf(" transition counter [%.2f] percentage transition per request [%.2f]", cluster.TransitionCounter, cluster.PercentageTransitionPerRequest)
+	}
+	if cluster.SessionTimeout > 0 {
+		message += fmt.Sprintf(" session timeout [%d] uuid [%s]", cluster.SessionTimeout, cluster.Uuid)
+	}
+	log.LoggerFactory().Info(message)
 	return server
 }
 

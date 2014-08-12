@@ -29,7 +29,7 @@ type Proxy struct {
 func NewProxy(configFile string) *Proxy {
 	proxy, err := loadConfig(configFile)
 	if err != nil {
-		log.LoggerFactory().Error("Error parsing config %v", err)
+		os.Exit(1)
 	}
 	return proxy
 }
