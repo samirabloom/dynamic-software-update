@@ -3,7 +3,9 @@
 
 \usepackage[nodayofweek]{datetime}
 \longdate
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}   
+ 
 
 \usepackage{enumitem}
 \usepackage{hyperref}
@@ -11,6 +13,8 @@
 \usepackage{graphicx}
 \usepackage{fancyhdr}
 \pagestyle{fancyplain}
+\usepackage[T1]{fontenc}
+\usepackage[numbib]{tocbibind}
 
 \usepackage{caption}
 \usepackage{subcaption}
@@ -317,13 +321,58 @@ ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging l
 
 ZeroMQ provide sockets that carry atomic messages across various transports such as TCP or UDP and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
 
-More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ \footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist.  
+More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ \footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist. 
+
+
+\subsection{Hypertext Transfer Protocol} \label{HTTP}
+The Hypertext Transfer Protocol (HTTP) is a generic, stateless application-level protocol for distributed hypermedia information systems. HTTP is the foundation protocol of the World Wide Web and it is widely used between a web browser and a web server. A feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred.  To provide reliability HTTP uses Transmission Control Protocol (TCP). Since HTTP is stateless, a new TCP connection is created between client and server for each transaction and the TCP connection terminates immediately after the transaction is completed. HTTP functions as a request-response protocol in a client-server interaction. 
+
+\subsection{HTTP Requests} \label{Requests}
+The HTTP request sent to the server by client has the following format:\\
+
+		\indent
+		<Request> ::= <Request-Line>\\
+		\indent\indent\indent\indent
+		\setlength\parindent{24pt}
+		<general-headers>\\
+		\indent\indent\indent\indent
+		|<request-headers>\\
+		\indent\indent\indent\indent
+		| <entity-headers> CRLF\\
+		\indent\indent\indent\indent
+		CRLF \\
+		\indent\indent\indent\indent
+		<opt-message-body>\\
+
+The Request-Line consists of a method token, Request-URI and the protocol version. Method token defines HTTP functions such as GET, POST, PUT, DELETE that is performed on the resources identified by Request-URI. General headers provide general control information and they can be included in both requests and responses. Transfer-Encoding is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if Transfer-Encoding is defined as "chuncked", the data will be sent to the recipient in a series of "chunks". The request-header fields allow the client to pass additional information about the request, and about the client itself, to the server. Entity-headers define optional and required metainformation about the request body and if the request has no body, provide information about the resource identified by the request. For example, Content-Length header is one of the entity-header fields indicating the size of the request body. CRLF refers to a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n'). CRLF is used to define the end of request line and headers and start of the request body.
+
+
+\subsection{HTTP Responses}
+Server send HTTP responses to the client after receiving and interpreting requests using the following format: \\
+\indent
+		<Response> ::= <Status-Line>\\
+		\indent\indent\indent\indent
+		\setlength\parindent{24pt}
+		<general-headers>\\
+		\indent\indent\indent\indent
+		|<response-headers>\\
+		\indent\indent\indent\indent
+		| <entity-headers> CRLF\\
+		\indent\indent\indent\indent
+		CRLF \\
+		\indent\indent\indent\indent
+		<opt-message-body>\\
+
+The Status-Line consists of the HTTP version followed by a numeric status code and its associated textual phrase. Status code indicates the action taken on the corresponding request such as 'Successful' (The request was successfully received, understood, and accepted), 'Client Error' (The request contains a syntax error or the request cannot be fulfilled) and 'Server Error' (The server failed to fulfill an apparently valid request). Similar to requests, HTTP responses also have several type of headers which provides general or specific information about the about the response (Section \ref{Requests}).  
+
+ 
 
 \section{Design} \label{Design}
 To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2 \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
 
 In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
 
+\subsection{Proposed Dynamic Software Update System} 
 This project proposes a simple lightweight system to support reliable dynamic software updates suitable for continuous delivery into production. In the proposed system the updated version will run concurrently with previous stable versions. The updated system will be monitored automatically and if the system behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
 
 Four mechanisms will be supported to enable different reliable update strategies depending on the specific software requirements.
@@ -336,19 +385,19 @@ Four mechanisms will be supported to enable different reliable update strategies
 
 \underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
 
-In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution.png} (Figure \ref{proposed_solution.png} ) demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} (Figure \ref{proposed_solution} ) demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
 
 \vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.70]{proposed_solution.png}
+     \includegraphics[scale=0.70]{proposed_solution}
   \caption{Component interactions within the proposed  dynamic software update system}
-  \label{system}
+  \label{proposed_solution}
 \end{figure}
 \vspace{-18pt}
 
 
-\noindent
+\subsection{Proposed Technology Stack} 
 The following technology stack has been chosen for the dynamic software update system:
 
 \begin{list}{-}{}
@@ -358,31 +407,30 @@ The following technology stack has been chosen for the dynamic software update s
   
   \item Etcd as a highly available distributed key value store used for shared configuration and as a software version registry
   
-  \item Go \footnote{\url{http://golang.org/}} programming language because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Go will be used to build the content switching load balancer
+  \item Go \footnote{\url{http://golang.org/}} programming language because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Go will be used to build the content switching load balancer. Other fast programming languages such as C\textsuperscript{++} and Java was considered to use. However, C\textsuperscript{++} was not chosen since it does not have garbage collection and requires manual memory management.  Additionally, Java was not chosen since it is more heavyweight in comparison to Go and it does not give the programmer any control over the memory management.    
   
   \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware  
 
     \end{list}
 
 \section{Implementation} \label{Implementation}
-To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented as described in this section.  
+To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented using GO programming language as described in this section. 
 
 \subsection{Message Based Proxy Using ZeroMQ}
-\noindent
-The first proxy that supports dynamic software update was a HTTP reverse proxy  based on ZeroMQ messaging system. The proxy was written in Go programming language. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}.
-
-The ZeroMQ load balancing HTTP reverse proxy is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
+The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}.
+The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
  
 \begin{list}{-}{}
   \itemsep0em
-  \item \textbf{upstream} is responsible for receiving HTTP requests and replying with the HTTP response.
+  \item \textbf{upstream} uses STREAM socket for receiving HTTP requests and replying with the HTTP response. Upstream also consists of REQ socket that forwards the requests to the router. 
   
-  \item \textbf{router} is responsible for distributing the request across four downstream threads.
-  
-  \item \textbf{downstream} is responsible for sending HTTP requests to the two Docker containers containing the Netty web services and receiving the responses.
+  \item \textbf{router} is responsible for distributing requests across four downstream threads using ROUTER and DEALER sockets. ROUTER socket adds the identity of the sender and receiver to responses and requests respectively. DEALER socket distributes the requests across downstream threads in a round-robin order.
+ 
+  \item \textbf{downstream} is responsible for receiving the requests from the router using REP sockets and sending HTTP requests to the two Docker containers containing the Netty web services and receiving the responses using STREAM socket.
 \end{list}
 
-quantitative analysis of the ZeroMQ based proxy showed that a messaging system is not the correct choice for a proxy acting as a dynamic software update system. Hence, messaging system free proxies were developed as described in the next sections.
+
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked, ZeroMQ DEALER socket in the router treats each chunk as a separate message and for example it distributes each chunk of the same request to different servers. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer.
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -394,7 +442,6 @@ quantitative analysis of the ZeroMQ based proxy showed that a messaging system i
 \vspace{-18pt}
 
 \subsection{Socket Based Proxy With Content Counting}
-\noindent
 Socket based proxy is implemented using raw Go sockets without a messaging system. This proxy uses the Transfer-Encoding and Content-Length HTTP header fields to detect the end of a request or response. Quantitative analysis of this proxy described in section xxxx showed significant performance overhead. Therefore, another version of the socket based proxy was developed as described in the next section.    
 
 \subsection{TCP Socket Based Proxy With End Of File}
@@ -427,7 +474,7 @@ creates the same stages as the forward pipe for the response. The read stage of 
   \centering
      \includegraphics[scale=0.70]{proxy}
   \caption{TCP Socket Based Proxy Design}
-  \label{prototype}
+  \label{proxy}
 \end{figure}
 % \vspace{-18pt}
 
@@ -522,46 +569,15 @@ The system to support dynamic software update will be evaluated as described bel
 \noindent
 \underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version.
 
-\section{Project Plan \& Progress Summary}
-This section lists the tasks required to develop a reliable dynamic software update system as described in section \ref{Implementation}. The tasks have been separated by those that have been completed and those that are still outstanding.
- 
-\noindent 
-\underline{Completed Tasks}
-
-1.	Literature review
-
-2.	Prototype technology stack\\
-\noindent 
-\underline{Outstanding Tasks}
-
-%\noindent 
-3.	Productionize prototype by adding unit and integration tests
-
-4.	Support dynamic registration of containers in etcd
- 
-5.	Support automated deployment of new containers
- 
-6.	Rapid update mechanism
- 
-7.	Create load and saturation performance tests
-
-8.	Monitor updated system behavior (\textit{i.e.} response size and time)
-
-9.	Immediate switch back after update failure
-
-10.	Create crash tests and integration tests for step 9
-
-11.	New session update mechanism
-
-12. Multi-version update mechanism
-
-12.	Long term update mechanism
-
-13.	New session switch back after update failure\\
+\section{Conclusions \& Future Plans}
+xxxxxxxxx\\
+xxxxxxxxx\\
+xxxxxxxxx\\
 
 
 
 \clearpage
+
 
 \begin{thebibliography}{1}
 

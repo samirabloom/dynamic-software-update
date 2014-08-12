@@ -80,7 +80,7 @@ func route(next func(*ChunkContext), clusters *Clusters, createBackPipe func(con
 							transitionUUID = uuid.NewUUID()
 						}
 
-						// determine transation percentage for request
+						// determine transition percentage for request
 						percentage := hashToPercentage(transitionUUID.String())
 
 						cluster.TransitionCounter += cluster.PercentageTransitionPerRequest
