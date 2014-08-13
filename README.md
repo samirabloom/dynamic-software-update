@@ -70,6 +70,18 @@ curl 'http://127.0.0.1:1235' -H 'Accept-Encoding: gzip,deflate,sdch' -H 'Accept-
 curl 'http://127.0.0.1:1235' -H 'Accept-Encoding: gzip,deflate,sdch' -H 'Accept-Language: en-US,en;q=0.8,fa;q=0.6' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' -H 'Referer: https://www.google.co.uk/' -H 'Cookie: __utmb=110886291.4.10.1403464391; __utmc=110886291; __utmz=110886291.1403464391.7.6.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided)' -H 'Connection: keep-alive' -H 'Cache-Control: max-age=0' --compressed
 ````
 
+
+### example requests for upgrades
+ - **Request for gradual (Upgrade happens after 6 request if "percentageTransitionPerRequest" is set to .05)** 
+```bash
+curl -v 'http://127.0.0.1:1235/' -H 'Cookie:   transition=952c8557-2088-11e4-87e3-600308a8245e;'
+```
+
+ - **Request for Session Upgrade**
+```bash
+curl -v 'http://127.0.0.1:1235/' -H 'Cookie:   dynsoftup=9f0ef721-2228-11e4-9770-600308a8245e;'
+```
+
 ### proxy to real server
 
 i.e. http://nginx.com/blog/http-keepalives-and-web-performance/
@@ -81,9 +93,38 @@ i.e. http://nginx.com/blog/http-keepalives-and-web-performance/
 curl -vvv http://127.0.0.1:1235/blog/http-keepalives-and-web-performance/ -H "Host: nginx.com"
 ```
 
-### testing config REST services
+### testing config REST services using Chrome DHC
 
 The easiest way to test the config services is to use [DHC](https://chrome.google.com/webstore/detail/dhc-rest-http-api-client/aejoelaoggembcahagimdiliamlcdmfm) and import the example calls from DHC_Chrome_Extension_Config_Server_REST_Examples.json in the project root.
+
+
+### testing config REST services using curl
+
+ - **PUT Request for Concurrent upgrade**
+```bash
+curl http://127.0.0.1:9090/server -X PUT --data '{"cluster": {"servers":[{"ip": "127.0.0.1", "port": 1037},{"ip": "127.0.0.1", "port": 1038},{"ip": "127.0.0.1", "port": 1039}],"version": 1.1,"upgradeTransition": { "mode": "CONCURRENT" }}}'
+````
+
+ - **using file to send a put request**
+```bash
+curl -i -H "Accept: application/json" -X PUT -d @config/config_script.json localhost:9090/server
+```
+
+ - **GET Request for getting the list of all versions of the clusters**
+```bash
+curl http://127.0.0.1:9090/server/ -X GET 
+```
+
+ - **GET Request for getting a specific cluster from the list of clusters**
+```bash
+curl http://127.0.0.1:9090/server/e3011edf-2249-11e4-9b84-600308a8245e -X GET 
+```
+
+ - **DELETE Request for deleting a specific cluster from the list of clusters**
+```bash
+curl http://127.0.0.1:9090/server/e3011edf-2249-11e4-9b84-600308a8245e -X DELETE
+```
+
 
 ### test running in boot2docker
 
