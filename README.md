@@ -72,7 +72,7 @@ curl 'http://127.0.0.1:1235' -H 'Accept-Encoding: gzip,deflate,sdch' -H 'Accept-
 
 
 ### example requests for upgrades
- - **Request for gradual (Upgrade happens after 6 request if "percentageTransitionPerRequest" is set to .05)** 
+ - **Request for gradual (Upgrade happens after 6 request if "percentageTransitionPerRequest" is set to 0.5)** 
 ```bash
 curl -v 'http://127.0.0.1:1235/' -H 'Cookie:   transition=952c8557-2088-11e4-87e3-600308a8245e;'
 ```
@@ -105,7 +105,7 @@ The easiest way to test the config services is to use [DHC](https://chrome.googl
 curl http://127.0.0.1:9090/server -X PUT --data '{"cluster": {"servers":[{"ip": "127.0.0.1", "port": 1037},{"ip": "127.0.0.1", "port": 1038},{"ip": "127.0.0.1", "port": 1039}],"version": 1.1,"upgradeTransition": { "mode": "CONCURRENT" }}}'
 ````
 
- - **using file to send a put request**
+ - **PUT Request using a config file**
 ```bash
 curl -i -H "Accept: application/json" -X PUT -d @config/config_script.json localhost:9090/server
 ```
