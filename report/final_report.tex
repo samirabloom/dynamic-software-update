@@ -212,7 +212,7 @@ The main advantage of virtualization is separation between the virtualized infra
 Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware \footnote{\url{http://www.vmware.com/}} or VirtualBox \footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\\
 
 
-\vspace{-8pt}
+%\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=1]{Hypervisor}
@@ -228,7 +228,7 @@ Operating system virtualization that is called hypervisor virtualization allows 
 Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2) \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \\
 
 
-\vspace{-8pt}
+%\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=1]{containervsvm}
@@ -290,7 +290,7 @@ Docker also provides a registry of containers called the Docker Index. It allows
    
 With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately \footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \\
 
-\vspace{-8pt}
+%\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=1]{docker}
@@ -326,13 +326,13 @@ In a broker-less messaging system each application directly talks to other appli
 
 ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications \footnote{\label{ZeroMQ} \url{http://zeromq.org/}}. 
 
-ZeroMQ provide sockets that carry atomic messages across various transports such as TCP or UDP and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
+ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
 
 More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ \footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist. 
 
 
 \subsection{Hypertext Transfer Protocol} \label{HTTP}
-The Hypertext Transfer Protocol (HTTP) is a generic, stateless application-level protocol for distributed hypermedia information systems. HTTP is the foundation protocol of the World Wide Web and it is widely used between a web browser and a web server. A feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred.  To provide reliability HTTP uses Transmission Control Protocol (TCP). Since HTTP is stateless, a new TCP connection is created between client and server for each transaction and the TCP connection terminates immediately after the transaction is completed. HTTP functions as a request-response protocol in a client-server interaction. 
+The Hypertext Transfer Protocol (HTTP) is a generic, stateless application-level protocol for distributed hypermedia information systems. HTTP is the foundation protocol of the World Wide Web and it is widely used between a web browser and a web server. A feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred.  To provide reliability HTTP uses TCP. Since HTTP is stateless, a new TCP connection is created between client and server for each transaction and the TCP connection terminates immediately after the transaction is completed. HTTP functions as a request-response protocol in a client-server interaction. 
 
 \subsection{HTTP Requests} \label{Requests}
 The HTTP request sent to the server by client has the following format:\\
@@ -351,7 +351,7 @@ The HTTP request sent to the server by client has the following format:\\
 		\indent\indent\indent\indent
 		<opt-message-body>\\
 
-The Request-Line consists of a method token, Request-URI and the protocol version. Method token defines HTTP functions such as GET, POST, PUT, DELETE that is performed on the resources identified by Request-URI. General headers provide general control information and they can be included in both requests and responses. Transfer-Encoding is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if Transfer-Encoding is defined as "chuncked", the data will be sent to the recipient in a series of "chunks". The request-header fields allow the client to pass additional information about the request, and about the client itself, to the server. Entity-headers define optional and required metainformation about the request body and if the request has no body, provide information about the resource identified by the request. For example, Content-Length header is one of the entity-header fields indicating the size of the request body. CRLF refers to a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n'). CRLF is used to define the end of request line and headers and start of the request body.
+The Request-Line consists of a method token, Request-URI and the protocol version. Method token defines HTTP functions such as GET, POST, PUT, DELETE that is performed on the resources identified by Request-URI. General headers provide general control information and they can be included in both requests and responses. Transfer-Encoding is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if Transfer-Encoding is defined as "chunked", the data will be sent to the recipient in a series of "chunks". The request-header fields allow the client to pass additional information about the request, and about the client itself, to the server. Entity-headers define optional and required metainformation about the request body and if the request has no body, provide information about the resource identified by the request. For example, Content-Length header is one of the entity-header fields indicating the size of the request body. CRLF refers to a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n'). CRLF is used to define the end of request line and headers and start of the request body.
 
 
 \subsection{HTTP Responses}
@@ -370,7 +370,7 @@ Server send HTTP responses to the client after receiving and interpreting reques
 		\indent\indent\indent\indent
 		<opt-message-body>\\
 
-The Status-Line consists of the HTTP version followed by a numeric status code and its associated textual phrase. Status code indicates the action taken on the corresponding request such as 'Successful' (The request was successfully received, understood, and accepted), 'Client Error' (The request contains a syntax error or the request cannot be fulfilled) and 'Server Error' (The server failed to fulfill an apparently valid request). Similar to requests, HTTP responses also have several type of headers which provides general or specific information about the about the response (Section \ref{Requests}).  
+The Status-Line consists of the HTTP version followed by a numeric status code and its associated textual phrase. Status code indicates the action taken on the corresponding request such as 'Successful' (The request was successfully received, understood, and accepted), 'Client Error' (The request contains a syntax error or the request cannot be fulfilled) and 'Server Error' (The server failed to fulfill an apparently valid request). Similar to requests, HTTP responses also have several type of headers which provides general or specific information about he response (Section \ref{Requests}). Additionally, CRLF is also used to define the end of response headers and start of the optional response body.   
 
  
 
@@ -395,14 +395,14 @@ Four mechanisms will be supported to enable different reliable update strategies
 
 In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} (Figure \ref{proposed_solution} ) demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
 
-\vspace{-8pt}
+%\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.70]{proposed_solution}
   \caption{Component interactions within the proposed  dynamic software update system}
   \label{proposed_solution}
 \end{figure}
-\vspace{-18pt}
+%\vspace{-18pt}
 
 
 \subsection{Proposed Technology Stack} 
@@ -426,8 +426,7 @@ The following technology stack has been chosen for the dynamic software update s
 To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented using GO programming language as described in this section. 
 
 \subsection{Message Based Proxy Using ZeroMQ}
-The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}.
-The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
+The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}. The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
  
 \begin{list}{-}{}
   \itemsep0em
@@ -439,7 +438,10 @@ The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sock
 \end{list}
 
 
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked (Section \ref{Requests}), ZeroMQ DEALER socket in the router treats each chunk as a separate message and it distributes each chunk of the same request or response to different recipients. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer. Therefore, the aforementioned proxy was not advanced further to support dynamic software update and an alternative one was sought to be developed. 
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked (Section \ref{Requests}), ZeroMQ DEALER socket in the router treats each chunk as a separate message and it distributes each chunk of the same request or response to different recipients. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer. Therefore, the aforementioned proxy was not advanced further to support dynamic software update and an alternative one was sought to be developed. \\\\
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
+XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -448,13 +450,17 @@ Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests o
   \caption{ZeroMQ, Go and Docker Prototype}
   \label{prototype}
 \end{figure}
-\vspace{-18pt}
 
 \subsection{Socket Based Proxy With Content Counting}
-As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a fast and efficient dynamic software system. Hence, a new proxy was implemented using raw Go sockets. In this approach the proxy  
+As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a fast and efficient dynamic software update system. Hence, a new load balancing HTTP proxy was implemented using raw Go sockets. Figure xx demonstrates the design of the content counting socket based proxy. In this design the proxy listens in a loop called "Accept Loop" for new TCP connections (Figure xxx). In the case of a new connection, the listener creates a dedicated TCP connection between the client and the server. The new connection receive HTTP requests in a "read loop" and distributes them across a cluster of HTTP services (Figure xx).  
 
+In this approach HTTP request and response formats were used to detect the end of a message sent by client/server. Detecting the end of requests/responses is essential in order to stop reading from the senders and closing GO sockets for terminating each TCP connection. For HTTP requests, the method token in the Request-Line was used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the "read loop" ends after the first read. However, for other HTTP functions such as POST or PUT and for HTTP responses, headers such as Transfer-Encoding and Content-Length were used (Section \ref{HTTP}). When the size of message body is defined by Content-Length header, proxy parses the HTTP requests/responses and when the first CRLF is detected (Section \ref{HTTP}), then it is known that any data after the first CRLF is the message body . Hence, the data bytes received after first CRLF is counted and compared with the value obtained from Content-Length. When the two values are equal, the "read loop" ends. In addition, when the Content-Length header is not set and the Transfer-Encoding header is defined as "chunked", then the message is sent to the recipient in a series of chunks. At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n' as a line separator, therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. Hence, to detect the end of HTTP messages with chunked Transfer-Encoding header, the implemented proxy screens each chunk and when the last chunk is spotted (\textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'), the "read loop" ends. 
 
-This proxy uses the Transfer-Encoding and Content-Length HTTP header fields to detect the end of a request or response. Quantitative analysis of this proxy described in section xxxx showed significant performance overhead. Therefore, another version of the socket based proxy was developed as described in the next section.    
+To evaluate the performance of the aforementioned proxy, a HTTP benchmarking tool called wrk \footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. wrk is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{wrk} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}. Requests were sent to an example Go web service either directly or via the implemented socket based proxy and the round trip time (\textit{i.e.} the time taken to send a request to the server and receive a response) was calculated. This analysis showed that sending requests and responses via the proxy increases the round trip time approximately 200\%. detailed analysis of the proxy showed that one of the main reasons for the performance overhead was the parsing and the content counting that the proxy is doing to detect the end of requests and responses. furthermore, when the requests and responses went through the proxy, read errors were regularly occurring and the the Go sockets didn't seem to be closed reliably that also can have a big impact on the the round trip time as well as effecting the reliability of the proxy. Hence, the significant overhead associated with the implemented proxy and the regular read and socket errors lead us think that a proxy with content counting  will not be a good candidate for supporting a reliable and efficient dynamic software update system. Therefore, another version of the socket based proxy was developed as described in the next section.\\ \\ \\
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
+XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\    
 
 \subsection{TCP Socket Based Proxy With End Of File}
 The final version of the proxy developed using TCP sockets. This proxy does not use any messaging systems and it uses the End of File (EOF) signal to detect the end of a request or response. The TCP socket based proxy is arranged as shown in Figure \ref{proxy} and described in the following sections.
@@ -485,7 +491,7 @@ creates the same stages as the forward pipe for the response. The read stage of 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.70]{proxy}
-  \caption{TCP Socket Based Proxy Design}
+  \caption{TCP Socket Based Proxy Design Supporting Dynamic Software Update}
   \label{proxy}
 \end{figure}
 % \vspace{-18pt}
