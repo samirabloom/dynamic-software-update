@@ -37,6 +37,7 @@ func NewProxy(configFile string) *Proxy {
 func CLI() {
 	log.LogLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
 
+	//
 	var cmd, _ = os.Getwd()
 	if !strings.HasSuffix(cmd, "/") {
 		cmd = cmd+"/"

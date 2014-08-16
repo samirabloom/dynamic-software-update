@@ -9,6 +9,7 @@ import (
 	"errors"
 	"proxy/log"
 	"proxy/stages"
+	"os"
 )
 
 // ==== PARSE CONFIG - START
@@ -21,6 +22,7 @@ func readConfigFile(configFile string) []byte {
 	jsonConfig, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.LoggerFactory().Error("Error %s reading config file [%s]", err, configFile)
+		os.Exit(1)
 	}
 	return jsonConfig
 }

@@ -379,7 +379,7 @@ To manage the ever-increasing size of E-commerce and web related services large-
 
 In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
 
-\subsection{Proposed Dynamic Software Update System} 
+\subsection{Proposed Dynamic Software Update System}\label{modes} 
 This project proposes a simple lightweight system to support reliable dynamic software updates suitable for continuous delivery into production. In the proposed system the updated version will run concurrently with previous stable versions. The updated system will be monitored automatically and if the system behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
 
 Four mechanisms will be supported to enable different reliable update strategies depending on the specific software requirements.
@@ -465,7 +465,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
 XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\    
 
-\subsubsection{Socket Based Proxy With End Of File}
+\subsubsection{Socket Based Staged Proxy With End Of File}
 The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in figure \ref{proxy}. The SBD  approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
 
 \begin{list}{-}{}
@@ -489,7 +489,7 @@ This version of HTTP load balancing proxy does not use content counting to detec
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.60]{proxy}
-  \caption{TCP Socket Based Proxy Design Supporting Dynamic Software Update}
+  \caption{Socket Based Staged Proxy Design Supporting Dynamic Software Update}
   \label{proxy}
 \end{figure}
 % \vspace{-18pt}
@@ -500,7 +500,11 @@ This version of HTTP load balancing proxy does not use content counting to detec
 
 \noindent
 \textbf{Forward Pipe} \\
-\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server. The \textit{ChunkContext Struct} is responsible for identifying the HTTP connection by containing information such as the network addresses of the client and the server, and it defines if the received message is a request or response.\\
+\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The textit{ChunkContext} contains information such as the network addresses of the client and the server, as follows: \\ 
+
+xxxxx \\
+add the code for chunk context code \\
+xxxx \\
 
 \noindent
 \textbf{Read Stage} \\
@@ -515,7 +519,7 @@ according to the type of message (\textit{i.e.} requests or responses) is proces
 
 \underline{Routing Requests} - When the requests arrive in \textit{Route} stage,   
 
-\underline{Routing Responses} - 
+\underline{Routing Responses} - \\\\
 
 
 
@@ -534,9 +538,24 @@ according to the type of message (\textit{i.e.} requests or responses) is proces
  
 \noindent
 \textbf{Back Pipe} \\
-\textit{Back pipe} has the same responsibility as the \textit{Forward Pipe}. It constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
+\textit{Back pipe} has the same responsibility as the \textit{Forward Pipe}. It constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.\\\\
 
-\subsection{REST Configuration Service} 
+xxxxxxxx\\\\
+HAVE A DIAGRAM ABOUT COMPARING ALL THREE PROXIES AND SAY THEREFORE THE LAST VERSION WAS USED FOR FURTHERER ADVANCEMENT\\\\
+
+XXXXXXXXX\\
+
+\subsection{Command Line Interface}
+CLI supports: two properties \\
+
+-	Log level
+- Config File
+
+
+\subsection{REST API}
+To configure the staged proxy and apply different upgrade modes stated in section \ref{modes}, a REST configuration service was implemented and integrated into the staged proxy. 
+
+
 A REST configuration service was developed and implemented into the proxy (Figure \ref{proxy}) to support different upgrade scenarios explained in section xxx. This REST service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software updates. The user sends the updated version of the cluster to the REST server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 
 
 As it was described in section xxx, the proxy supports different update strategies. Firstly, the proxy will be started on a default configuration defined in a JSON file. The JSON file has three different sections defined as "proxy", "configService" and "cluster". The proxy and configService sections define the Internet Protocol (IP) and the port addresses that the proxy and the REST configuration service will be running on. The cluster section defines the IP and port addresses of the servers in the cluster. 
