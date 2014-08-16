@@ -33,8 +33,6 @@ assertion
  - written integration and unit tests for 50% of the code, currently
 working of covering most of the code
 
-## Remaining:
-
 1. Finish the remaining unit and integration tests
 
 1. Extend the proxy to record metrics for server responses (to enable detection of invalid response)
@@ -46,3 +44,25 @@ working of covering most of the code
  - New Session Update - DONE
     - Any request with no uuid or with new uuid goes to the new cluster, however, any request with the old uuid goes to the old cluster till it's session is timed out
  - Long Term Update
+ 
+## Remaining: 
+
+1. Taking out modes from route function and making it more encapsulated
+ 
+1. Writing tests for route function
+
+1. Write a makefile
+
+1. Evaluation
+
+1. Extend the metric analysis for multi-version response
+
+1. Dockerisation
+
+1. Write documentation on github and add link to REST service error messages
+
+1. Command line implementation
+
+
+
+

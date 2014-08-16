@@ -5,7 +5,7 @@
 \longdate
 \setcounter{tocdepth}{4}
 \setcounter{secnumdepth}{4}   
- 
+
 
 \usepackage{enumitem}
 \usepackage{hyperref}
@@ -32,7 +32,7 @@
 \cfoot{\fancyplain{}{\thepage}}
 
 \newenvironment{Figure}
-  {\par\medskip\noindent\minipage{\linewidth}}
+  {\par\medskip\indent\minipage{\linewidth}}
   {\endminipage\par\medskip}
 
 \title{Highly Reliable Upgrading of Software Containers\\\Large{--- Literature Survey \& Progress Report ---}}
@@ -176,7 +176,6 @@ Dynamic software update systems mentioned above affect code updates at the granu
 
 
 \subsubsection{Data Update} 
-
 Most dynamic software update systems handle the data update by using object replacement. The system or the developer allocates replacement objects and initialize them using data from the old version. Ginseng uses type-wrapping approach. In this approach the programs are compiled so that \textit{struct}s have an added version field and extra “slop” space to allow for future extensions. Transformation of old objects will be initiated by inserting calls to mediator functions which access updated objects. Ksplice and DynaMOS do not change the old objects but allocate shadow data structures containing only the new fields. Shadow data structures have the advantage of changing fewer functions by an update. When a new field is added to a \textit{struct}, only the code using that field is affected but not all the code that uses the \textit{struct}. 
 
 
@@ -398,7 +397,7 @@ In all four mechanisms the behavior of the updated software will be automaticall
 %\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.70]{proposed_solution}
+     \includegraphics[scale=0.62]{proposed_solution}
   \caption{Component interactions within the proposed  dynamic software update system}
   \label{proposed_solution}
 \end{figure}
@@ -437,27 +436,28 @@ The first proxy developed to support dynamic software update was a HTTP reverse 
   \item \textbf{downstream} is responsible for receiving the requests from the router using REP sockets and sending HTTP requests to the two Docker containers containing the Netty web services and receiving the responses using STREAM socket.
 \end{list}
 
+%\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.62]{prototype}
+  \caption{ZeroMQ, Go and Docker Prototype}
+  \label{prototype}
+\end{figure}
 
+\noindent
 Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked (Section \ref{Requests}), ZeroMQ DEALER socket in the router treats each chunk as a separate message and it distributes each chunk of the same request or response to different recipients. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer. Therefore, the aforementioned proxy was not advanced further to support dynamic software update and an alternative one was sought to be developed. \\\\
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
 XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
 
-%\vspace{-8pt}
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=0.70]{prototype}
-  \caption{ZeroMQ, Go and Docker Prototype}
-  \label{prototype}
-\end{figure}
 
 \subsection{Socket Based Proxies}
 As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a fast and efficient dynamic software update system. This section describes different approaches used to develop load balancing HTTP proxies using raw Go sockets with no messaging systems.   
 
 \subsubsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in figure xxx. In this design the proxy consists of a listener that listens in an "Accept Loop" for new TCP connections (Figure xxx). In the case of a new connection, the listener creates a dedicated TCP connection between the client and the server. The new connection receives HTTP requests in a "read loop" and distributes them across a cluster of HTTP services (Figure xx).  
+The first version of the socket based proxy was designed as demonstrated in figure xxx. In this design the proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections (Figure xxx). In the case of a new connection, the listener creates a dedicated TCP connection between the client and the server. The new connection receives HTTP requests in a  \textit{Read} loop and distributes them across a cluster of HTTP services (Figure xx).  
 
-The content counting proxy uses HTTP request and response formats to detect the end of a message sent by client/server. Detecting the end of requests/responses is essential in order to stop reading from the senders and closing GO sockets for terminating each TCP connection. For HTTP requests, the method token in the Request-Line was used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the "read loop" ends after the first read. However, for other HTTP functions such as POST or PUT and for HTTP responses, headers such as Transfer-Encoding and Content-Length were used (Section \ref{HTTP}). When the size of message body is defined by Content-Length header, proxy parses the HTTP requests/responses and when the first CRLF is detected (Section \ref{HTTP}), then it is known that any data after the first CRLF is the message body . Hence, the data bytes received after first CRLF is counted and compared with the value obtained from Content-Length. When the two values are equal, the "read loop" ends. In addition, when the Content-Length header is not set and the Transfer-Encoding header is defined as "chunked", then the message is sent to the recipient in a series of chunks. At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n' as a line separator, therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. Hence, to detect the end of HTTP messages with chunked Transfer-Encoding header, the implemented proxy screens each chunk and when the last chunk is spotted (\textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'), the "read loop" ends. 
+The content counting proxy uses HTTP request and response formats to detect the end of a message sent by client/server. Detecting the end of requests/responses is essential in order to stop reading from the senders and closing GO sockets for terminating each TCP connection. For HTTP requests, the method token in the Request-Line was used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the  \textit{Read} loop ends after the first read. However, for other HTTP functions such as POST or PUT and for HTTP responses, headers such as Transfer-Encoding and Content-Length were used (Section \ref{HTTP}). When the size of message body is defined by Content-Length header, proxy parses the HTTP requests/responses and when the first CRLF is detected (Section \ref{HTTP}), then it is known that any data after the first CRLF is the message body . Hence, the data bytes received after first CRLF is counted and compared with the value obtained from Content-Length. When the two values are equal, the \textit{Read} loop ends. In addition, when the Content-Length header is not set and the Transfer-Encoding header is defined as "chunked", then the message is sent to the recipient in a series of chunks. At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n' as a line separator, therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. Hence, to detect the end of HTTP messages with chunked Transfer-Encoding header, the implemented proxy screens each chunk and when the last chunk is spotted (\textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'), the  \textit{Read} loop ends. 
 
 To evaluate the performance of the aforementioned proxy, a HTTP benchmarking tool called wrk \footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. wrk is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{wrk} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}. Requests were sent to an example Go web service either directly or via the implemented socket based proxy and the round trip time (\textit{i.e.} the time taken to send a request to the server and receive a response) was calculated. This analysis showed that sending requests and responses via the proxy increases the round trip time approximately xxxxx200\%xxx. Detailed analysis of the proxy showed that one of the main reasons for the performance overhead was due to parsing and content counting that the proxy is doing to detect the end of messages. Furthermore, when requests and responses went through the proxy, read errors were regularly occurring and the the Go sockets did not seem to be closed reliably. These errors can also have a big impact on the round trip time as well as effecting the reliability of the proxy. In conclusion, the significant overhead associated with the implemented proxy and the regular read and socket errors lead us think that a proxy with content counting  is not be a good candidate for supporting a reliable and efficient dynamic software update. Therefore, another version of the socket based proxy was developed as described in the next section.\\ \\ \\
 
@@ -470,9 +470,9 @@ The final version of the socket based proxy was implemented using a Stage Based 
 
 \begin{list}{-}{}
   \itemsep0em
-  \item\textbf{Encapsulation And Separation Of Concerns} - resulted in separating logic for each functional area into a single component. This creates a simple and isolated code that focuses on one topic, making it clear and easier to understand. Additionally, encapsulation and separation of concerns simplified testing by allowing each test to be focused on one specific area. For example, multiple tests could be done on reading from a socket and dealing with different errors and situation that can occur to insure a reliable reading process unlike the unreliable "read loop" described in section \ref{Content-Counting}. 
+  \item\textbf{Encapsulation And Separation Of Concerns} - resulted in separating logic for each functional area into a single component. This creates a simple and isolated code that focuses on one topic, making it clear and easier to understand. Additionally, encapsulation and separation of concerns simplified testing by allowing each test to be focused on one specific area. For example, multiple tests could be done on reading from a socket and dealing with different errors and situation that can occur to insure a reliable reading process unlike the unreliable  \textit{Read} loop described in section \ref{Content-Counting}. 
 
-  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP load balancing proxy shown in figure \ref{proxy} the read and write stages were fist developed and that was followed by development of the complete and routing stages respectively. Furthermore, This design also simplified testing for the following reasons:
+  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP load balancing proxy shown in figure \ref{proxy} the  \textit{Read} and  \textit{write} stages were first developed. That was followed by development of the  \textit{Complete} and  \textit{Route} stages respectively and then the rest of proxy was implemented. Furthermore, This design also simplified testing for the following reasons:
 \begin{list}{-}{}
   \itemsep0em
   \item allowing the code-under-test to be isolated by mocking all dependencies 
@@ -484,38 +484,57 @@ The final version of the socket based proxy was implemented using a Stage Based 
 \end{list}
 
 \noindent
-This proxy does not use content counting to detect the end of messages instead it uses the End of File (EOF) signal. This
+This version of HTTP load balancing proxy does not use content counting to detect the end of messages instead it uses the End-Of-File (EOF) signal. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\\
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.60]{proxy}
+  \caption{TCP Socket Based Proxy Design Supporting Dynamic Software Update}
+  \label{proxy}
+\end{figure}
+% \vspace{-18pt}
+
+\noindent
+\textbf{Accept Loop} \\
+ \textit{Accept} loop accepts incoming HTTP connections on a listener and creates a  \textit{Forward pipe} for each request.\\  
+
+\noindent
+\textbf{Forward Pipe} \\
+\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server. The \textit{ChunkContext Struct} is responsible for identifying the HTTP connection by containing information such as the network addresses of the client and the server, and it defines if the received message is a request or response.\\
+
+\noindent
+\textbf{Read Stage} \\
+\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the final version of the socket based proxy (Figure \ref{proxy}), when an EOF condition (\textit{i.e.}  when no more input is available) occurs, \textit{Read} treats this condition as an error and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input and prevents the need for parsing requests/responses and the content counting mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the \textit{Read} stage in \textit{Back pipe} reads responses from the server.   \\
+
+\noindent
+\textbf{Route Stage} \\
+\textit{Route} stage has different functionality in the \textit{Forward Pipe} (\textit{i.e.} processing requests) and \textit{Back pipe} (\textit{i.e.} processing responses).    
 
 
-\subsubsection{Accept Loop} 
-Accepts Loop stage  incoming HTTP connections on a listener and creates a forward pipe for each request.
+according to the type of message (\textit{i.e.} requests or responses) is processing.\\
 
-\subsubsection{Forward Pipe} creates the read, route, write and complete stages of the proxy for processing the request.
-  \begin{list}{-}{}
-  \itemsep0em
-  \item \textbf{Read} stage reads the requests from the HTTP connection and passes the read data to the route stage. When there is no more data to be read from the connection, the read stage will call the complete stage.
+\underline{Routing Requests} - When the requests arrive in \textit{Route} stage,   
 
-  \item \textbf{Route} stage \\
+\underline{Routing Responses} - 
+
+
+
   			-  -  - load balancer and send the requests to the correct instance of the cluster\\
   			-  -  - create backward pipe\\
   			-  -  - set cookie headers\\
   			-  -  - parse the headers for metrics\\
   
-  \item \textbf{Write} stage writs the request received from the route stage to an instance of the cluster that is chosen in the route stage.
-  \item \textbf{Complete} stage shuts down the writing and reading sides of the TCP connection when the request has been read and written to the server. 
-  
-\end{list}
-\subsubsection{Back Pipe} 
-creates the same stages as the forward pipe for the response. The read stage of the back pipe reads the response from the server, and the write stage writes the response to the HTTP connection.
+\noindent
+\textbf{Write Stage} \\
+\textit{Write} stage writes received requests/responses to an underlying data stream. The writing process stops if any errors such as \textit{ErrShortWrite} encountered while writing to a socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes datato the client.   \\
 
-
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=0.70]{proxy}
-  \caption{TCP Socket Based Proxy Design Supporting Dynamic Software Update}
-  \label{proxy}
-\end{figure}
-% \vspace{-18pt}
+\noindent
+\textbf{Complete Stage}\\ 
+\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. This proved to be essential for generating a fast and reliable dynamic software update system.\\
+ 
+\noindent
+\textbf{Back Pipe} \\
+\textit{Back pipe} has the same responsibility as the \textit{Forward Pipe}. It constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
 \subsection{REST Configuration Service} 
 A REST configuration service was developed and implemented into the proxy (Figure \ref{proxy}) to support different upgrade scenarios explained in section xxx. This REST service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software updates. The user sends the updated version of the cluster to the REST server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 
