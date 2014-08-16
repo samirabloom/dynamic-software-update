@@ -4,7 +4,7 @@ import (
 	"testing"
 	assertion "util/test/assertion"
 	"net"
-	"proxy/stages"
+	"proxy/contexts"
 	"errors"
 )
 
@@ -20,8 +20,8 @@ func mockParseConfigService(configServicePort int, parseConfigServiceErr error) 
 	}
 }
 
-func mockParseClusters(clusters *stages.Clusters, clusterParseErr error) func(map[string]interface{}) (*stages.Clusters, error) {
-	return func(map[string]interface{}) (*stages.Clusters, error) {
+func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}) (*contexts.Clusters, error) {
+	return func(map[string]interface{}) (*contexts.Clusters, error) {
 		return clusters, clusterParseErr
 	}
 }
@@ -33,7 +33,7 @@ func Test_Parse_Config_File_With_No_Errors(testCtx *testing.T) {
 		proxyParseErr error               = nil
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = nil
-		clusters *stages.Clusters         = &stages.Clusters{}
+		clusters *contexts.Clusters         = &contexts.Clusters{}
 		clusterParseErr error             = nil
 		jsonData                          = []byte("")
 		expectedProxy *Proxy              = &Proxy{frontendAddr: tcpProxyLocalAddress, configServicePort: configServicePort, clusters: clusters, stop: make(chan bool), }
@@ -55,7 +55,7 @@ func Test_Parse_Config_File_With_Proxy_Parse_Error(testCtx *testing.T) {
 		proxyParseErr error               = errors.New("Test Proxy Parse Error")
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = nil
-		clusters *stages.Clusters         = &stages.Clusters{}
+		clusters *contexts.Clusters         = &contexts.Clusters{}
 		clusterParseErr error             = nil
 		jsonData                          = []byte("")
 		expectedProxy *Proxy              = nil
@@ -77,7 +77,7 @@ func Test_Parse_Config_File_With_Config_Service_Parse_Error(testCtx *testing.T) 
 		proxyParseErr error               = nil
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = errors.New("Test Config Service Parse Error")
-		clusters *stages.Clusters         = &stages.Clusters{}
+		clusters *contexts.Clusters         = &contexts.Clusters{}
 		clusterParseErr error             = nil
 		jsonData                          = []byte("")
 		expectedProxy *Proxy              = nil
@@ -99,7 +99,7 @@ func Test_Parse_Config_File_With_Cluster_Parse_Error(testCtx *testing.T) {
 		proxyParseErr error               = nil
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = nil
-		clusters *stages.Clusters         = &stages.Clusters{}
+		clusters *contexts.Clusters         = &contexts.Clusters{}
 		clusterParseErr error             = errors.New("Test Config Service Parse Error")
 		jsonData                          = []byte("")
 		expectedProxy *Proxy              = nil

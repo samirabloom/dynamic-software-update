@@ -10,7 +10,13 @@ import (
 	"proxy/stages"
 	"flag"
 	"os"
+	"proxy/transition"
+	"proxy/contexts"
 )
+
+// this is a trick to ensure that go loads the proxy/transition package
+var registerAllModes = transition.InstantMode
+
 var uuidGenerator = func(uuidValue uuid.UUID) func() uuid.UUID {
 	return func() uuid.UUID {
 		return uuidValue
@@ -22,7 +28,7 @@ var uuidGenerator = func(uuidValue uuid.UUID) func() uuid.UUID {
 type Proxy struct {
 	frontendAddr      *net.TCPAddr
 	configServicePort int
-	clusters          *stages.Clusters
+	clusters          *contexts.Clusters
 	stop              chan bool
 }
 
@@ -103,7 +109,7 @@ func (proxy *Proxy) acceptLoop(started chan bool) {
 				pipesComplete := make(chan int64)
 
 				// create forward pipe
-				forwardContext := stages.NewForwardPipeChunkContext(client.(*net.TCPConn), pipesComplete)
+				forwardContext := contexts.NewForwardPipeChunkContext(client.(*net.TCPConn), pipesComplete)
 				go stages.CreatePipe(proxy.clusters)(forwardContext)
 
 				// wait for pipes to complete (or quit early)

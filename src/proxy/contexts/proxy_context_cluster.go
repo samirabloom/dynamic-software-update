@@ -1,4 +1,4 @@
-package stages
+package contexts
 
 import (
 	"container/list"

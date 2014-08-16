@@ -4,31 +4,32 @@ import (
 	"io"
 	"time"
 	"proxy/log"
+	"proxy/contexts"
 )
 
 // ==== READ - START
 
-func read(next func(*ChunkContext), complete func(*ChunkContext)) func(*ChunkContext) {
-	return func(context *ChunkContext) {
+func read(next func(*contexts.ChunkContext), complete func(*contexts.ChunkContext)) func(*contexts.ChunkContext) {
+	return func(context *contexts.ChunkContext) {
 		defer log.Trace("read", time.Now())
 		log.LoggerFactory().Debug("Read Stage START - %s", context)
 		var loopCounter = 0
 		for {
 			log.LoggerFactory().Debug("Read Loop START - %d - %s", loopCounter, context)
-			context.data = context.data[0:cap(context.data)]
-			readSize, readError := context.from.Read(context.data)
-			context.data = context.data[0:readSize]
+			context.Data = context.Data[0:cap(context.Data)]
+			readSize, readError := context.From.Read(context.Data)
+			context.Data = context.Data[0:readSize]
 
 			if readSize > 0 {
-				context.totalReadSize += int64(readSize)
+				context.TotalReadSize += int64(readSize)
 				next(context)
-				if context.firstChunk {
-					context.firstChunk = false
+				if context.FirstChunk {
+					context.FirstChunk = false
 				}
 			}
 
-			if context.err != nil {
-				log.LoggerFactory().Debug("Error routing connection %s - %s", context.err, context)
+			if context.Err != nil {
+				log.LoggerFactory().Debug("Error routing connection %s - %s", context.Err, context)
 				break
 			}
 
@@ -39,7 +40,7 @@ func read(next func(*ChunkContext), complete func(*ChunkContext)) func(*ChunkCon
 
 			if readError != nil {
 				log.LoggerFactory().Debug("Read Loop error %s - %s", readError, context)
-				context.err = readError
+				context.Err = readError
 				break
 			}
 

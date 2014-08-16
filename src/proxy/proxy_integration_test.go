@@ -7,14 +7,14 @@ import (
 	networkutil "util/test/network"
 	assertion "util/test/assertion"
 	"code.google.com/p/go-uuid/uuid"
-	"proxy/stages"
+	"proxy/contexts"
 )
 
 var testUuid = uuid.NewUUID()
 
 func NewTestProxy(frontendAddr *net.TCPAddr, backendAddresses []*net.TCPAddr) *Proxy {
-	clusters := &stages.Clusters{}
-	clusters.Add(&stages.Cluster{BackendAddresses:  backendAddresses, RequestCounter: -1, Uuid: testUuid, Mode: stages.SessionMode})
+	clusters := &contexts.Clusters{}
+	clusters.Add(&contexts.Cluster{BackendAddresses:  backendAddresses, RequestCounter: -1, Uuid: testUuid, Mode: contexts.SessionMode})
 	return &Proxy{
 		frontendAddr: frontendAddr,
 		clusters: clusters,

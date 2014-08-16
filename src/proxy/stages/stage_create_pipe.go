@@ -1,12 +1,15 @@
 package stages
 
-import "proxy/log"
+import (
+	"proxy/log"
+	"proxy/contexts"
+)
 
 // ==== CREATE PIPE - START
 
-func CreatePipe(clusters *Clusters) func(*ChunkContext) {
-	return func(context *ChunkContext) {
-		log.LoggerFactory().Debug("Creating " + context.description + " START")
+func CreatePipe(clusters *contexts.Clusters) func(*contexts.ChunkContext) {
+	return func(context *contexts.ChunkContext) {
+		log.LoggerFactory().Debug("Creating " + contexts.DirectionToDescription[context.Direction] + " START")
 		stages := read(
 			route(
 				write,
@@ -17,7 +20,7 @@ func CreatePipe(clusters *Clusters) func(*ChunkContext) {
 		)
 		stages(context)
 		log.EndPerformanceLogEntry()
-		log.LoggerFactory().Debug("Creating " + context.description + " END")
+		log.LoggerFactory().Debug("Creating " + contexts.DirectionToDescription[context.Direction] + " END")
 	}
 }
 

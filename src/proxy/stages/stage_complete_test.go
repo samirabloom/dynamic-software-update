@@ -6,24 +6,24 @@ import (
 	"syscall"
 	mock "util/test/mock"
 	assertion "util/test/assertion"
+	"proxy/contexts"
 )
 
-func NewTestCompleteChunkContext(chunks []string, err error) (*ChunkContext, *mock.MockConn, *mock.MockConn) {
-	mockContext := &ChunkContext{
-		description: "",
-		data: make([]byte, 64*1024),
-		from: &net.TCPConn{},
-		to: &net.TCPConn{},
-		err: nil,
-		totalReadSize: 0,
-		totalWriteSize: 0,
-		pipeComplete: make(chan int64, 100),
-		firstChunk: true,
+func NewTestCompleteChunkContext(chunks []string, err error) (*contexts.ChunkContext, *mock.MockConn, *mock.MockConn) {
+	mockContext := &contexts.ChunkContext{
+		Data: make([]byte, 64*1024),
+		From: &net.TCPConn{},
+		To: &net.TCPConn{},
+		Err: nil,
+		TotalReadSize: 0,
+		TotalWriteSize: 0,
+		PipeComplete: make(chan int64, 100),
+		FirstChunk: true,
 	}
-	mockContext.err = err
-	mockContext.from = mock.NewMockConn(err, len(chunks))
-	mockContext.to = mock.NewMockConn(err, len(chunks))
-	return mockContext, mockContext.to.(*mock.MockConn), mockContext.from.(*mock.MockConn)
+	mockContext.Err = err
+	mockContext.From = mock.NewMockConn(err, len(chunks))
+	mockContext.To = mock.NewMockConn(err, len(chunks))
+	return mockContext, mockContext.To.(*mock.MockConn), mockContext.From.(*mock.MockConn)
 }
 
 // test no error

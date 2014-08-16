@@ -6,22 +6,22 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	assertion "util/test/assertion"
 	"time"
+	"proxy/contexts"
 )
 
-func NewTestRouteChunkContext(data string, clientToServer bool) *ChunkContext {
-	mockContext := &ChunkContext{
-		description: "",
-		data: make([]byte, 64*1024),
-		from: &net.TCPConn{},
-		to: &net.TCPConn{},
-		err: nil,
-		totalReadSize: 0,
-		totalWriteSize: 0,
-		pipeComplete: make(chan int64, 100),
-		firstChunk: true,
+func NewTestRouteChunkContext(data string, clientToServer contexts.Direction) *contexts.ChunkContext {
+	mockContext := &contexts.ChunkContext{
+		Data: make([]byte, 64*1024),
+		From: &net.TCPConn{},
+		To: &net.TCPConn{},
+		Err: nil,
+		TotalReadSize: 0,
+		TotalWriteSize: 0,
+		PipeComplete: make(chan int64, 100),
+		FirstChunk: true,
 	}
-	mockContext.data = []byte(data)
-	mockContext.clientToServer = clientToServer
+	mockContext.Data = []byte(data)
+	mockContext.Direction = clientToServer
 	return mockContext
 }
 
@@ -37,23 +37,22 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 		defer listener.Close()
 	}
 	var (
-		mockWrite      = NewMockStage("mockWrite")
-		mockCreatePipe = NewMockStage("mockCreatePipe")
-		cluster        = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
-		clusters       = &Clusters{}
+		mockWrite      = contexts.NewMockStage("mockWrite")
+		mockCreatePipe = contexts.NewMockStage("mockCreatePipe")
+		cluster        = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.InstantMode}
+		clusters       = &contexts.Clusters{}
 		mockContext    = NewTestRouteChunkContext("Cookie: dynsoftup="+cluster.Uuid.String()+";", true)
 	)
 	clusters.Add(cluster)
-	mockCreatePipe.close(1)
+	mockCreatePipe.Close(1)
 
 	// when
-	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.MockStage, clusters, mockCreatePipe.MockStage)(mockContext)
 
 	// then
-	//	assertion.AssertDeepEqual("Correct Cluster for UUID in Cookie", testCtx, cluster, mockContext.cluster)
-	<-mockCreatePipe.mockStageCallChannel
-	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, 1, mockCreatePipe.mockStageCallCounter)
-	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
+	<-mockCreatePipe.MockStageCallChannel
+	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, 1, mockCreatePipe.MockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.MockStageCallCounter)
 
 }
 
@@ -64,26 +63,26 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		mockWrite             = NewMockStage("mockWrite")
-		mockCreatePipe        = NewMockStage("mockCreatePipe")
+		mockWrite             = contexts.NewMockStage("mockWrite")
+		mockCreatePipe        = contexts.NewMockStage("mockCreatePipe")
 		initialTotalReadSize  = int64(10)
-		cluster               = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: SessionMode}
-		clusters              = &Clusters{}
+		cluster               = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.SessionMode}
+		clusters              = &contexts.Clusters{}
 		expectedContentLength = "Content-Length: 40\n"
 		expectedCookieHeader  = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext           = NewTestRouteChunkContext("this is a request with no cookie \n added", false)
 	)
 	clusters.Add(cluster)
 
-	mockContext.totalReadSize = initialTotalReadSize
+	mockContext.TotalReadSize = initialTotalReadSize
 
 	// when
-	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.MockStage, clusters, mockCreatePipe.MockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedContentLength+expectedCookieHeader+" added"), mockContext.data)
-	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
-	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, int64(len(expectedContentLength) + len(expectedCookieHeader))+initialTotalReadSize, mockContext.totalReadSize)
+	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedContentLength+expectedCookieHeader+" added"), mockContext.Data)
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.MockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, int64(len(expectedContentLength) + len(expectedCookieHeader))+initialTotalReadSize, mockContext.TotalReadSize)
 }
 
 // test firstChunk and not clientToServer and context.requestUUID
@@ -93,24 +92,24 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
-		mockWrite            = NewMockStage("mockWrite")
-		mockCreatePipe       = NewMockStage("mockCreatePipe")
+		mockWrite            = contexts.NewMockStage("mockWrite")
+		mockCreatePipe       = contexts.NewMockStage("mockCreatePipe")
 		initialTotalReadSize = int64(10)
-		cluster              = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: SessionMode}
-		clusters             = &Clusters{}
+		cluster              = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.SessionMode}
+		clusters             = &contexts.Clusters{}
 		expectedCookieHeader = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", false)
 	)
 	clusters.Add(cluster)
-	mockContext.totalReadSize = initialTotalReadSize
+	mockContext.TotalReadSize = initialTotalReadSize
 
 	// when
-	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.MockStage, clusters, mockCreatePipe.MockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedCookieHeader+" added\n"), mockContext.data)
-	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
-	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, +int64(len(expectedCookieHeader))+initialTotalReadSize, mockContext.totalReadSize)
+	assertion.AssertDeepEqual("Correct Chunk With Cookie", testCtx, []byte("this is a request with no cookie \n"+expectedCookieHeader+" added\n"), mockContext.Data)
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.MockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Total Read Size", testCtx, +int64(len(expectedCookieHeader))+initialTotalReadSize, mockContext.TotalReadSize)
 
 }
 
@@ -122,23 +121,23 @@ func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
 		mockContext    = NewTestRouteChunkContext("this is a request with no cookie \n added", true)
-		mockWrite      = NewMockStage("mockWrite")
-		mockCreatePipe = NewMockStage("mockCreatePipe")
-		cluster        = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
-		clusters       = &Clusters{}
+		mockWrite      = contexts.NewMockStage("mockWrite")
+		mockCreatePipe = contexts.NewMockStage("mockCreatePipe")
+		cluster        = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
+		clusters       = &contexts.Clusters{}
 	)
 	clusters.Add(cluster)
-	mockContext.firstChunk = false
-	mockCreatePipe.close(1)
+	mockContext.FirstChunk = false
+	mockCreatePipe.Close(1)
 
 	// when
-	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.MockStage, clusters, mockCreatePipe.MockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Chunk Without Cookie", testCtx, []byte("this is a request with no cookie \n added"), mockContext.data)
-	<-mockCreatePipe.mockStageCallChannel
-	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, 0, mockCreatePipe.mockStageCallCounter)
-	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Chunk Without Cookie", testCtx, []byte("this is a request with no cookie \n added"), mockContext.Data)
+	<-mockCreatePipe.MockStageCallChannel
+	assertion.AssertDeepEqual("Correct New Pipe Created", testCtx, 0, mockCreatePipe.MockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.MockStageCallCounter)
 }
 
 // test not firstChunk and not clientToServer
@@ -149,20 +148,20 @@ func Test_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
 		mockContext    = NewTestRouteChunkContext("this is a response with no cookie \n added", false)
-		mockWrite      = NewMockStage("mockWrite")
-		mockCreatePipe = NewMockStage("mockCreatePipe")
-		cluster        = &Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
-		clusters       = &Clusters{}
+		mockWrite      = contexts.NewMockStage("mockWrite")
+		mockCreatePipe = contexts.NewMockStage("mockCreatePipe")
+		cluster        = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
+		clusters       = &contexts.Clusters{}
 	)
 	clusters.Add(cluster)
-	mockContext.firstChunk = false
+	mockContext.FirstChunk = false
 
 	// when
-	route(mockWrite.mockStage, clusters, mockCreatePipe.mockStage)(mockContext)
+	route(mockWrite.MockStage, clusters, mockCreatePipe.MockStage)(mockContext)
 
 	// then
-	assertion.AssertDeepEqual("Correct Chunk Without Cookie", testCtx, []byte("this is a response with no cookie \n added"), mockContext.data)
-	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.mockStageCallCounter)
+	assertion.AssertDeepEqual("Correct Chunk Without Cookie", testCtx, []byte("this is a response with no cookie \n added"), mockContext.Data)
+	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.MockStageCallCounter)
 }
 
 func Test_Parse_Header(testCtx *testing.T) {

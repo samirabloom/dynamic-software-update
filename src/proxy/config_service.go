@@ -9,14 +9,14 @@ import (
 	"regexp"
 	"errors"
 	"proxy/log"
-	"proxy/stages"
+	"proxy/contexts"
 )
 
-func ConfigServer(port int, routeContexts *stages.Clusters) {
-	urlRegex := regexp.MustCompile("/server/([a-z0-9-]*){1}")
+func ConfigServer(port int, routeContexts *contexts.Clusters) {
+	urlRegex := regexp.MustCompile("/configuration/cluster/([a-z0-9-]*){1}")
 	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
 		requestMappings: []*requestMapping{
-		&requestMapping{pattern: regexp.MustCompile("/server"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
+		&requestMapping{pattern: regexp.MustCompile("/configuration/cluster"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
 			return uuid.NewUUID()
 		})},
 		&requestMapping{pattern: urlRegex, method: "GET", handler: GETHandler(urlRegex)},
@@ -28,12 +28,12 @@ func ConfigServer(port int, routeContexts *stages.Clusters) {
 type requestMapping struct {
 	pattern *regexp.Regexp
 	method string
-	handler func(*stages.Clusters, http.ResponseWriter, *http.Request)
+	handler func(*contexts.Clusters, http.ResponseWriter, *http.Request)
 }
 
 type RegexpHandler struct {
 	requestMappings []*requestMapping
-	routeContexts *stages.Clusters
+	routeContexts *contexts.Clusters
 }
 
 func (handler *RegexpHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -47,8 +47,8 @@ func (handler *RegexpHandler) ServeHTTP(writer http.ResponseWriter, request *htt
 	http.NotFound(writer, request)
 }
 
-func PUTHandler(uuidGenerator func() uuid.UUID) func(*stages.Clusters, http.ResponseWriter, *http.Request) {
-	return func(routeContexts *stages.Clusters, writer http.ResponseWriter, request *http.Request) {
+func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
+	return func(routeContexts *contexts.Clusters, writer http.ResponseWriter, request *http.Request) {
 		body := make([]byte, 1024)
 		size, _ := request.Body.Read(body)
 
@@ -79,8 +79,8 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*stages.Clusters, http.Resp
 	}
 }
 
-func GETHandler(urlRegex *regexp.Regexp) func(*stages.Clusters, http.ResponseWriter, *http.Request) {
-	return func(routeContexts *stages.Clusters, writer http.ResponseWriter, request *http.Request) {
+func GETHandler(urlRegex *regexp.Regexp) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
+	return func(routeContexts *contexts.Clusters, writer http.ResponseWriter, request *http.Request) {
 
 		serverId := urlRegex.FindSubmatch([]byte(request.URL.Path))
 
@@ -102,7 +102,7 @@ func GETHandler(urlRegex *regexp.Regexp) func(*stages.Clusters, http.ResponseWri
 			index := 0
 			var routeContextsJSON []map[string]interface{} = make([]map[string]interface{}, routeContexts.ContextsByVersion.Len())
 			for element := routeContexts.ContextsByVersion.Front(); element != nil; element = element.Next() {
-				routeContextsJSON[index] = serialiseCluster(element.Value.(*stages.Cluster))
+				routeContextsJSON[index] = serialiseCluster(element.Value.(*contexts.Cluster))
 				index++
 			}
 			jsonBody, err = json.Marshal(routeContextsJSON);
@@ -116,8 +116,8 @@ func GETHandler(urlRegex *regexp.Regexp) func(*stages.Clusters, http.ResponseWri
 }
 
 
-func DeleteHandler(urlRegex *regexp.Regexp) func(*stages.Clusters, http.ResponseWriter, *http.Request) {
-	return func(routeContexts *stages.Clusters, writer http.ResponseWriter, request *http.Request) {
+func DeleteHandler(urlRegex *regexp.Regexp) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
+	return func(routeContexts *contexts.Clusters, writer http.ResponseWriter, request *http.Request) {
 		serverId := urlRegex.FindSubmatch([]byte(request.URL.Path))
 
 		uuid := uuid.Parse(string(serverId[1]))

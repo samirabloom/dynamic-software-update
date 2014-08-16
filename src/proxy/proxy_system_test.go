@@ -49,7 +49,7 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Session_Cluster_Transition(
 		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsClusterTwo []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsCluster3re []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
-		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/server"
+		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/configuration/cluster"
 	)
 
 	// given
@@ -105,7 +105,7 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Instant_Cluster_Transition(
 		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsClusterTwo []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsCluster3re []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
-		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/server"
+		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/configuration/cluster"
 	)
 
 	// given
@@ -155,7 +155,7 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsClusterTwo []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsCluster3re []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
-		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/server"
+		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/configuration/cluster"
 	)
 
 	// given
@@ -179,7 +179,7 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 	uuidCookieVersion1_5, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"ip\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"ip\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.5}}")
 
 	// then - should update cluster configuration
-	assertion.AssertDeepEqual("Update Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
+	assertion.AssertDeepEqual("Update Cluster Again - Correct PUT Status", testCtx, "202 Accepted", putStatus)
 
 	// then - should load balance requests against latest cluster
 	assertion.AssertDeepEqual("Latest Cluster When No UUID After Two New Clusters - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[0])+"\n", makeProxyRequest(proxyPort, "", "", ""))
@@ -203,7 +203,7 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 	_, deleteStatus = networkutil.DELETERequest(configServiceUrl+"/"+uuidCookieVersion1_1)
 
 	// then - should remove cluster
-	assertion.AssertDeepEqual("Remove Cluster - Correct Delete Status", testCtx, "202 Accepted", deleteStatus)
+	assertion.AssertDeepEqual("Remove Cluster Again - Correct Delete Status", testCtx, "202 Accepted", deleteStatus)
 
 	// then - should load balance requests against latest cluster
 	assertion.AssertDeepEqual("Initial Cluster After Two Clusters Removed - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[0])+"\n", makeProxyRequest(proxyPort, "", "", ""))
@@ -217,7 +217,7 @@ func Test_Proxy_System_Test_Should_Maintain_Version_Order_With_Multiple_Clusters
 		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsClusterTwo []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsCluster3re []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
-		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/server"
+		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/configuration/cluster"
 	)
 
 	// given
@@ -252,7 +252,7 @@ func Test_Proxy_System_Test_Should_Route_Concurrently(testCtx *testing.T) {
 		configPort int              = networkutil.FindFreeLocalSocket(testCtx).Port
 		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
 		serverPortsClusterTwo []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
-		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/server"
+		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/configuration/cluster"
 	)
 
 	// given
