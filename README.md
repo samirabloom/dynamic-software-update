@@ -34,7 +34,7 @@ Usage of proxy:
 
   -logLevel="WARN": Set the log level as "CRITICAL", "ERROR", "WARNING", "NOTICE", "INFO" or "DEBUG"
   
-  -h: Display this message
+  -h: Displays this message
 ```
 
 For example:
