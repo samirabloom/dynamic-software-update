@@ -7,16 +7,12 @@ The proxy provides a simple REST API to support dynamically updating the cluster
 
 ## HTTP Response Codes
 
-* **202 StatusAccepted** - a new cluster entity is successfully added or deleted 
-* **200 StatusOK** - cluster(s) entity is successfully returned   
-* **404 StatusNotFound** - cluster id is invalid
-* **400 StatusBadRequest** - request syntax is  invalid
+* **202 Accepted** - a new cluster entity is successfully added or deleted 
+* **200 OK** - cluster(s) entity is successfully returned   
+* **404 Not Found** - cluster id is invalid
+* **400 Bad Request** - request syntax is  invalid
 
-## /configuration/cluster
-
-This endpoint represents the cluster entity and supports the following HTTP methods:
-
-## PUT
+## PUT - /configuration/cluster
 To add a new cluster make a PUT request to `/configuration/cluster`.
 
 ###Request Body
@@ -24,18 +20,18 @@ To add a new cluster make a PUT request to `/configuration/cluster`.
 ```js
 {
   "cluster": {
-    "servers": [
-      {
-        "ip": "", 
-        "port": 0
-      }
-    ], 
-    "version": 0, 
-    "upgradeTransition": {
-      "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
-      "sessionTimeout": 0  // only supported for a `mode` value of "SESSION" 
-      "percentageTransitionPerRequest": 0  // only supported for a `mode` value of "GRADUAL"
-    }
+  "servers": [
+  {
+  "ip": "", 
+  "port": 0
+  }
+  ], 
+  "version": 0, 
+  "upgradeTransition": {
+  "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
+  "sessionTimeout": 0  // only supported for a `mode` value of "SESSION" 
+  "percentageTransitionPerRequest": 0  // only supported for a `mode` value of "GRADUAL"
+  }
   }
 }
 ```
@@ -56,8 +52,13 @@ Type: `Number` Default value: `undefined`
 
 This value specifies the port of a server in the cluster
 
+##### cluster.upgradeTransition
+Type: `Object` Default value: `{ mode: "INSTANT" }`
+
+This value allows the configuration of the upgrade transition, if no `upgradeTransition` is specified the upgrade transition mode defaults to `INSTANT`.
+
 ##### cluster.upgradeTransition.mode
-Type: `String` Default value: `INSTANT`
+Type: `String` Default value: `SESSION`
 
 This value specifies the upgrade transition mode and support the following values: `INSTANT`, `SESSION`, `GRADUAL`, `CONCURRENT`
 
@@ -80,21 +81,21 @@ For example the following JSON would set up a new cluster with two `servers` and
 ```js
 {
   "cluster": {
-    "servers": [
-      {
-        "ip": "127.0.0.1", 
-        "port": 1036
-      },  
-      {
-        "ip": "127.0.0.1", 
-        "port": 1038
-      }
-    ], 
-    "version": 1.1, 
-    "upgradeTransition": {
-      "mode": "SESSION", 
-      "sessionTimeout": 60
-    }
+  "servers": [
+  {
+  "ip": "127.0.0.1", 
+  "port": 1036
+  },  
+  {
+  "ip": "127.0.0.1", 
+  "port": 1038
+  }
+  ], 
+  "version": 1.1, 
+  "upgradeTransition": {
+  "mode": "SESSION", 
+  "sessionTimeout": 60
+  }
   }
 }
 ```
@@ -115,27 +116,28 @@ Content-Type: text/plain; charset=utf-8
  
 1dcbb083-257f-11e4-bcbc-600308a8245e
 ```
-## GET
+## GET - /configuration/cluster/{clusterId}
 
-To get a single cluster configuration make a GET request to `/configuration/cluster/{clusterId}`. To get all the cluster configurations make a GET request with no cluster id `/configuration/cluster/`.
+To get a single cluster configuration make a GET request to `/configuration/cluster/{clusterId}`. 
 
 ### Response Body
 
 ```js
 {
   "cluster": {
-    "servers": [
-      {
-        "ip": "", 
-        "port": 0
-      }
-    ], 
-    "version": 0, 
-    "upgradeTransition": {
-      "mode": ""  
-      "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
-      "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
-    }
+  "servers": [
+  {
+  "ip": "", 
+  "port": 0
+  }
+  ], 
+  "upgradeTransition": {
+  "mode": ""  
+  "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
+  "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
+  },
+   "uuid": "", 
+   "version": 0
   }
 }
 ```
@@ -154,22 +156,22 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
 ```js
 {
   "cluster": {
-    "servers": [
-      {
-        "ip": "127.0.0.1", 
-        "port": 1036
-      }, 
-      {
-        "ip": "127.0.0.1", 
-        "port": 1038
-      }
-    ], 
-    "upgradeTransition": {
-      "mode": "SESSION", 
-      "sessionTimeout": 60
-    }, 
-    "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e", 
-    "version": 1.1
+  "servers": [
+  {
+  "ip": "127.0.0.1", 
+  "port": 1036
+  }, 
+  {
+  "ip": "127.0.0.1", 
+  "port": 1038
+  }
+  ], 
+  "upgradeTransition": {
+  "mode": "SESSION", 
+  "sessionTimeout": 60
+  }, 
+  "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e", 
+  "version": 1.1
   }
 }
 ```
@@ -184,6 +186,144 @@ Content-Type: text/plain; charset=utf-8
 
 {"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":1.1}}
 ```
+
+## GET - /configuration/cluster
+
+To get all the cluster configurations make a GET request with no cluster id `/configuration/cluster/`.
+
+### Response Body
+
+````js
+[
+ {
+   "cluster": {
+   "servers": [
+   {
+   "ip": "", 
+   "port": 0
+   }
+   ], 
+   "upgradeTransition": {
+   "mode": ""  
+   "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
+   "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
+   },
+  "uuid": "", 
+  "version": 0
+   }
+ }, 
+  {
+  "cluster": {
+    "servers": [
+    {
+      "ip": "", 
+      "port": 0
+    }, 
+    {
+      "ip": "", 
+      "port": 0
+    }
+    ], 
+    "upgradeTransition": {
+    "mode": "CONCURRENT"
+    }, 
+    "uuid": "", 
+    "version": 0
+  }
+  } 
+]
+```
+
+### Example
+
+##### Request
+
+For example the following `curl` request would get a list of all cluster configurations
+
+```bash
+curl http://127.0.0.1:9090/configuration/cluster/ -X GET
+```
+##### Response
+
+```js
+[
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "127.0.0.1", 
+          "port": 1036
+        }, 
+        {
+          "ip": "127.0.0.1", 
+          "port": 1038
+        }
+      ], 
+      "upgradeTransition": {
+        "mode": "SESSION", 
+        "sessionTimeout": 60
+      }, 
+      "uuid": "1f6a0854-2608-11e4-ab79-600308a8245e", 
+      "version": 1.1
+    }
+  }, 
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "127.0.0.1", 
+          "port": 1037
+        }, 
+        {
+          "ip": "127.0.0.1", 
+          "port": 1039
+        }
+      ], 
+      "upgradeTransition": {
+        "mode": "CONCURRENT"
+      }, 
+      "uuid": "01386f1f-2608-11e4-ab79-600308a8245e", 
+      "version": 1.1
+    }
+  }, 
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "127.0.0.1", 
+          "port": 1034
+        }, 
+        {
+          "ip": "127.0.0.1", 
+          "port": 1035
+        }
+      ], 
+      "upgradeTransition": {
+        "mode": "INSTANT"
+      }, 
+      "uuid": "ffde36ce-2607-11e4-ab79-600308a8245e", 
+      "version": 1
+    }
+  }
+]
+```
+
+For example the response when using curl is as follows:
+
+```bash
+HTTP/1.1 200 OK
+Date: Sun, 17 Aug 2014 12:28:55 GMT
+Content-Length: 583
+Content-Type: text/plain; charset=utf-8
+ 
+[{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1037},{"ip":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1034},{"ip":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]samiras-mbp:dynamic-software-update samirarabbanian$ 
+```
+
+
+
+
+
+
 
 ## DELETE
 
@@ -207,8 +347,5 @@ HTTP/1.1 202 Accepted
 Date: Sat, 16 Aug 2014 21:28:38 GMT
 Content-Length: 0
 Content-Type: text/plain; charset=utf-8
-
 ```
-
-
 

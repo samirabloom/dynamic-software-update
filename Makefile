@@ -38,7 +38,7 @@ dependencies:
 	go get -v github.com/op/go-logging
 
 build: clean dependencies
-	$(FLAGS) go build -v -a -o proxy ./src/main_run.go
+	$(FLAGS) go build -v -o proxy ./src/main_run.go
 
 count:
 	find . -name "*.go" -print0 | xargs -0 wc -l
