@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"code.google.com/p/go-uuid/uuid"
 	"regexp"
-	"errors"
 	"proxy/log"
 	"proxy/contexts"
 )
@@ -55,14 +54,14 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.Re
 		var jsonConfig map[string]interface{}
 		err := json.Unmarshal(body[0:size], &jsonConfig)
 		if err != nil {
-			fmt.Printf("Error decoding json request:\n\t%s\n", err.Error())
+			fmt.Fprintf(writer, "Error decoding json request - %s", err.Error())
 			http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		} else {
 			clusterConfiguration := jsonConfig["cluster"]
 			if clusterConfiguration != nil {
 				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}))
 				if err != nil {
-					fmt.Printf("Error parsing cluster configuration:\n\t%s\n", err.Error())
+					fmt.Fprintf(writer, "Error parsing cluster configuration - %s", err.Error())
 					http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 				} else {
 					routeContexts.Add(cluster)
@@ -71,9 +70,8 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.Re
 					fmt.Fprintf(writer, "%s", cluster.Uuid)
 				}
 			} else {
-				errorMessage := "Invalid cluster configuration - \"cluster\" config missing"
-				log.LoggerFactory().Error(errorMessage)
-				err = errors.New(errorMessage)
+				fmt.Fprintf(writer, "Invalid cluster configuration - \"cluster\" config missing")
+				http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			}
 		}
 	}

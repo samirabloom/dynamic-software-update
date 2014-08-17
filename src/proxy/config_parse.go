@@ -9,22 +9,25 @@ import (
 	"errors"
 	"proxy/log"
 	"proxy/contexts"
-	"os"
 )
 
 // ==== PARSE CONFIG - START
 
 func loadConfig(configFile string) (*Proxy, error) {
-	return parseConfigFile(readConfigFile(configFile), parseProxy, parseConfigService, parseClusters(func() uuid.UUID { return uuid.NewUUID() }, true))
+	jsonData, err := readConfigFile(configFile)
+	if err == nil {
+		return parseConfigFile(jsonData, parseProxy, parseConfigService, parseClusters(func() uuid.UUID { return uuid.NewUUID() }, true))
+	} else {
+		return nil, err
+	}
 }
 
-func readConfigFile(configFile string) []byte {
+func readConfigFile(configFile string) ([]byte, error) {
 	jsonConfig, err := ioutil.ReadFile(configFile)
 	if err != nil {
-		log.LoggerFactory().Error("Error %s reading config file [%s]", err, configFile)
-		os.Exit(1)
+		return nil, errors.New(fmt.Sprintf("Error %s reading config file [%s]", err, configFile))
 	}
-	return jsonConfig
+	return jsonConfig, nil
 }
 
 func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseConfigService func(map[string]interface{}) (int, error), parseClusters func(map[string]interface{}) (*contexts.Clusters, error)) (proxy *Proxy, err error) {
@@ -32,33 +35,33 @@ func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*
 	var jsonConfig = make(map[string]interface{})
 	err = json.Unmarshal(jsonData, &jsonConfig)
 	if err != nil {
-		log.LoggerFactory().Error("Error %s parsing config file:\n%s", err.Error(), jsonData)
-	}
+		return nil, errors.New(fmt.Sprintf("Error %s parsing config file:\n%s", err.Error(), jsonData))
+	} else {
+		tcpProxyLocalAddress, proxyParseErr := parseProxy(jsonConfig)
+		if proxyParseErr == nil {
+			configServicePort, parseConfigServiceErr := parseConfigService(jsonConfig)
+			if parseConfigServiceErr == nil {
+				clusters, clusterParseErr := parseClusters(jsonConfig)
+				if clusterParseErr == nil {
+					// create load balancer
+					proxy = &Proxy{
+						frontendAddr: tcpProxyLocalAddress,
+						configServicePort: configServicePort,
+						clusters: clusters,
+						stop: make(chan bool),
+					}
+					log.LoggerFactory().Notice("Parsed config file:\n%s\nas:\n%s", jsonData, proxy)
 
-	tcpProxyLocalAddress, proxyParseErr := parseProxy(jsonConfig)
-	if proxyParseErr == nil {
-		configServicePort, parseConfigServiceErr := parseConfigService(jsonConfig)
-		if parseConfigServiceErr == nil {
-			clusters, clusterParseErr := parseClusters(jsonConfig)
-			if clusterParseErr == nil {
-				// create load balancer
-				proxy = &Proxy{
-					frontendAddr: tcpProxyLocalAddress,
-					configServicePort: configServicePort,
-					clusters: clusters,
-					stop: make(chan bool),
+					return proxy, nil
+				} else {
+					return nil, clusterParseErr
 				}
-				log.LoggerFactory().Notice("Parsed config file:\n%s\nas:\n%s", jsonData, proxy)
-
-				return proxy, nil
 			} else {
-				return nil, clusterParseErr
+				return nil, parseConfigServiceErr
 			}
 		} else {
-			return nil, parseConfigServiceErr
+			return nil, proxyParseErr
 		}
-	} else {
-		return nil, proxyParseErr
 	}
 }
 
@@ -70,15 +73,13 @@ func parseProxy(jsonConfig map[string]interface{}) (*net.TCPAddr, error) {
 
 	if jsonConfig["proxy"] != nil {
 		var proxyConfig map[string]interface{} = jsonConfig["proxy"].(map[string]interface{})
-		tcpProxyLocalAddress, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]))
+		tcpProxyLocalAddress, err = net.ResolveTCPAddr("tcp", fmt.Sprintf(":%v", proxyConfig["port"]))
 		if err != nil {
-			errorMessage := "Invalid proxy address [" + fmt.Sprintf("%s:%v", proxyConfig["ip"], proxyConfig["port"]) + "] - " + err.Error()
-			log.LoggerFactory().Error(errorMessage)
+			errorMessage := "Invalid proxy address [" + fmt.Sprintf(":%v", proxyConfig["port"]) + "] - " + err.Error()
 			err = errors.New(errorMessage)
 		}
 	} else {
 		errorMessage := "Invalid proxy configuration - \"proxy\" config missing"
-		log.LoggerFactory().Error(errorMessage)
 		err = errors.New(errorMessage)
 	}
 
@@ -97,12 +98,10 @@ func parseConfigService(jsonConfig map[string]interface{}) (int, error) {
 			configServicePort = int(configServiceConfig["port"].(float64))
 		} else {
 			errorMessage := "Invalid config service configuration - \"port\" is missing from \"configService\" config"
-			log.LoggerFactory().Error(errorMessage)
 			err = errors.New(errorMessage)
 		}
 	} else {
 		errorMessage := "Invalid proxy configuration - \"configService\" config missing"
-		log.LoggerFactory().Error(errorMessage)
 		err = errors.New(errorMessage)
 	}
 	return configServicePort, err
@@ -125,7 +124,6 @@ func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map
 			}
 		} else {
 			errorMessage := "Invalid cluster configuration - \"cluster\" config missing"
-			log.LoggerFactory().Error(errorMessage)
 			err = errors.New(errorMessage)
 		}
 
@@ -155,7 +153,6 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 					backendAddresses[index], err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["ip"], server["port"]))
 					if err != nil {
 						errorMessage := "Invalid server address [" + fmt.Sprintf("%s:%v", server["ip"], server["port"]) + "] - " + err.Error()
-						log.LoggerFactory().Error(errorMessage)
 						err = errors.New(errorMessage)
 					}
 				}
@@ -177,7 +174,6 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 				if upgradeTransitionConfig != nil {
 					if initialCluster {
 						errorMessage := "Invalid cluster configuration - \"upgradeTransition\" can not be specified for the intial cluster"
-						log.LoggerFactory().Error(errorMessage)
 						err = errors.New(errorMessage)
 					} else {
 						upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
@@ -196,12 +192,10 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 									sessionTimeout = int64(sessionTimeoutConfig.(float64))
 								} else {
 									errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
-									log.LoggerFactory().Error(errorMessage)
 									err = errors.New(errorMessage)
 								}
 							} else if sessionTimeoutConfig != nil {
 								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
-								log.LoggerFactory().Error(errorMessage)
 								err = errors.New(errorMessage)
 							}
 
@@ -211,17 +205,14 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 									percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
 								} else {
 									errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
-									log.LoggerFactory().Error(errorMessage)
 									err = errors.New(errorMessage)
 								}
 							} else if percentageTransitionPerRequestConfig != nil {
 								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
-								log.LoggerFactory().Error(errorMessage)
 								err = errors.New(errorMessage)
 							}
 						} else {
-							errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\" or \"SESSION\""
-							log.LoggerFactory().Error(errorMessage)
+							errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\", \"SESSION\", \"GRADUAL\" or \"CONCURRENT\""
 							err = errors.New(errorMessage)
 						}
 					}
@@ -232,12 +223,10 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 				}
 			} else {
 				errorMessage := "Invalid cluster configuration - \"servers\" list must contain at least one entry"
-				log.LoggerFactory().Error(errorMessage)
 				err = errors.New(errorMessage)
 			}
 		} else {
 			errorMessage := "Invalid cluster configuration - \"servers\" list missing from \"cluster\" config"
-			log.LoggerFactory().Error(errorMessage)
 			err = errors.New(errorMessage)
 		}
 

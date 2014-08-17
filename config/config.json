@@ -1,6 +1,5 @@
 {
     "proxy": {
-        "ip": "localhost",
         "port": 1234
     },
     "configService": {

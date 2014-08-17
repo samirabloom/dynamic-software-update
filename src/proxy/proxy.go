@@ -35,20 +35,36 @@ type Proxy struct {
 func NewProxy(configFile string) *Proxy {
 	proxy, err := loadConfig(configFile)
 	if err != nil {
+		log.LoggerFactory().Error("%s", err.Error())
 		os.Exit(1)
 	}
 	return proxy
 }
 
 func CLI() {
-	log.LogLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
+	log.LogLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"\n")
 
 	//
 	var cmd, _ = os.Getwd()
 	if !strings.HasSuffix(cmd, "/") {
 		cmd = cmd+"/"
 	}
-	var configFile = flag.String("configFile", cmd+"config.json", "Set the location of the configuration file")
+	var configFile = flag.String("configFile", "./config.json", "Set the location of the configuration file that should contain configuration to start the proxy,\n                               for example:" +
+				"\n                                           {" +
+				"\n                                               \"proxy\": {" +
+				"\n                                                   \"port\": 1235" +
+				"\n                                               }," +
+				"\n                                               \"configService\": {" +
+				"\n                                                   \"port\": 9090" +
+				"\n                                               }," +
+				"\n                                               \"cluster\": {" +
+				"\n                                                   \"servers\":[" +
+				"\n                                                       {\"ip\": \"127.0.0.1\", \"port\": 1034}," +
+				"\n                                                       {\"ip\": \"127.0.0.1\", \"port\": 1035}" +
+				"\n                                                   ]," +
+				"\n                                                   \"version\": 1.0" +
+				"\n                                               }" +
+				"\n                                           }\n")
 
 	flag.Parse()
 

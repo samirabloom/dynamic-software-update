@@ -5,11 +5,11 @@ import (
 )
 
 func NewMockResponseWriter() *MockResponseWriter {
-	return &MockResponseWriter{WritenBodyBytes: make(map[int][]byte), Headers: make(http.Header), ResponseCodes: make(map[int]int)}
+	return &MockResponseWriter{WrittenBodyBytes: make(map[int][]byte), Headers: make(http.Header), ResponseCodes: make(map[int]int)}
 }
 
 type MockResponseWriter struct {
-	WritenBodyBytes map[int][]byte
+	WrittenBodyBytes map[int][]byte
 	Headers         http.Header
 	ResponseCodes   map[int]int
 }
@@ -19,9 +19,9 @@ func (rw *MockResponseWriter) Header() http.Header {
 }
 
 func (rw *MockResponseWriter) Write(data []byte) (int, error) {
-	currentSize := len(rw.WritenBodyBytes)
-	rw.WritenBodyBytes[currentSize] = make([]byte, len(data))
-	copy(rw.WritenBodyBytes[currentSize], data)
+	currentSize := len(rw.WrittenBodyBytes)
+	rw.WrittenBodyBytes[currentSize] = make([]byte, len(data))
+	copy(rw.WrittenBodyBytes[currentSize], data)
 	return len(data), nil;
 }
 

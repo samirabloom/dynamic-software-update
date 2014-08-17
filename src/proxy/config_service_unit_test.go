@@ -30,8 +30,8 @@ func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusAccepted, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
 }
 
 func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T) {
@@ -81,6 +81,7 @@ func Test_Config_PUT_With_Valid_Cluster_Configuration_Object(testCtx *testing.T)
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
+		expectedResponseBody  = []byte("Error parsing cluster configuration - Invalid cluster configuration - \"servers\" list must contain at least one entry")
 	)
 
 	// when
@@ -88,6 +89,7 @@ func Test_Config_PUT_With_Valid_Cluster_Configuration_Object(testCtx *testing.T)
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
 	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
 }
 
@@ -99,6 +101,7 @@ func Test_Config_PUT_When_Invalid_JSON(testCtx *testing.T) {
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
+		expectedResponseBody  = []byte("Error decoding json request - invalid character 'i' looking for beginning of object key string")
 	)
 
 	// when
@@ -106,6 +109,7 @@ func Test_Config_PUT_When_Invalid_JSON(testCtx *testing.T) {
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
 	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
 }
 
@@ -117,13 +121,15 @@ func Test_Config_PUT_When_Empty_JSON(testCtx *testing.T) {
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
+		expectedResponseBody  = []byte("Invalid cluster configuration - \"cluster\" config missing")
 	)
 
 	// when
 	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Response Code", testCtx, 0, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
 	assertion.AssertDeepEqual("Correct Object Added To Clusters", testCtx, expectedRouteContexts, actualRouteContexts)
 }
 
@@ -145,8 +151,8 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 	GETHandler(urlRegex)(routeContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WritenBodyBytes[0])
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusOK, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
 }
 
 func Test_Config_GET_With_Non_Existing_Object(testCtx *testing.T) {
@@ -166,8 +172,8 @@ func Test_Config_GET_With_Non_Existing_Object(testCtx *testing.T) {
 	GETHandler(urlRegex)(routeContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Response Body", testCtx, string(expectedResponseBody), string(responseWriter.WritenBodyBytes[0]))
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusNotFound, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, string(expectedResponseBody), string(responseWriter.WrittenBodyBytes[0]))
 }
 
 func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
@@ -200,8 +206,8 @@ func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
 	GETHandler(urlRegex)(routeContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WritenBodyBytes[0])
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusOK, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
 }
 
 func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
@@ -221,8 +227,8 @@ func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
 	DeleteHandler(urlRegex)(routeContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Object Removed From Clusters", testCtx, expectedRouteContexts, routeContexts)
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusAccepted, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Object Removed From Clusters", testCtx, expectedRouteContexts, routeContexts)
 }
 
 
@@ -281,6 +287,6 @@ func Test_Config_DELETE_With_Non_Existing_Object(testCtx *testing.T) {
 	DeleteHandler(urlRegex)(routeContexts, responseWriter, request)
 
 	// then
-	assertion.AssertDeepEqual("Correct Object Removed From Clusters", testCtx, expectedRouteContexts, routeContexts)
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusNotFound, responseWriter.ResponseCodes[0])
+	assertion.AssertDeepEqual("Correct Object Removed From Clusters", testCtx, expectedRouteContexts, routeContexts)
 }

@@ -285,7 +285,7 @@ func Test_Parse_Cluster_Config_When_Invalid_Mode(testCtx *testing.T) {
 	var (
 		serversConfig                       = []interface{}{map[string]interface{}{"ip":"127.0.0.1", "port":1024}, map[string]interface{}{"ip":"127.0.0.1", "port":1025}}
 		jsonConfig                          = map[string]interface{}{"cluster": map[string]interface{}{"servers": serversConfig, "upgradeTransition": map[string]interface{}{"mode": "INVALID"}, "version": 1.0}}
-		expectedError error                 = errors.New("Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\" or \"SESSION\"")
+		expectedError error                 = errors.New("Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\", \"SESSION\", \"GRADUAL\" or \"CONCURRENT\"")
 		expectedClusters *contexts.Clusters = nil
 	)
 

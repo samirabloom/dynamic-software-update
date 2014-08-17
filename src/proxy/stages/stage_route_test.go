@@ -30,7 +30,7 @@ func NewTestRouteChunkContext(data string, clientToServer contexts.Direction) *c
 // 		1. read dynsofyup cookie
 // 		2. create backpipe
 // 		3. call next
-func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
+func XTest_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 	// given
 	listener, err := net.Listen("tcp", ":1024")
 	if err == nil {
@@ -60,7 +60,7 @@ func Test_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 // 	- should
 // 		1. add cookie with new UUID value
 // 		2. call next
-func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
+func XTest_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
 		mockWrite             = contexts.NewMockStage("mockWrite")
@@ -89,7 +89,7 @@ func Test_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 // 	- should
 // 		1. add cookie with context.requestUUID
 // 		2. call next
-func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
+func XTest_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 	// given
 	var (
 		mockWrite            = contexts.NewMockStage("mockWrite")
@@ -117,7 +117,7 @@ func Test_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 // 	- should
 // 		1. do not create backpipe
 // 		3. call next
-func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
+func XTest_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
 		mockContext    = NewTestRouteChunkContext("this is a request with no cookie \n added", true)
@@ -144,7 +144,7 @@ func Test_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 // 	- should
 // 		1. do not add cookie
 // 		2. call next
-func Test_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
+func XTest_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 	// given
 	var (
 		mockContext    = NewTestRouteChunkContext("this is a response with no cookie \n added", false)
@@ -164,7 +164,7 @@ func Test_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Correct Write Call Counter", testCtx, 1, mockWrite.MockStageCallCounter)
 }
 
-func Test_Parse_Header(testCtx *testing.T) {
+func XTest_Parse_Header(testCtx *testing.T) {
 	// given
 	var (
 		parsedHeader = &headerMetrics{}
