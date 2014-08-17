@@ -31,4 +31,3 @@ proxy -logLevel="${logLevel}" -configFile="config/config_script.json" &
 
 trap "pkill proxy; pkill example_server" exit INT TERM
 
-wait

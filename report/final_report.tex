@@ -19,6 +19,7 @@
 % for jason config
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{inconsolata}
 
 \colorlet{punct}{red!60!black}
 \definecolor{background}{HTML}{EEEEEE}
@@ -26,14 +27,14 @@
 \colorlet{numb}{magenta!60!black}
 
 \lstdefinelanguage{json}{
-    basicstyle=\normalfont\ttfamily,
-    numbers=left,
-    numberstyle=\scriptsize,
-    stepnumber=1,
-    numbersep=8pt,
-    showstringspaces=false,
+    basicstyle=\ttfamily\small,
+%    numbers=left,
+ %   numberstyle=\scriptsize,
+  %  stepnumber=1,
+%    numbersep=8pt,
+%    showstringspaces=false,
     breaklines=true,
-    frame=lines,
+ %   frame=lines,
     backgroundcolor=\color{background},
     literate=
      *{0}{{{\color{numb}0}}}{1}
@@ -588,15 +589,58 @@ HAVE A DIAGRAM ABOUT COMPARING ALL THREE PROXIES AND SAY THEREFORE THE LAST VERS
 
 XXXXXXXXX\\
 
+
+
+\subsection{Proxy Installation}
+The proxy can be installed in two simple steps as follows:
+\begin{list}{-}{}
+  \itemsep0em
+  \item git clone \url {https://github.com/samirabloom/dynamic-software-update} 
+  \item make
+\end{list}
+
+\noindent
+The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
+
 \subsection{Command Line Interface}
-CLI supports: two properties \\
+The proxy runs from the command line with the following options:\\
 
--	Log level
-- Config File
+\begin{lstlisting}[language=json,firstnumber=1]
+Usage of proxy:
+  -configFile="./config.json":  Set the location of the configuration file 
+  that should contain configuration to start the proxy, 
+  for example:
+              {
+                  "proxy": {
+                      "port": 1235
+                  },
+                  "configService": {
+                      "port": 9090
+                  },
+                  "cluster": {
+                      "servers":[
+                          {"ip": "127.0.0.1", "port": 1034},
+                          {"ip": "127.0.0.1", "port": 1035}
+                      ],
+                      "version": 1.0
+                  }
+              }
 
+  -logLevel="WARN":  Set the log level as "CRITICAL", "ERROR", "WARNING", 
+  "NOTICE", "INFO" or "DEBUG"
 
+  -h: Displays this message
+\end{lstlisting} 
+
+\noindent\\
+For example the following command will run the proxy in the "INFO" log level and uses a file called \textit{config/config\_script.json} for its configuration. 
+
+\begin{lstlisting}[language=json,firstnumber=1]
+proxy -logLevel=INFO -configFile="config/config_script.json" 
+\end{lstlisting}
+ 
 \subsection{REST API}
-The proxy provides a simple REST API (Figure \ref{proxy}) to support dynamically updating the cluster configuration as follows:
+The proxy provides a simple REST API (Figure \ref{proxy}) to support dynamically updating the cluster configuration as follows:\\
 
 \begin{list}{-}{}
   \itemsep0em
@@ -713,8 +757,6 @@ xxxxxxxxx\\
 Talk about how I dockerised the proxy
 why didn't use fleet system and coreOS? 
 
-
-\subsection{How To Run Proxy?????} 
 
 
 
