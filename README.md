@@ -211,3 +211,10 @@ export GOPATH=$GOPATH:`PWD`
 go get github.com/axw/gocov/gocov
 go get gopkg.in/matm/v1/gocov-html
 gocov test -v proxy | gocov-html > coverage.html
+
+# Run Docker with Go as Terminal
+
+1. vagrant up
+1. vagrant ssh
+1. docker run -i -v /vagrant:/vagrant -t samirabloom/docker-go /bin/bash
+1. cd /vagrant

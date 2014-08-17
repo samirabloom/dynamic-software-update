@@ -31,7 +31,12 @@ test: clean
 coverage:
 	go get github.com/axw/gocov/gocov
 	go get gopkg.in/matm/v1/gocov-html
-	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy | gocov-html > coverage.html
+	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy | gocov-html > proxy_coverage.html
+#	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy/contexts | gocov-html > contexts_coverage.html
+#	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy/log | gocov-html > log_coverage.html
+	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy/stages | gocov-html > stages_coverage.html
+	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy/tcp | gocov-html > tcp_coverage.html
+#	PATH=$(PATH):$(GOPATH)/bin gocov test -v proxy/transition | gocov-html > transition_coverage.html
 
 dependencies:
 	go get -v code.google.com/p/go-uuid/uuid

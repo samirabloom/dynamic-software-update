@@ -47,9 +47,25 @@ working of covering most of the code
  
 ## Remaining: 
 
-1. Writing tests for route function
-
 1. Evaluation
+ - compare different versions of proxy for performance
+ - compare & test upgrade scenarios
+    + scenarios
+      - instant, session & gradual upgrade
+      - concurrent upgrade
+      - concurrent upgrade with crashing
+      - concurrent upgrade with kill -9
+    + containers
+      - docker registry
+         - normal request
+         - kill -9 request
+      - nginx & php to netty & java
+         - crashing request
+         - small single chunk response
+         - large multiple chunk response with content length
+         - large multiple chunk response with transfer encoding
+
+1. Writing tests for route function
 
 1. Extend the metric analysis for multi-version response
 

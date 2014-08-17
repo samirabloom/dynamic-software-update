@@ -1,4 +1,4 @@
-package proxy_a
+package content_counting_proxy
 
 import (
 	"time"
@@ -73,7 +73,7 @@ var loggerFactory = func() func(*string) *logging.Logger {
 	}
 }()
 
-func Proxy() {
+func CLI() {
 	logLevel := flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"")
 	flag.Parse()
 
