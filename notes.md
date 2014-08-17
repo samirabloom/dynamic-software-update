@@ -47,11 +47,7 @@ working of covering most of the code
  
 ## Remaining: 
 
-1. Taking out modes from route function and making it more encapsulated
- 
 1. Writing tests for route function
-
-1. Write a makefile
 
 1. Evaluation
 

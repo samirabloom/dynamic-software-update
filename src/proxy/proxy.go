@@ -44,12 +44,8 @@ func NewProxy(configFile string) *Proxy {
 func CLI() {
 	log.LogLevel = flag.String("logLevel", "WARN", "Set the log level as \"CRITICAL\", \"ERROR\", \"WARNING\", \"NOTICE\", \"INFO\" or \"DEBUG\"\n")
 
-	//
-	var cmd, _ = os.Getwd()
-	if !strings.HasSuffix(cmd, "/") {
-		cmd = cmd+"/"
-	}
-	var configFile = flag.String("configFile", "./config.json", "Set the location of the configuration file that should contain configuration to start the proxy,\n                               for example:" +
+	var configFile = flag.String("configFile", "./config.json", "Set the location of the configuration file that should contain configuration to start the proxy," +
+				"\n                               for example:" +
 				"\n                                           {" +
 				"\n                                               \"proxy\": {" +
 				"\n                                                   \"port\": 1235" +

@@ -6,6 +6,7 @@
 *.o
 *.so
 dynsoftup
+proxy
 example_server
 pkg
 
