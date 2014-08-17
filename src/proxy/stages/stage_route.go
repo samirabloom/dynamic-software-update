@@ -2,15 +2,15 @@ package stages
 
 import (
 	"bytes"
-	"net"
 	"regexp"
-	"syscall"
 	"time"
 	byteutil "util/byte"
 	"proxy/log"
 	"strconv"
-	"strings"
 	"proxy/contexts"
+	"syscall"
+	"net"
+	"strings"
 )
 
 // ==== ROUTE - START
@@ -35,10 +35,10 @@ func route(next func(*contexts.ChunkContext), clusters *contexts.Clusters, creat
 
 				err := clusters.GetByVersionOrder(0).Mode.Route(clusters, context)
 				if err != nil {
-					log.LoggerFactory().Error("Can't forward traffic to %v - %s\n", context.To, err)
+					log.LoggerFactory().Error("Error communicating with server - %s\n", err)
 					if isConnectionRefused(err) {
 						// no such device or address
-						context.Err = &net.OpError{Op: "dial", Addr: context.To.RemoteAddr(), Err: syscall.ENXIO}
+						context.Err = &net.OpError{Op: "dial", Err: syscall.ENXIO}
 						context.PipeComplete <- 0
 					}
 					return

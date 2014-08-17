@@ -5,6 +5,7 @@ import (
 	"proxy/tcp"
 	"strings"
 	"time"
+	"net"
 )
 
 type Direction bool
@@ -39,7 +40,7 @@ type ChunkContext struct {
 func (context *ChunkContext) Close() {
 	// close sockets
 	context.From.Close()
-	if context.To != nil {
+	if context.To != (*net.TCPConn)(nil) {
 		context.To.Close()
 	}
 }
