@@ -378,39 +378,31 @@ The Hypertext Transfer Protocol (HTTP) is a generic, stateless application-level
 \subsection{HTTP Requests} \label{Requests}
 The HTTP request sent to the server by client has the following format:\\
 
-		\indent
-		<Request> ::= <Request-Line>\\
-		\indent\indent\indent\indent
-		\setlength\parindent{24pt}
-		<general-headers>\\
-		\indent\indent\indent\indent
-		|<request-headers>\\
-		\indent\indent\indent\indent
-		| <entity-headers> CRLF\\
-		\indent\indent\indent\indent
-		CRLF \\
-		\indent\indent\indent\indent
-		<opt-message-body>\\
-
+\begin{lstlisting}[language=json,firstnumber=1]
+<Request> ::=	<Request-Line>
+		<general-headers>
+		|<request-headers>
+		| <entity-headers> CRLF
+		CRLF 
+		<opt-message-body>
+		
+\end{lstlisting} 
+\noindent\\
 The Request-Line consists of a method token, Request-URI and the protocol version. Method token defines HTTP functions such as GET, POST, PUT, DELETE that is performed on the resources identified by Request-URI. General headers provide general control information and they can be included in both requests and responses. Transfer-Encoding is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if Transfer-Encoding is defined as "chunked", the data will be sent to the recipient in a series of "chunks". The request-header fields allow the client to pass additional information about the request, and about the client itself, to the server. Entity-headers define optional and required metainformation about the request body and if the request has no body, provide information about the resource identified by the request. For example, Content-Length header is one of the entity-header fields indicating the size of the request body. CRLF refers to a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n'). CRLF is used to define the end of request line and headers and start of the request body.
 
 
 \subsection{HTTP Responses}
 Server send HTTP responses to the client after receiving and interpreting requests using the following format: \\
-\indent
-		<Response> ::= <Status-Line>\\
-		\indent\indent\indent\indent
-		\setlength\parindent{24pt}
-		<general-headers>\\
-		\indent\indent\indent\indent
-		|<response-headers>\\
-		\indent\indent\indent\indent
-		| <entity-headers> CRLF\\
-		\indent\indent\indent\indent
-		CRLF \\
-		\indent\indent\indent\indent
-		<opt-message-body>\\
 
+\begin{lstlisting}[language=json,firstnumber=1]
+<Response> ::=	<Status-Line>
+		<general-headers>
+		|<response-headers>
+		|<entity-headers> CRLF
+		CRLF 
+		<opt-message-body>
+\end{lstlisting} 
+\noindent\\
 The Status-Line consists of the HTTP version followed by a numeric status code and its associated textual phrase. Status code indicates the action taken on the corresponding request such as 'Successful' (The request was successfully received, understood, and accepted), 'Client Error' (The request contains a syntax error or the request cannot be fulfilled) and 'Server Error' (The server failed to fulfill an apparently valid request). Similar to requests, HTTP responses also have several type of headers which provides general or specific information about he response (Section \ref{Requests}). Additionally, CRLF is also used to define the end of response headers and start of the optional response body.   
 
  
@@ -507,7 +499,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
 XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\    
 
-\subsubsection{Socket Based Staged Proxy With End Of File}
+\subsubsection{Socket Based Staged Proxy With End Of File}\label{staged}
 The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in figure \ref{proxy}. The SBD  approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
 
 \begin{list}{-}{}
@@ -542,13 +534,24 @@ This version of HTTP load balancing proxy does not use content counting to detec
 
 \noindent
 \textbf{Forward Pipe} \\
-\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The textit{ChunkContext} contains information such as the network addresses of the client and the server, as follows: \\ 
+\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as the network addresses of the client and the server and the data transfer direction, as follows: \\ 
 
-xxxxx \\
-add the code for chunk context code \\
-xxxx \\
+\begin{lstlisting}[language=json,firstnumber=1]
+type ChunkContext struct {
+	Data                   []byte
+	To                     tcp.TCPConnection
+	From                   tcp.TCPConnection
+	Err                    error
+	TotalReadSize          int64
+	TotalWriteSize         int64
+	PipeComplete           chan int64
+	FirstChunk             bool
+	RoutingContext         *RoutingContext
+	Direction              Direction
+}
+\end{lstlisting} 
 
-\noindent
+\noindent\\
 \textbf{Read Stage} \\
 \textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the final version of the socket based proxy (Figure \ref{proxy}), when an EOF condition (\textit{i.e.}  when no more input is available) occurs, \textit{Read} treats this condition as an error and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input and prevents the need for parsing requests/responses and the content counting mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the \textit{Read} stage in \textit{Back pipe} reads responses from the server.   \\
 
@@ -556,8 +559,6 @@ xxxx \\
 \textbf{Route Stage} \\
 \textit{Route} stage has different functionality in the \textit{Forward Pipe} (\textit{i.e.} processing requests) and \textit{Back pipe} (\textit{i.e.} processing responses).    
 
-
-according to the type of message (\textit{i.e.} requests or responses) is processing.\\
 
 \underline{Routing Requests} - When the requests arrive in \textit{Route} stage,   
 
@@ -636,7 +637,7 @@ Usage of proxy:
 For example the following command will run the proxy in the "INFO" log level and uses a file called \textit{config/config\_script.json} for its configuration. 
 
 \begin{lstlisting}[language=json,firstnumber=1]
-proxy -logLevel=INFO -configFile="config/config_script.json" 
+proxy -logLevel=INFO -configFile= "config/config_script.json" 
 \end{lstlisting}
  
 \subsection{REST API}
@@ -668,9 +669,8 @@ The REST API supports the following HTTP response codes:
   
 \end{list}
 
-\noindent 
-\textbf{PUT /configuration/cluster}\\
-The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:
+\subsubsection{PUT /configuration/cluster}
+The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:\\
 
 \begin{lstlisting}[language=json,firstnumber=1]
 {
@@ -691,49 +691,55 @@ The PUT request to \textit{/configuration/cluster}  is used to add a new cluster
 }
 \end{lstlisting}
 
-\noindent
+\noindent\\
 The JSON fields are used for the following reasons:
 
 \begin{list}{-}{}
   \itemsep0em
-  \item\textbf{{cluster.servers}} - specifies the list of servers in the cluster
+  \item\textbf{{cluster.servers}} - specifies the list of servers in the cluster.
   
-  \item\textbf{{cluster.servers[i].ip}} - specifies the IP address or hostname of a server in the cluster
+  \item\textbf{{cluster.servers[i].ip}} - specifies the IP address or hostname of a server in the cluster.
   
-   \item\textbf{{cluster.servers[i].port}} - specifies the port of a server in the cluster
-   
-      \item\textbf{{cluster.version}} - specifies the cluster version 
-   
-   \item\textbf{{cluster.upgradeTransition}} - allows the configuration of the upgrade transition. If no upgradeTransition is specified the upgrade transition mode defaults to INSTANT.  
-   
-   
-   
-   deletes a single cluster configuration
-   
-    \item\textbf{{cluster.upgradeTransition.sessionTimeout}}
-    
- 
-    
+  \item\textbf{{cluster.servers[i].port}} - specifies the port of a server in the cluster.
   
+  \item\textbf{{cluster.version}} - specifies the cluster version. 
+  
+  \item\textbf{{cluster.upgradeTransition}} - allows the configuration of the upgrade transition. If no \textit{upgradeTransition} is specified, the upgrade transition mode defaults to INSTANT.  
+  
+  \item\textbf{{cluster.upgradeTransition.mode}} - specifies the upgrade transition mode and support the following values: INSTANT, SESSION, GRADUAL and CONCURRENT.
+   
+  \item\textbf{{cluster.upgradeTransition.sessionTimeout}} - specifies the timeout period assigned to the SESSION transition mode. 
 \end{list}
 
+\noindent
+When the user send a PUT request and successfully adds a new cluster, the proxy responds by returning a cluster id representing the new cluster entity that has been added. Appendix \ref{Appendix  I} demonstrates detailed examples of the PUT requests and responses supported by proxy and the type of values that can be used in each field of the message body.
 
+\subsubsection{GET - /configuration/cluster/\{clusterId\}} 
+GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single cluster configuration. If no cluster id is specified and the GET request is sent to \textit{/configuration/cluster/}, a list of all the cluster configurations added to the proxy will be returned. The format of the response body for getting a cluster configuration with a specific cluster entity is shown below and detailed examples of GET requests and responses are demonstrated in Appendix \ref{Appendix  I}.\\
 
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+    "cluster": {
+        "servers": [
+            {
+                "ip": "",
+                "port": 0
+            }
+        ],
+        "upgradeTransition": {
+                "mode": ""
+                "sessionTimeout": 0  
+                "percentageTransitionPerRequest": 0  
+        },
+        "uuid": "",
+        "version": 0
+    }
+}
 
+\end{lstlisting}
 
-
-A REST configuration service was developed and implemented into the proxy (Figure \ref{proxy}) to support different upgrade scenarios explained in section xxx. This REST service takes advantage of HTTP functions such as PUT, GET and DELETE to mange clusters and software updates. The user sends the updated version of the cluster to the REST server using a PUT request. A UUID will be generated for each new cluster and saved in a list. The user can quarry any of the clusters using the UUID associated with the desired cluster and the HTTP PUT function. Each cluster can also be deleted using the HTTP DELETE function. 
-
-As it was described in section xxx, the proxy supports different update strategies. Firstly, the proxy will be started on a default configuration defined in a JSON file. The JSON file has three different sections defined as "proxy", "configService" and "cluster". The proxy and configService sections define the Internet Protocol (IP) and the port addresses that the proxy and the REST configuration service will be running on. The cluster section defines the IP and port addresses of the servers in the cluster. 
-
-As well as defining the IP and port addresses of the running clusters, the cluster section has several optional sections as follow:
-
-\begin{list}{-}{}
-  \itemsep0em
-  \item \textbf{version}: The user can define the version of the cluster. If  no version is defined, version 0.0 will be chosen as the default one.      
-
-  \item \textbf{upgradeTransition}: This configuration defines which of the upgrade scenarios (section xxx) will be applied to the updated cluster. If the user defines the session mode, it is necessary to define a time out for the session update.
-\end{list}
+\subsubsection{DELETE - /configuration/cluster/\{clusterId\}}
+DELETE requests to \textit{/configuration/cluster/\{clusterId\}} deletes a single cluster configuration. No request body and response body is defined for the DELETE request. Appendix \ref{Appendix I} shows an example of a DELETE request and the response received from the proxy.
 
 \subsection{Upgrade Strategies}
 \underline{Rapid Update} - In this mechanism the updated version of software will immediately process all requests. To apply the Rapid Update, the "upgradeTransition" section of the configuration file will be defined as "Instant" and as soon as the updated version start running it will immediately process all requests. The non-updated version will however remain running. If the user decide to delete the updated version of the software or if the updated version does not behave correctly the non-updated version will be immediately available to process requests. Different versions of the software will be available in the version order and the newest version will always process the request and if the most updated one is not available the next most updated one will be available unless specified otherwise.  
@@ -748,40 +754,29 @@ As well as defining the IP and port addresses of the running clusters, the clust
 
 
 \subsection{Testing}
-xxxxxxxxx\\
-xxxxxxxxx\\
-xxxxxxxxx\\
-xxxxxxxxx\\
+As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\\
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
+XXXXXXXX A FIGURE FOR TESTING XXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\ 
+
+\subsubsection{Unit Testing}
+These tests focus on low level checking of the functionality of each proxy component. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component and be mocked. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.    
+
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
+XXXXXXXX MAYBE ADD A SCREEN SHOT XXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\ 
+
+
+\subsubsection{Integration Testing}
+These testes focus on the integration between different components of the REST API and the poxy. To ensure each component of the REST API integrates correctly, tests were designed to send simultaneous PUT, GET and DELETE requests to the REST server and the responses were analyzed. In addition, integration of different stages of the proxy was tested using different scenarios such as testing the behavior of when the proxy is configured for SESSION or CONCURRENT upgrade or when a cluster configuration is deleted from the proxy.
+
+\subsubsection{System Testing}
+The aim of these tests is to check that the components of the dynamic software update system including proxy and the REST API work together. System tests were written to cover complete user scenarios. The tests are executed by starting the proxy with an initial configuration. Then HTTP requests is fired at the proxy and the test checks that the proxy is distributing the requests to the cluster of servers correctly. Afterwards, the four different upgrade modes described in section \ref{modes} are applied via the REST API and the behavior of the  proxy is tested. Finally, the proxy is tested when clusters are deleted from the proxy.   
 
 \subsection{Dockerising the proxy}
-Talk about how I dockerised the proxy
-why didn't use fleet system and coreOS? 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Talk about how I dockerised the proxy\\\\
+why didn't use fleet system and coreOS? \\\\
 
 
 
@@ -820,7 +815,410 @@ xxxxxxxxx\\
 xxxxxxxxx\\
 
 
+\clearpage
+\section{Appendices}
 
+\subsection{Appendix I: Proxy REST API}\label{Appendix I}
+The proxy provides a simple REST API to support dynamically updating the cluster configuration as follows:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item \textbf{PUT /configuration/cluster} - adds a new cluster configuration  
+ \item\textbf{GET /configuration/cluster/{clusterId}} - gets a single cluster configuration
+ \item\textbf{GET /configuration/cluster} - gets all cluster configurations
+ \item\textbf{DELETE /configuration/cluster/{clusterId}} - deletes a single cluster configuration
+\end{list}
+
+\noindent
+\textbf{HTTP Response Codes}
+\begin{list}{-}{}
+  \itemsep0em
+\item 202 Accepted - a new cluster entity is successfully added or deleted 
+\item 200 OK - cluster(s) entity is successfully returned   
+\item 404 Not Found - cluster id is invalid
+\item 400 Bad Request - request syntax is  invalid
+\end{list}
+
+\noindent
+\textbf{PUT - /configuration/cluster}\\
+To add a new cluster make a PUT request to \textit{/configuration/cluster}.\\
+
+\noindent
+\textit{\textbf{Request Body}}
+ 
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "cluster": {
+    "servers": [
+      {
+        "ip": "",
+        "port": 0
+      }
+    ],
+    "version": 0,
+    "upgradeTransition": {
+        "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
+        "sessionTimeout": 0  // only supported for a 'mode' value of "SESSION" 
+        "percentageTransitionPerRequest": 0  // only supported for a 'mode' value of "GRADUAL"
+      }
+    }
+}
+\end{lstlisting}
+\noindent \\
+\textbf{cluster.servers}\\
+\noindent
+Type: 'Array'  Default value: '[]'\\
+\noindent
+This value specifies the list of servers in the cluster\\
+
+\noindent
+\textbf{cluster.servers[i].ip}\\
+\noindent
+Type: 'String' Default value: 'undefined'\\
+\noindent
+This value specifies the ip address or hostname of a server in the cluster\\
+
+\noindent
+\textbf{cluster.servers[i].port}\\
+\noindent
+Type: 'Number' Default value: 'undefined'\\
+\noindent
+This value specifies the port of a server in the cluster\\
+
+\noindent
+\textbf{cluster.version}\\
+\noindent
+Type: 'Number' Default value: '0'\\
+\noindent
+This value specifies the cluster version. If no version is specified, the version defaults to '0'. \\
+
+\noindent
+\textbf{cluster.upgradeTransition}\\
+\noindent
+Type: 'Object' Default value: ''INSTANT'\\
+\noindent
+This value allows the configuration of the upgrade transition. If no 'upgradeTransition' is specified, the upgrade transition mode defaults to 'INSTANT'.\\
+
+\noindent
+\textbf{cluster.upgradeTransition.mode}\\
+\noindent
+Type: 'String' Default value: 'SESSION'\\
+\noindent
+This value specifies the upgrade transition mode and support the following values: 'INSTANT', 'SESSION', 'GRADUAL', 'CONCURRENT'.\\
+
+\noindent
+\textbf{cluster.upgradeTransition.sessionTimeout}\\
+\noindent
+Type: 'String' Default value: 'undefined'\\
+\noindent
+This value specifies the timeout period assigned to the 'SESSION' transition mode. \\
+
+\noindent
+\textbf{Response Body}\\
+\noindent
+A cluster id is returned representing the new cluster entity that has been added. \\
+
+\noindent
+\textbf{Example}\\
+
+\noindent
+\textbf{Request}\\
+\noindent
+For example the following JSON would set up a new cluster with two 'servers' and 'SESSION' upgrade transition:
+
+\begin{lstlisting}[language=json,firstnumber=1]
+
+{
+  "cluster": {
+    "servers": [
+      {
+        "ip": "127.0.0.1", 
+        "port": 1036
+      },  
+      {
+        "ip": "127.0.0.1", 
+        "port": 1038
+      }
+    ], 
+    "version": 1.1, 
+    "upgradeTransition": {
+      "mode": "SESSION", 
+      "sessionTimeout": 60
+    }
+  }
+}
+\end{lstlisting}
+
+\noindent \\
+To send this request with 'Curl' use the following syntax:\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"ip": "127.0.0.1", "port": 1036},{"ip": "127.0.0.1", "port": 1038}],"version": 1.1,"upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+\end{lstlisting}
+
+\noindent \\
+\textbf{Response}\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+HTTP/1.1 202 Accepted
+Date: Sat, 16 Aug 2014 19:54:21 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+ 
+1dcbb083-257f-11e4-bcbc-600308a8245e
+\end{lstlisting}
+
+\noindent \\
+\textit{\textbf{GET - /configuration/cluster/{clusterId}}}\\
+
+\noindent 
+To get a single cluster configuration make a GET request to \textit{/configuration/cluster/{clusterId}}.\\ 
+
+\noindent 
+\textbf{Response Body}\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "cluster": {
+    "servers": [
+      {
+        "ip": "",
+        "port": 0
+      }
+    ],
+    "upgradeTransition": {
+      "mode": ""
+      "sessionTimeout": 0  // only returned when 'mode' is "SESSION" 
+      "percentageTransitionPerRequest": 0  // only returned when 'mode' is "GRADUAL"
+    },
+    "uuid": "",
+    "version": 0
+  }
+} 
+\end{lstlisting}
+
+\noindent \\
+\textbf{Example}
+
+\noindent \\
+\textbf{Request}
+
+\noindent 
+For example the following 'curl' request would get the cluster configuration with cluster id '1dcbb083-257f-11e4-bcbc-600308a8245e':\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a8245e -X GET
+\end{lstlisting}
+
+\noindent \\
+\textbf{Response}\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+{
+  "cluster": {
+    "servers": [
+      {
+        "ip": "127.0.0.1",
+        "port": 1036
+      },
+      {
+        "ip": "127.0.0.1",
+        "port": 1038
+      }
+     ],
+    "upgradeTransition": {
+        "mode": "SESSION",
+        "sessionTimeout": 60
+    },
+    "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e",
+    "version": 1.1
+  }
+}
+  
+\end{lstlisting}
+
+\noindent \\
+For example the response when using curl is as follows:
+
+\begin{lstlisting}[language=json,firstnumber=1]
+HTTP/1.1 200 OK
+Date: Sat, 16 Aug 2014 20:37:42 GMT
+Content-Length: 206
+Content-Type: text/plain; charset=utf-8
+
+{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":1.1}}
+\end{lstlisting}
+
+\noindent \\
+\textit{\textbf{GET - /configuration/cluster}}\\
+\noindent 
+To get all the cluster configurations make a GET request with no cluster id \textit{/configuration/cluster/}.
+
+\noindent \\
+\textbf{Response Body}\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+
+[
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "",
+          "port": 0
+        }
+       ],
+      "upgradeTransition": {
+        "mode": ""
+        "sessionTimeout": 0  // only returned when 'mode' is "SESSION" 
+        "percentageTransitionPerRequest": 0  // only returned when 'mode' is "GRADUAL"
+      },
+      "uuid": "",
+      "version": 0
+    }
+  },
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "",
+          "port": 0
+        },
+        {
+          "ip": "",
+          "port": 0
+        }
+       ],
+      "upgradeTransition": {
+        "mode": "CONCURRENT"
+      },
+      "uuid": "",
+      "version": 0
+    }
+  }
+]
+\end{lstlisting}
+
+\noindent \\
+\textbf{Example}
+
+\noindent \\
+\textbf{Request}\\
+
+\noindent 
+For example the following 'curl' request would get a list of all cluster configurations\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+curl http://127.0.0.1:9090/configuration/cluster/ -X GET
+'''
+##### Response
+
+\begin{lstlisting}[language=json,firstnumber=1]
+[
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "127.0.0.1", 
+          "port": 1036
+        }, 
+        {
+          "ip": "127.0.0.1", 
+          "port": 1038
+        }
+      ], 
+      "upgradeTransition": {
+        "mode": "SESSION", 
+        "sessionTimeout": 60
+      }, 
+      "uuid": "1f6a0854-2608-11e4-ab79-600308a8245e", 
+      "version": 1.1
+    }
+  }, 
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "127.0.0.1", 
+          "port": 1037
+        }, 
+        {
+          "ip": "127.0.0.1", 
+          "port": 1039
+        }
+      ], 
+      "upgradeTransition": {
+        "mode": "CONCURRENT"
+      }, 
+      "uuid": "01386f1f-2608-11e4-ab79-600308a8245e", 
+      "version": 1.1
+    }
+  }, 
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "127.0.0.1", 
+          "port": 1034
+        }, 
+        {
+          "ip": "127.0.0.1", 
+          "port": 1035
+        }
+      ], 
+      "upgradeTransition": {
+        "mode": "INSTANT"
+      }, 
+      "uuid": "ffde36ce-2607-11e4-ab79-600308a8245e", 
+      "version": 1
+    }
+  }
+]
+\end{lstlisting}
+
+\noindent \\
+For example the response when using curl is as follows:
+
+\begin{lstlisting}[language=json,firstnumber=1]
+HTTP/1.1 200 OK
+Date: Sun, 17 Aug 2014 12:28:55 GMT
+Content-Length: 583
+Content-Type: text/plain; charset=utf-8
+ 
+[{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1037},{"ip":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1034},{"ip":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]
+\end{lstlisting}
+
+\noindent \\
+\textbf{DELETE - /configuration/cluster/{clusterId}}
+
+\noindent 
+To delete a single cluster configuration make a DELETE request to \textit{/configuration/cluster/{clusterId}}.\\
+
+\noindent 
+\textbf{Example}\\
+
+\noindent 
+\textbf{Request}\\
+
+\noindent 
+For example the following 'curl' request would delete the cluster configuration with id '1dcbb083-257f-11e4-bcbc-600308a8245e':\\
+
+\begin{lstlisting}[language=json,firstnumber=1]
+curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a8245e -X DELETE
+\end{lstlisting}
+
+\noindent \\
+\textbf{Response}\\
+
+\noindent 
+For example the response when using curl is as follows:
+
+\begin{lstlisting}[language=json,firstnumber=1]
+HTTP/1.1 202 Accepted
+Date: Sat, 16 Aug 2014 21:28:38 GMT
+Content-Length: 0
+Content-Type: text/plain; charset=utf-8
+\end{lstlisting}
 
 
 \clearpage
