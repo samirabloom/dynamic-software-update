@@ -28,6 +28,7 @@
 
 \lstdefinelanguage{json}{
     basicstyle=\ttfamily\small,
+%    xleftmargin=71 
 %    numbers=left,
  %   numberstyle=\scriptsize,
   %  stepnumber=1,
@@ -344,7 +345,6 @@ With Docker, a new application on a host only needs its binaries or libraries bu
 
 \subsection{CoreOS} \label{CoreOS}
 CoreOS is an open source lightweight operating system based on the Linux Kernel which is designed for security, consistency and relability \footnote {\label{coreos} \url {https://coreos.com/using-coreos/}}. CoreOS does not support any package management tools such as apt \footnote{\url{https://help.ubuntu.com/12.04/serverguide/apt-get.html}} or yum \footnote {\url{http://yum.baseurl.org/}} instead it is a base OS for Docker containers. Therefore, any application can run on CoreOS, using a Docker container. CoreOS has an active/passive dual-partition scheme, similar to ChromeOS \footnote{\url{http://www.chromium.org/chromium-os}} , which is used to update the OS as a single unit instead of package by package. Initially, the system is booted into an active partition, once a new update is detected it is downloaded and installed to the passive parition. To ensure the installation does not affect the running system, it is rate limited using Linux cgroups. The system will switch to the partition with the latest update once it is rebooted \footnote {\label{coreos} \url {https://coreos.com/using-coreos/}}. CoreOS also has several tools to support simple cluster deployment including:
-
   \begin{list}{-}{}
   \itemsep0em
   \item \underline{etcd} - An open source distributed key value store that handles distributed locking and master election
@@ -353,9 +353,6 @@ CoreOS is an open source lightweight operating system based on the Linux Kernel 
   \end{list}
 
 \noindent
-
-
-
 \subsection{Messaging Systems} \label{MOM}
 Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ) \footnote{\label{ZeroMQ} \url{http://zeromq.org/}} are the most common messaging standards. 
 
@@ -456,7 +453,7 @@ The following technology stack has been chosen for the dynamic software update s
 
 \clearpage
 \section{Implementation} \label{Implementation}
-To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented using GO programming language as described in this section. 
+To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented using Go programming language as described in this section. 
 
 \subsection{Message Based Proxy Using ZeroMQ}
 The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}. The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
@@ -478,26 +475,72 @@ The first proxy developed to support dynamic software update was a HTTP reverse 
   \label{prototype}
 \end{figure}
 
-\noindent
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests or responses are chunked (Section \ref{Requests}), ZeroMQ DEALER socket in the router treats each chunk as a separate message and it distributes each chunk of the same request or response to different recipients. To prevent this major routing issue associated with ZeroMQ messaging system, the message chunks for each HTTP request and response were buffered before forwarding them to the servers and clients. This approach allowed successful routing using ZeroMQ messaging system, however, quantitative analysis of the HTTP reverse proxy showed significant overhead associated with using the implemented proxy as the load balancer. Therefore, the aforementioned proxy was not advanced further to support dynamic software update and an alternative one was sought to be developed. \\\\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-
+\noindent\\
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing of chnuked HTTP requests. Furthermore, HTTP provides adequate support for messaging such as content encoding and caching, therefore, wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update and an alternative one with no messaging system was sought to be developed. 
 
 \subsection{Socket Based Proxies}
-As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a fast and efficient dynamic software update system. This section describes different approaches used to develop load balancing HTTP proxies using raw Go sockets with no messaging systems.   
+As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a reliable and efficient dynamic software update system. This section describes different approaches used to develop load balancing HTTP proxies using raw Go sockets with no messaging systems.   
 
 \subsubsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in figure xxx. In this design the proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections (Figure xxx). In the case of a new connection, the listener creates a dedicated TCP connection between the client and the server. The new connection receives HTTP requests in a  \textit{Read} loop and distributes them across a cluster of HTTP services (Figure xx).  
+The first version of the socket based proxy was designed as demonstrated in figure xxx. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections (Figure xxx). In the case of a new connection, the listener creates a dedicated TCP connection between the client and the server. The new connection receives HTTP requests in a  \textit{Read} loop and distributes them across a cluster of HTTP services (Figure xx).  
 
-The content counting proxy uses HTTP request and response formats to detect the end of a message sent by client/server. Detecting the end of requests/responses is essential in order to stop reading from the senders and closing GO sockets for terminating each TCP connection. For HTTP requests, the method token in the Request-Line was used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the  \textit{Read} loop ends after the first read. However, for other HTTP functions such as POST or PUT and for HTTP responses, headers such as Transfer-Encoding and Content-Length were used (Section \ref{HTTP}). When the size of message body is defined by Content-Length header, proxy parses the HTTP requests/responses and when the first CRLF is detected (Section \ref{HTTP}), then it is known that any data after the first CRLF is the message body . Hence, the data bytes received after first CRLF is counted and compared with the value obtained from Content-Length. When the two values are equal, the \textit{Read} loop ends. In addition, when the Content-Length header is not set and the Transfer-Encoding header is defined as "chunked", then the message is sent to the recipient in a series of chunks. At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n' as a line separator, therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. Hence, to detect the end of HTTP messages with chunked Transfer-Encoding header, the implemented proxy screens each chunk and when the last chunk is spotted (\textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'), the  \textit{Read} loop ends. 
+\noindent\\
+\textbf{Content Counting}\\
+The content counting proxy uses HTTP format to detect the end of requests and responses \ref{HTTP}. Detecting the end of requests/responses is essential in order to reliably close Go sockets such as read and write and terminating TCP connections. 
 
-To evaluate the performance of the aforementioned proxy, a HTTP benchmarking tool called wrk \footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. wrk is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{wrk} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}. Requests were sent to an example Go web service either directly or via the implemented socket based proxy and the round trip time (\textit{i.e.} the time taken to send a request to the server and receive a response) was calculated. This analysis showed that sending requests and responses via the proxy increases the round trip time approximately xxxxx200\%xxx. Detailed analysis of the proxy showed that one of the main reasons for the performance overhead was due to parsing and content counting that the proxy is doing to detect the end of messages. Furthermore, when requests and responses went through the proxy, read errors were regularly occurring and the the Go sockets did not seem to be closed reliably. These errors can also have a big impact on the round trip time as well as effecting the reliability of the proxy. In conclusion, the significant overhead associated with the implemented proxy and the regular read and socket errors lead us think that a proxy with content counting  is not be a good candidate for supporting a reliable and efficient dynamic software update. Therefore, another version of the socket based proxy was developed as described in the next section.\\ \\ \\
+For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the  \textit{Read} loop ends after the first read. However, for other HTTP functions such as POST or PUT and for HTTP responses, headers such as Transfer-Encoding and Content-Length were used (Section \ref{HTTP}). When the size of message body is defined by Content-Length header, proxy searches  in requests/responses for the first CRLF, which defines the end of headers and start of the message body (Section \ref{HTTP}), and it counts the length of read data after the first CRLF. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates. However, when the Content-Length header is not set and the Transfer-Encoding header is defined as "chunked", HTTP messages are sent to the recipient in a series of chunks. At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n' as a line separator, therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the implemented proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-XXXXXXXX HAVE A DIAGRAM HERE TO SHOW WHAT I JUST EXPLAINED XX\\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\    
+
+\noindent\\
+\textbf{Performance Evaluation}\\
+To evaluate the performance of the aforementioned proxy, two HTTP benchmarking tools called \textit{wrk} \footnote{\label{wrk} \url{https://github.com/wg/wrk}} and \textit{ApacheBench} (\textit{ab}) \footnote{\label{ab} \url{http://httpd.apache.org/docs/2.2/programs/ab.html}}  were used. \textit{wrk} is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{wrk} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}. \textit{ab} is a single-threaded tool used to measure the performance of HTTP web servers by generating stressing conditions.
+
+
+
+HTTP Requests were fired to an example Go web service either directly or via the implemented content counting proxy. The processed time for each request was calculated using both \textit{wrk} and \textit{ab}. The following terminal outputs are an example of results obtained by \textit{wrk} when the benchmark was run for 2 minutes, using 400 threads and keeping 400 HTTP connections open.  \\  
+
+\noindent
+\underline{Direct HTTP Requests To Go Server}
+\begin{lstlisting}[language=json,firstnumber=1]
+$ ./wrk -t400 -c400 -d120 --latency http://127.0.0.1:1024
+Running 2m test @ http://127.0.0.1:1024
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    56.33ms    5.34ms 113.13ms   97.48%
+    Req/Sec    17.26      2.09    28.00     94.61%
+  Latency Distribution
+     50%   55.85ms
+     75%   56.36ms
+     90%   56.89ms
+     99%   97.85ms
+  854993 requests in 2.00m, 126.38MB read
+Requests/sec:   7123.93
+Transfer/sec:      1.05MB
+\end{lstlisting}
+
+\noindent\\
+\underline{HTTP Requests To Go Server Via Content Counting Proxy} 
+\begin{lstlisting}[language=json,firstnumber=1]
+$ ./wrk -t400 -c400 -d120 --latency http://127.0.0.1:1234
+Running 2m test @ http://127.0.0.1:1234
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   381.51ms  131.93ms 482.79ms   83.01%
+    Req/Sec     0.48      2.34    26.00     95.10%
+  Latency Distribution
+     50%  472.32ms
+     75%  480.15ms
+     90%  481.42ms
+     99%  482.69ms
+  25835 requests in 2.00m, 3.82MB read
+  Socket errors: connect 0, read 27144, write 681, timeout 21088
+Requests/sec:    215.24
+Transfer/sec:     32.58KB
+\end{lstlisting}
+
+
+\noindent \\
+The above results show that significant socket errors such as read and write errors occur when the requests are sent to the Go server via proxy. The socket errors consequently reduce the number of requests processed by the server (\textit{e.g.} from 7123.93/second to  215.24/second), the amount of data transferred (\textit{e.g.} from 1.05MB/second to 32.58KB/second) and finally increases the time taken for each request to be processed (average time increased from 56.33ms to 381.51ms). The results obtained from \textit{wrk} were consistent and similar results were obtained when \textit{ab} was used for evaluations. Detailed analysis of the proxy showed that the content counting process of the proxy is not reliable. The end of messages are not persistently detected correctly, therefore, the read and write sockets do not close appropriately which results in socket errors. In conclusion, the significant overhead and socket errors associated with the implemented proxy lead us think that a proxy with content counting  is not suitable for supporting reliable and efficient dynamic software updates. Therefore, another version of the socket based proxy was developed as described in the next section.
 
 \subsubsection{Socket Based Staged Proxy With End Of File}\label{staged}
 The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in figure \ref{proxy}. The SBD  approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
@@ -557,32 +600,37 @@ type ChunkContext struct {
 
 \noindent
 \textbf{Route Stage} \\
-\textit{Route} stage has different functionality in the \textit{Forward Pipe} (\textit{i.e.} processing requests) and \textit{Back pipe} (\textit{i.e.} processing responses).    
+\textit{Route} stage has different functionality in the \textit{Forward Pipe}, \textit{i.e.} processing requests and \textit{Back pipe}, \textit{i.e.} processing responses. \\   
 
+\noindent
+\underline{Routing in \textit{Forward Pipe}} - When a new request arrives in the \textit{Route} stage, the \textit{Route} checks the upgrade transition mode of the most updated cluster and forwards the request chunks to the correct instance of the cluster accordingly. Currently the proxy supports four different upgrade transition modes; INSTANT, SESSION, GRADUAL and CONCURRENT (Section \ref{modes}). The \textit{Route} stage distributes the requests using the modes according to the rules summarized below: 
 
-\underline{Routing Requests} - When the requests arrive in \textit{Route} stage,   
-
-\underline{Routing Responses} - \\\\
-
-
-
-
-			-  -  - Talk about cluster configuration as well  
-  			-  -  - load balancer and send the requests to the correct instance of the cluster\\
-  			-  -  - create backward pipe\\
-  			-  -  - set cookie headers\\
-  			-  -  - parse the headers for metrics\\
+\begin{list}{-}{}
+  \itemsep0em
+  \item{\textbf{INSTANT}} - If the upgrade transition mode in the most updated version of the cluster is defined as INSTANT, \textit{Route} stage forwards the requests to the latest cluster version of the cluster. If no upgrade transition is defined in the cluster configuration, INSTANT mode will be the default mode (Section \ref{PUT}).\\
   
+  \item{\textbf{SESSION}} -  When upgrade transition mode of a cluster is defined as SESSION, the proxy will generate a  session cookie with a configured expiry time for each request forwarded to that cluster. The session cookie will be added as a header to the HTTP response using  Set-Cookie. If the request arrived in \textit{Route} stage has an assigned cookie and it is not timed out, \textit{Route} stage forwards the request to the cluster associated with the cookie, otherwise requests will be forwarded according to the upgrade transition mode of the cluster with highest version number. If the cluster configuration has an upgrade transition with no mode, SESSION mode will be assigned to that cluster. \\
+  
+   \item{\textbf{GRADUAL}} - When a client connects to a cluster with GRADUAL transition mode, a transition cookie will be added to the responses associated to that client. The transition cookie refers to a percentage determining when the client should switch to the new version of the system. As an example, if the transition percentage is 15\%, this means that the \textit{Route} stag forwards the first 15\% of the requests to the old version before forwarding the requests to the new version.\\
+   
+   \item{\textbf{CONCURRENT}} - When the upgrade transition mode is set to CONCURRENT, the \textit{Route} stage forwards requests concurrently to the two most updated cluster versions.        
+\end{list}
+\noindent
+If an error occurs while routing the requests to a cluster, the request will be forwarded to the older version of the cluster. If routing to all versions failed, the process stops and returns an appropriate error to the client. If the request is successfully routed, a \textit{Back pipe} will be created by \textit{Route} stage for processing responses.   
+
+\noindent\\
+\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses differently according to the configuration of the cluster which the response comes from. If the upgrade transition mode in the cluster is defined as INSTANT, the response will be sent to the client with no further modifications. If the mode is set to SESSION or GRADUAL, \textit{Route} stage sets the session cookie or the transition cookie to the response respectively before forwarding it to the client. Finally, if the mode is defined as CONCURRENT, the response from each cluster version will be parsed and HTTP headers such as status code, Transfer-Encoding, Content-Length and the response delays are compared. If the response headers from the new cluster version is identical to the old version, the response from the old cluster is dropped and the new response is forwarded to the client. However, if the response headers from the new cluster is different from the old cluster's response, the \textit{Route} stage forwards the resppnse from the old cluster.\\
+
 \noindent
 \textbf{Write Stage} \\
-\textit{Write} stage writes received requests/responses to an underlying data stream. The writing process stops if any errors such as \textit{ErrShortWrite} encountered while writing to a socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes datato the client.   \\
+\textit{Write} stage writes received requests/responses to an underlying data stream. The writing process stops if any errors such as \textit{ErrShortWrite} encountered while writing to a socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client.   \\
 
 \noindent
 \textbf{Complete Stage}\\ 
-\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. This proved to be essential for generating a fast and reliable dynamic software update system.\\
- 
+\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. This proved to be essential for generating a fast and reliable dynamic software update system.\\ 
+
 \noindent
-\textbf{Back Pipe} \\
+\textbf{Back Pipe}\\
 \textit{Back pipe} has the same responsibility as the \textit{Forward Pipe}. It constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.\\\\
 
 xxxxxxxx\\\\
@@ -641,7 +689,7 @@ proxy -logLevel=INFO -configFile= "config/config_script.json"
 \end{lstlisting}
  
 \subsection{REST API}
-The proxy provides a simple REST API (Figure \ref{proxy}) to support dynamically updating the cluster configuration as follows:\\
+The proxy provides a simple REST API (Figure \ref{proxy}) to support dynamically updating the cluster configuration as follows:
 
 \begin{list}{-}{}
   \itemsep0em
@@ -669,7 +717,7 @@ The REST API supports the following HTTP response codes:
   
 \end{list}
 
-\subsubsection{PUT /configuration/cluster}
+\subsubsection{PUT /configuration/cluster}\label{PUT}
 The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:\\
 
 \begin{lstlisting}[language=json,firstnumber=1]
@@ -909,9 +957,16 @@ This value specifies the upgrade transition mode and support the following value
 \noindent
 \textbf{cluster.upgradeTransition.sessionTimeout}\\
 \noindent
-Type: 'String' Default value: 'undefined'\\
+Type: 'Number' Default value: 'undefined'\\
 \noindent
 This value specifies the timeout period assigned to the 'SESSION' transition mode. \\
+
+\noindent
+\textbf{cluster.upgradeTransition.percentageTransitionPerRequest}\\
+\noindent
+Type: 'Number' Default value: 'undefined'\\
+\noindent
+This value specifies the transition percentage associated with each request in the `GRADUAL` transition mode. \\
 
 \noindent
 \textbf{Response Body}\\
