@@ -20,19 +20,19 @@ To add a new cluster make a PUT request to `/configuration/cluster`.
 ```js
 {
   "cluster": {
-  "servers": [
-  {
-  "ip": "", 
-  "port": 0
-  }
-  ], 
-  "version": 0, 
-  "upgradeTransition": {
-  "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
-  "sessionTimeout": 0  // only supported for a `mode` value of "SESSION" 
-  "percentageTransitionPerRequest": 0  // only supported for a `mode` value of "GRADUAL"
-  }
-  }
+    "servers": [
+      {
+        "ip": "",
+        "port": 0
+      }
+    ],
+    "version": 0,
+    "upgradeTransition": {
+        "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
+        "sessionTimeout": 0  // only supported for a `mode` value of "SESSION" 
+        "percentageTransitionPerRequest": 0  // only supported for a `mode` value of "GRADUAL"
+      }
+    }
 }
 ```
 
@@ -52,22 +52,31 @@ Type: `Number` Default value: `undefined`
 
 This value specifies the port of a server in the cluster
 
+##### cluster.version
+Type: `Number` Default value: `0`
+
+This value specifies the cluster version. If no version is specified, the version defaults to `0`. 
+
 ##### cluster.upgradeTransition
 Type: `Object` Default value: `{ mode: "INSTANT" }`
 
-This value allows the configuration of the upgrade transition, if no `upgradeTransition` is specified the upgrade transition mode defaults to `INSTANT`.
+This value allows the configuration of the upgrade transition. If no `upgradeTransition` is specified, the upgrade transition mode defaults to `INSTANT`.
 
 ##### cluster.upgradeTransition.mode
 Type: `String` Default value: `SESSION`
 
-This value specifies the upgrade transition mode and support the following values: `INSTANT`, `SESSION`, `GRADUAL`, `CONCURRENT`
+This value specifies the upgrade transition mode and support the following values: `INSTANT`, `SESSION`, `GRADUAL`, `CONCURRENT`. If no `upgradeTransition mode` is specified, the mode defaults to `SESSION`.
 
 ##### cluster.upgradeTransition.sessionTimeout
-Type: `String` Default value: `undefined`
+Type: `Number` Default value: `undefined`
 
-This value specifies the timeout period...
+This value specifies the timeout period assigned to the `SESSION` transition mode.
+
+##### cluster.upgradeTransition.percentageTransitionPerRequest
+Type: `Number` Default value: `undefined`
+
+This value specifies the transition percentage associated with each request in the `GRADUAL` transition mode. 
  
-
 ###Response Body
 
 A cluster id is returned representing the new cluster entity that has been added. 
@@ -79,23 +88,24 @@ A cluster id is returned representing the new cluster entity that has been added
 For example the following JSON would set up a new cluster with two `servers` and `SESSION` upgrade transition:
 
 ```js
+
 {
   "cluster": {
-  "servers": [
-  {
-  "ip": "127.0.0.1", 
-  "port": 1036
-  },  
-  {
-  "ip": "127.0.0.1", 
-  "port": 1038
-  }
-  ], 
-  "version": 1.1, 
-  "upgradeTransition": {
-  "mode": "SESSION", 
-  "sessionTimeout": 60
-  }
+    "servers": [
+      {
+        "ip": "127.0.0.1", 
+        "port": 1036
+      },  
+      {
+        "ip": "127.0.0.1", 
+        "port": 1038
+      }
+    ], 
+    "version": 1.1, 
+    "upgradeTransition": {
+      "mode": "SESSION", 
+      "sessionTimeout": 60
+    }
   }
 }
 ```
@@ -125,21 +135,21 @@ To get a single cluster configuration make a GET request to `/configuration/clus
 ```js
 {
   "cluster": {
-  "servers": [
-  {
-  "ip": "", 
-  "port": 0
+    "servers": [
+      {
+        "ip": "",
+        "port": 0
+      }
+    ],
+    "upgradeTransition": {
+      "mode": ""
+      "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
+      "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
+    },
+    "uuid": "",
+    "version": 0
   }
-  ], 
-  "upgradeTransition": {
-  "mode": ""  
-  "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
-  "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
-  },
-   "uuid": "", 
-   "version": 0
-  }
-}
+} 
 ```
 
 ### Example
@@ -156,24 +166,25 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
 ```js
 {
   "cluster": {
-  "servers": [
-  {
-  "ip": "127.0.0.1", 
-  "port": 1036
-  }, 
-  {
-  "ip": "127.0.0.1", 
-  "port": 1038
-  }
-  ], 
-  "upgradeTransition": {
-  "mode": "SESSION", 
-  "sessionTimeout": 60
-  }, 
-  "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e", 
-  "version": 1.1
+    "servers": [
+      {
+        "ip": "127.0.0.1",
+        "port": 1036
+      },
+      {
+        "ip": "127.0.0.1",
+        "port": 1038
+      }
+     ],
+    "upgradeTransition": {
+        "mode": "SESSION",
+        "sessionTimeout": 60
+    },
+    "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e",
+    "version": 1.1
   }
 }
+  
 ```
 
 For example the response when using curl is as follows:
@@ -194,43 +205,44 @@ To get all the cluster configurations make a GET request with no cluster id `/co
 ### Response Body
 
 ````js
+
 [
- {
-   "cluster": {
-   "servers": [
-   {
-   "ip": "", 
-   "port": 0
-   }
-   ], 
-   "upgradeTransition": {
-   "mode": ""  
-   "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
-   "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
-   },
-  "uuid": "", 
-  "version": 0
-   }
- }, 
   {
-  "cluster": {
-    "servers": [
-    {
-      "ip": "", 
-      "port": 0
-    }, 
-    {
-      "ip": "", 
-      "port": 0
+    "cluster": {
+      "servers": [
+        {
+          "ip": "",
+          "port": 0
+        }
+       ],
+      "upgradeTransition": {
+        "mode": ""
+        "sessionTimeout": 0  // only returned when `mode` is "SESSION" 
+        "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
+      },
+      "uuid": "",
+      "version": 0
     }
-    ], 
-    "upgradeTransition": {
-    "mode": "CONCURRENT"
-    }, 
-    "uuid": "", 
-    "version": 0
+  },
+  {
+    "cluster": {
+      "servers": [
+        {
+          "ip": "",
+          "port": 0
+        },
+        {
+          "ip": "",
+          "port": 0
+        }
+       ],
+      "upgradeTransition": {
+        "mode": "CONCURRENT"
+      },
+      "uuid": "",
+      "version": 0
+    }
   }
-  } 
 ]
 ```
 
@@ -316,16 +328,10 @@ Date: Sun, 17 Aug 2014 12:28:55 GMT
 Content-Length: 583
 Content-Type: text/plain; charset=utf-8
  
-[{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1037},{"ip":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1034},{"ip":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]samiras-mbp:dynamic-software-update samirarabbanian$ 
+[{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1037},{"ip":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1034},{"ip":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]
 ```
 
-
-
-
-
-
-
-## DELETE
+## DELETE - /configuration/cluster/{clusterId}
 
 To delete a single cluster configuration make a DELETE request to `/configuration/cluster/{clusterId}`.
 
@@ -348,4 +354,3 @@ Date: Sat, 16 Aug 2014 21:28:38 GMT
 Content-Length: 0
 Content-Type: text/plain; charset=utf-8
 ```
-
