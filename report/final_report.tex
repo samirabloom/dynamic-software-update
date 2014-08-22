@@ -95,21 +95,22 @@
         \large
         {Imperial College London}\\
         \large
-         \vspace*{0.5cm}
+         \vspace*{0.2cm}
         {Department of Computing}
         
         \vspace{4.5 cm}
         \large
-        {Highly Reliable Upgrading of Software Containers}\\
+        {\Large \textbf{Highly Reliable Upgrading of Software Containers}}\\
+        \vspace{1.0 cm}
         {by}\\
-        {Samira Rabbanian (SR)}
+        {Samira Rabbanian (sr1213)}
         
-        \vspace{4.5cm}
+        \vspace{10cm}
         
 
   	\large {Submitted in partial fulfilment of the requirements for the MSc Degree in Computing Science of Imperial College London }\\
   	
-\vspace*{1.5 cm}  	
+\vspace*{1 cm}  	
   \large{September 2014}\\ 
            
     \end{center}
@@ -423,7 +424,7 @@ Four mechanisms will be supported to enable different reliable update strategies
 
 \underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
 
-In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} (Figure \ref{proposed_solution} ) demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -440,12 +441,9 @@ The following technology stack has been chosen for the dynamic software update s
 
 \begin{list}{-}{}
   \itemsep0em
+  \item Go \footnote{\url{http://golang.org/}} programming language for building proxy \textit{i.e.} the content switching load balancer. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C\textsuperscript{++} and Java was considered to use. However, C\textsuperscript{++} was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go and it does not give the programmer control over the memory management.  
+    
   \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer
-  \item CoreOS as a lightweight operating system to host Docker containers
-  
-  \item Etcd as a highly available distributed key value store used for shared configuration and as a software version registry
-  
-  \item Go \footnote{\url{http://golang.org/}} programming language because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Go will be used to build the content switching load balancer. Other fast programming languages such as C\textsuperscript{++} and Java was considered to use. However, C\textsuperscript{++} was not chosen since it does not have garbage collection and requires manual memory management.  Additionally, Java was not chosen since it is more heavyweight in comparison to Go and it does not give the programmer any control over the memory management.    
   
   \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware  
 
@@ -453,7 +451,7 @@ The following technology stack has been chosen for the dynamic software update s
 
 \clearpage
 \section{Implementation} \label{Implementation}
-To produce an efficient and reliable dynamic software update system several versions of a proxy was implemented using Go programming language as described in this section. 
+To produce an efficient and reliable dynamic software update system several versions of a load balancing proxy was implemented using Go programming language as described in this section. 
 
 \subsection{Message Based Proxy Using ZeroMQ}
 The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}. The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
@@ -475,8 +473,10 @@ The first proxy developed to support dynamic software update was a HTTP reverse 
   \label{prototype}
 \end{figure}
 
-\noindent\\
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing of chnuked HTTP requests. Furthermore, HTTP provides adequate support for messaging such as content encoding and caching, therefore, wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update and an alternative one with no messaging system was sought to be developed. 
+\subsubsection{Performance Evaluation}
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chnuked HTTP requests and content switching load balancing can be achieved using raw Go sockets. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems such as nanomsg were not explored for developing a content switching load balancer. 
+
+In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update and an alternative one with no messaging system was sought to be developed. 
 
 \subsection{Socket Based Proxies}
 As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a reliable and efficient dynamic software update system. This section describes different approaches used to develop load balancing HTTP proxies using raw Go sockets with no messaging systems.   
@@ -616,10 +616,10 @@ type ChunkContext struct {
    \item{\textbf{CONCURRENT}} - When the upgrade transition mode is set to CONCURRENT, the \textit{Route} stage forwards requests concurrently to the two most updated cluster versions.        
 \end{list}
 \noindent
-If an error occurs while routing the requests to a cluster, the request will be forwarded to the older version of the cluster. If routing to all versions failed, the process stops and returns an appropriate error to the client. If the request is successfully routed, a \textit{Back pipe} will be created by \textit{Route} stage for processing responses.   
+If the user decide to delete the updated version of the cluster or an error occurs while routing the requests to a cluster, the request will be forwarded to the older version of the cluster. If routing to all versions failed, the process stops and returns an appropriate error to the client. If the request is successfully routed, a \textit{Back pipe} will be created by \textit{Route} stage for processing responses.   
 
 \noindent\\
-\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses differently according to the configuration of the cluster which the response comes from. If the upgrade transition mode in the cluster is defined as INSTANT, the response will be sent to the client with no further modifications. If the mode is set to SESSION or GRADUAL, \textit{Route} stage sets the session cookie or the transition cookie to the response respectively before forwarding it to the client. Finally, if the mode is defined as CONCURRENT, the response from each cluster version will be parsed and HTTP headers such as status code, Transfer-Encoding, Content-Length and the response delays are compared. If the response headers from the new cluster version is identical to the old version, the response from the old cluster is dropped and the new response is forwarded to the client. However, if the response headers from the new cluster is different from the old cluster's response, the \textit{Route} stage forwards the resppnse from the old cluster.\\
+\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses differently according to the configuration of the cluster which the response comes from. If the upgrade transition mode in the cluster is defined as INSTANT, the response will be sent to the client with no further modifications. If the mode is set to SESSION or GRADUAL, \textit{Route} stage sets the session cookie or the transition cookie to the response respectively before forwarding it to the client. Finally, if the mode is defined as CONCURRENT, the response from each cluster version will be parsed and HTTP headers such as status code, Transfer-Encoding, Content-Length and the response delays are compared. If the response headers from the new cluster is identical to the old one, only the response from the new version will be send to the client. Otherwise the response from the new version will be dropped and the old version's response will be used.\\
 
 \noindent
 \textbf{Write Stage} \\
@@ -733,7 +733,8 @@ The PUT request to \textit{/configuration/cluster}  is used to add a new cluster
         "upgradeTransition": {
             "mode": ""
             "sessionTimeout": 0  
-            "percentageTransitionPerRequest": 0 
+            "percentageTransitionPerRequest": 0
+            "percentageTransitionPerRequest": 0  
         }
     }
 }
@@ -756,7 +757,9 @@ The JSON fields are used for the following reasons:
   
   \item\textbf{{cluster.upgradeTransition.mode}} - specifies the upgrade transition mode and support the following values: INSTANT, SESSION, GRADUAL and CONCURRENT.
    
-  \item\textbf{{cluster.upgradeTransition.sessionTimeout}} - specifies the timeout period assigned to the SESSION transition mode. 
+  \item\textbf{{cluster.upgradeTransition.sessionTimeout}} - specifies the timeout period assigned to the SESSION transition mode.
+  
+  \item\textbf{{cluster.upgradeTransition.percentageTransitionPerRequest}} - specifies the transition percentage associated with each request in the GRADUAL transition mode.
 \end{list}
 
 \noindent
@@ -788,18 +791,6 @@ GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single clus
 
 \subsubsection{DELETE - /configuration/cluster/\{clusterId\}}
 DELETE requests to \textit{/configuration/cluster/\{clusterId\}} deletes a single cluster configuration. No request body and response body is defined for the DELETE request. Appendix \ref{Appendix I} shows an example of a DELETE request and the response received from the proxy.
-
-\subsection{Upgrade Strategies}
-\underline{Rapid Update} - In this mechanism the updated version of software will immediately process all requests. To apply the Rapid Update, the "upgradeTransition" section of the configuration file will be defined as "Instant" and as soon as the updated version start running it will immediately process all requests. The non-updated version will however remain running. If the user decide to delete the updated version of the software or if the updated version does not behave correctly the non-updated version will be immediately available to process requests. Different versions of the software will be available in the version order and the newest version will always process the request and if the most updated one is not available the next most updated one will be available unless specified otherwise.  
-
-\underline{New Session Update} - This update mechanism will be defined as "Session" in the "upgradeTransition" section of the configuration file and will only switch new sessions to the updated version. Each request sent to the system will be given a cookie and the cookie will have a session time defined by the user. A new session will be identified by no requests being received from a client within the user defined session time.  As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly or the updated system is deleted.
-
-\underline{Multi-Version Update} - This update mechanism is defined as "concurrent"  "upgradeTransition" section of the configuration file. In the  this mechanism the most updated and the next most updated versions of the software run concurrently and  process identical requests for new sessions. The requests will be sent to both the old and the new versions and the characteristics of the response from the new version will be compared to the old version. If the responses are identical, only the response from the new version will be send to the client. Otherwise the response from the new version will be dropped and the old version's response will be used. xxxxxxxxxxxx If the response from both versions are incorrect, bot of the responses from the older version will be used.... xxxxxxxxxxxxxxxx  
-
-
-\underline{Long Term Update} - xxxxxxxxxxxxxxxxxxxxxxxx xx    xxx  x This mechanism will switch new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
-
-
 
 \subsection{Testing}
 As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\\

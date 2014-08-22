@@ -1,7 +1,7 @@
 #!/bin/bash
 
 logLevel=$1
-if [ -z "${logLevel}" ]; then logLevel="INFO"; fi
+if [ -z "${logLevel}" ]; then logLevel="NOTICE"; fi
 
 GOPATH=$PWD:$GOPATH
 echo "Using GOROOT=${GOROOT}"

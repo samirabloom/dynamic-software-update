@@ -1,0 +1,122 @@
+###############################
+server 1
+###############################
+samiras-mbp:wrk samirarabbanian$ ab -n 10000 -c 100 http://127.0.0.1:1034/
+This is ApacheBench, Version 2.3 <$Revision: 655654 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 127.0.0.1 (be patient)
+Completed 1000 requests
+Completed 2000 requests
+Completed 3000 requests
+Completed 4000 requests
+Completed 5000 requests
+Completed 6000 requests
+Completed 7000 requests
+Completed 8000 requests
+Completed 9000 requests
+Completed 10000 requests
+Finished 10000 requests
+
+
+Server Software:
+Server Hostname:        127.0.0.1
+Server Port:            1034
+
+Document Path:          /
+Document Length:        52 bytes
+
+Concurrency Level:      100
+Time taken for tests:   25.467 seconds
+Complete requests:      10000
+Failed requests:        0
+Write errors:           0
+Total transferred:      2900000 bytes
+HTML transferred:       520000 bytes
+Requests per second:    392.67 [#/sec] (mean)
+Time per request:       254.666 [ms] (mean)
+Time per request:       2.547 [ms] (mean, across all concurrent requests)
+Transfer rate:          111.21 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    1   0.7      1       4
+Processing:   251  253   1.0    253     259
+Waiting:       50   51   0.8     51      60
+Total:        251  255   1.2    255     260
+
+Percentage of the requests served within a certain time (ms)
+  50%    255
+  66%    255
+  75%    255
+  80%    256
+  90%    256
+  95%    257
+  98%    257
+  99%    257
+ 100%    260 (longest request)
+samiras-mbp:wrk samirarabbanian$
+
+
+
+###############################
+server 2
+###############################
+
+samiras-mbp:wrk samirarabbanian$ ab -n 10000 -c 100 http://127.0.0.1:1034/
+This is ApacheBench, Version 2.3 <$Revision: 655654 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 127.0.0.1 (be patient)
+Completed 1000 requests
+Completed 2000 requests
+Completed 3000 requests
+Completed 4000 requests
+Completed 5000 requests
+Completed 6000 requests
+Completed 7000 requests
+Completed 8000 requests
+Completed 9000 requests
+Completed 10000 requests
+Finished 10000 requests
+
+
+Server Software:
+Server Hostname:        127.0.0.1
+Server Port:            1034
+
+Document Path:          /
+Document Length:        52 bytes
+
+Concurrency Level:      100
+Time taken for tests:   25.494 seconds
+Complete requests:      10000
+Failed requests:        0
+Write errors:           0
+Total transferred:      2900000 bytes
+HTML transferred:       520000 bytes
+Requests per second:    392.25 [#/sec] (mean)
+Time per request:       254.941 [ms] (mean)
+Time per request:       2.549 [ms] (mean, across all concurrent requests)
+Transfer rate:          111.09 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    1   1.0      1       8
+Processing:   251  253   1.2    253     263
+Waiting:       50   51   0.6     51      54
+Total:        251  255   1.8    255     268
+
+Percentage of the requests served within a certain time (ms)
+  50%    255
+  66%    255
+  75%    256
+  80%    256
+  90%    256
+  95%    257
+  98%    261
+  99%    263
+ 100%    268 (longest request)
+samiras-mbp:wrk samirarabbanian$

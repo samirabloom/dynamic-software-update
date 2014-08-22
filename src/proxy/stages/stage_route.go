@@ -60,7 +60,6 @@ func route(next func(*contexts.ChunkContext), clusters *contexts.Clusters, creat
 						}
 					}
 				}
-
 			}
 		}
 		next(context)
