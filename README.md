@@ -241,7 +241,7 @@ VBoxManage: error: Details: code NS_ERROR_FAILURE (0x80004005), component HostNe
 VBoxManage: error: Context: "int handleCreate(HandlerArg*, int, int*)" at line 66 of file VBoxManageHostonly.cpp
 ```
 
-## Run the following commands
+## run the following commands
 ```bash
 sudo launchctl load /Library/LaunchDaemons/org.virtualbox.startup.plist
 sudo /Library/Application\ Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh start
