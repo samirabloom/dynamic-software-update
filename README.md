@@ -218,3 +218,16 @@ gocov test -v proxy | gocov-html > coverage.html
 1. vagrant ssh
 1. docker run -i -v /vagrant:/vagrant -t samirabloom/docker-go /bin/bash
 1. cd /vagrant
+
+# Debug Docker Containers
+
+1. commit container create as follows: docker commit <container name / id> <tag>
+1. run container in interactive mode as follows: docker run -i -t <tag> /bin/bash
+
+# Curl Different Couchbase Versions
+
+# curl 2.5.1
+curl -v http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+
+# curl 3.0.0
+curl -v http://Administrator:password@192.168.50.60:8091/pools/default/buckets/beer-sample
