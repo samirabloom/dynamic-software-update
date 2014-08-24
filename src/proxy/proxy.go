@@ -90,7 +90,8 @@ func (proxy *Proxy) Stop() {
 func (proxy *Proxy) acceptLoop(started chan bool) {
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(proxy.frontendAddr.Port))
 	if err != nil {
-		panic(fmt.Sprintf("Error opening socket - %s", err))
+		log.LoggerFactory().Error("Error opening socket - %s", err)
+		os.Exit(1)
 	}
 	started <- true
 

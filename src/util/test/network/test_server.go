@@ -26,8 +26,8 @@ func (h *handle) ServeHTTP(response http.ResponseWriter, request *http.Request) 
 	if (h.crash && regexp.MustCompile("/crash").MatchString(request.URL.Path)) {
 		panic("simulating server crash")
 	}
+	fmt.Printf("Port: %d\n", h.port)
 	fmt.Fprintf(response, "Port: %d\n", h.port)
-
 }
 
 // ==== TEST_SERVER - END

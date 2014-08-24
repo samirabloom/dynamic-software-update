@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"io"
 	"errors"
+	"proxy/http"
 )
 
 // ==== DUAL_TCP_CONNECTION - START
@@ -30,8 +31,6 @@ type TCPConnection interface {
 	SetKeepAlivePeriod(d time.Duration) error
 	SetNoDelay(noDelay bool) error
 }
-
-
 
 type DualTCPConnection struct {
 	ExpectedStatusCode  int
@@ -109,6 +108,8 @@ func (dualTCPConnection *DualTCPConnection) Write(writeBuffer []byte) (int, erro
 		errorsList string
 	)
 	for index, connection := range dualTCPConnection.Connections {
+		writeBuffer = http.UpdateHostHeader(writeBuffer, connection.RemoteAddr())
+
 		count, err := connection.Write(writeBuffer)
 		if err != nil {
 			if len(errorsList) > 0 {

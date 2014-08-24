@@ -2,6 +2,7 @@ package contexts
 
 import (
 	"proxy/log"
+	"proxy/http"
 )
 
 type TransitionMode uint64
@@ -43,6 +44,11 @@ func (mode *TransitionMode) Route(clusters *Clusters, context *ChunkContext) (er
 		log.LoggerFactory().Error("Transition Mode %s not configured, only modes [%s] are available", ModesModeToCode[cluster.Mode], keys)
 	} else {
 		err = ModesModeToRouteFunction[cluster.Mode](clusters, context)
+
+		// update host header - not for cluster mode as update done inside DualTCPConnection
+		if err == nil && cluster.Mode != ConcurrentMode {
+			context.Data = http.UpdateHostHeader(context.Data, context.To.RemoteAddr())
+		}
 	}
 
 	return err

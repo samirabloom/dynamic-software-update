@@ -43,7 +43,11 @@ func MakeRequest(method, url string, request io.Reader, headers ...*Header) (bod
 		}
 	}
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
+	defer func() {
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
+	}();
 
 	if err != nil {
 		log.Fatalln(err)
