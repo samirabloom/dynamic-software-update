@@ -1,0 +1,73 @@
+##############################################
+Starting the proxy with following config
+###############################################
+
+the proxy was started with a configuration file as shown in the following Terminal output
+
+
+2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"ip": "192.168.50.10", "port": 8091},
+            {"ip": "192.168.50.10", "port": 9091},
+            {"ip": "192.168.50.10", "port": 10091}
+        ],
+        "version": 2.5
+    }
+}
+as:
+Proxy{
+	Proxy Address:      :1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 2.50 [192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
+}
+
+##############################################
+Sending the following request
+###############################################
+
+curl -v http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
+
+
+GET /pools/default/buckets/beer-sample HTTP/1.1
+Authorization: Basic QWRtaW5pc3RyYXRvcjpwYXNzd29yZA==
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+
+
+##############################################
+Proxy out put as proof of load balancing
+###############################################
+
+2014/08/24 19:50:06.560279 proxy_context_cluster.go:104:     INFO - Serving response 0 from ip: [192.168.50.10] port: [8091] version: [2.50] mode: [INSTANT]
+2014/08/24 19:52:34.576970 proxy_context_cluster.go:104:     INFO - Serving response 1 from ip: [192.168.50.10] port: [9091] version: [2.50] mode: [INSTANT]
+2014/08/24 19:56:00.452493 proxy_context_cluster.go:104:     INFO - Serving response 2 from ip: [192.168.50.10] port: [10091] version: [2.50] mode: [INSTANT]
+2014/08/24 19:56:07.619419 proxy_context_cluster.go:104:     INFO - Serving response 3 from ip: [192.168.50.10] port: [8091] version: [2.50] mode: [INSTANT]
+2014/08/24 19:56:09.137194 proxy_context_cluster.go:104:     INFO - Serving response 4 from ip: [192.168.50.10] port: [9091] version: [2.50] mode: [INSTANT]
+2014/08/24 19:56:19.655983 proxy_context_cluster.go:104:     INFO - Serving response 5 from ip: [192.168.50.10] port: [10091] version: [2.50] mode: [INSTANT]
+2014/08/24 20:00:23.860473 proxy_context_cluster.go:104:     INFO - Serving response 6 from ip: [192.168.50.10] port: [8091] version: [2.50] mode: [INSTANT]
+
+
+##############################################
+Response
+###############################################
+
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=369f06ad-2bbf-11e4-9034-28cfe9158b63;
+Server: Couchbase Server
+Pragma: no-cache
+Date: Sun, 24 Aug 2014 18:50:06 GMT
+Content-Type: application/json
+Content-Length: 10972
+Cache-Control: no-cache
+
+{"name":"beer-sample","bucketType":"membase", ... }
+

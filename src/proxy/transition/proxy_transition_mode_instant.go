@@ -15,7 +15,7 @@ func (router *InstantTransitionRouter) route(clusters *contexts.Clusters, contex
 
 	context.To, err = net.DialTCP("tcp", nil, cluster.NextServer())
 	context.RoutingContext = &contexts.RoutingContext{Headers: make([]string, 1)}
-	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;", cluster.Uuid.String())
+	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", cluster.Uuid.String())
 
 	return err
 }
