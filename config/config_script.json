@@ -7,9 +7,7 @@
     },
     "cluster": {
         "servers":[
-            {"hostname": "192.168.50.10", "port": 8091},
-            {"hostname": "192.168.50.10", "port": 9091},
-            {"hostname": "192.168.50.10", "port": 10091}
+            {"hostname": "192.168.50.30", "port": 80}
         ],
         "version": 2.5
     }

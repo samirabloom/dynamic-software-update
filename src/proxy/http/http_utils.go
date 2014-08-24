@@ -7,5 +7,9 @@ var (
 )
 
 func UpdateHostHeader(data []byte, host string, port string) []byte {
-	return hostHeaderRegex.ReplaceAllLiteral(data, []byte("Host: "+host+":"+port))
+	if port == "80" {
+		return hostHeaderRegex.ReplaceAllLiteral(data, []byte("Host: "+host))
+	} else {
+		return hostHeaderRegex.ReplaceAllLiteral(data, []byte("Host: "+host+":"+port))
+	}
 }
