@@ -224,6 +224,22 @@ gocov test -v proxy | gocov-html > coverage.html
 1. commit container create as follows: docker commit <container name / id> <tag>
 1. run container in interactive mode as follows: docker run -i -t <tag> /bin/bash
 
+# To stop all containers:
+
+docker ps -a | grep -v CONTAINER | awk '{print $1}' | xargs docker stop
+
+# To delete all containers:
+
+docker ps -a | grep -v CONTAINER | awk '{print $1}' | xargs docker rm
+
+# To delete all images:
+
+docker images | grep -v IMAGE | awk '{print $3}' | xargs docker rmi -f
+
+# To run shell in docker container
+
+docker run -i -t ubuntu /bin/bash
+
 # Vagrant Error 
 
 ## if you have the following error:
