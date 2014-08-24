@@ -69,6 +69,5 @@ system_test_config.json
 *.aux
 *.log
 *.out
-*.synctex.gz
 *.toc
 *.dvi
