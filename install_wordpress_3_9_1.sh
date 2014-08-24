@@ -22,7 +22,7 @@ then
     echo
     date
 
-    docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=mysecretpassword -d mysql
+    docker run --name some-mysql -v /var/lib/mysql:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=mysecretpassword -d mysql
 
     date
 
@@ -33,7 +33,7 @@ then
     echo
     date
 
-    docker run --name some-wordpress -v /var/lib/mysql:/var/lib/mysql --link some-mysql:mysql -p 80:80 -d wordpress:3.9.1
+    docker run --name some-wordpress --link some-mysql:mysql -p 80:80 -d wordpress:3.9.1
 
     date
 
@@ -47,7 +47,7 @@ docker ps -a | grep -v CONTAINER | awk '{print \$1}' | xargs docker stop
 docker ps -a | grep -v CONTAINER | awk '{print \$1}' | xargs docker rm
 
 # run mysql container
-docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=mysecretpassword -d mysql
+docker run --name some-mysql -v /var/lib/mysql:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=mysecretpassword -d mysql
 
 sleep 10
 
