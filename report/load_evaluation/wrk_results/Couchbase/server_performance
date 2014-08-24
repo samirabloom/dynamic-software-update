@@ -1,0 +1,92 @@
+##############################################
+##############################################
+server 10 hr
+###############################################
+###############################################
+
+samirarabbanian$ ./wrk -t400 -c400 -d10h --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 600m test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.35s     1.96s    7.61s    75.10%
+    Req/Sec     0.38      0.55    11.00     63.39%
+  Latency Distribution
+     50%    1.27s 
+     75%    3.01s 
+     90%    5.59s 
+     99%    7.44s 
+  11636718 requests in 600.01m, 106.88GB read
+  Socket errors: connect 0, read 0, write 0, timeout 77438
+Requests/sec:    323.24
+Transfer/sec:      3.04MB
+
+##############################################
+##############################################
+server 1 hr
+###############################################
+###############################################
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t400 -c400 -d1h --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 60m test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.31s     1.60s    6.15s    69.97%
+    Req/Sec     0.44      0.86    12.00     90.60%
+  Latency Distribution
+     50%    1.32s
+     75%    4.05s
+     90%    4.79s
+     99%    5.75s
+  1157239 requests in 60.01m, 10.63GB read
+  Socket errors: connect 0, read 0, write 0, timeout 7249
+Requests/sec:    321.41
+Transfer/sec:      3.02MB
+samiras-mbp:wrk samirarabbanian$
+
+
+
+
+##############################################
+##############################################
+server 10 min
+###############################################
+###############################################
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t400 -c400 -d10m --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 10m test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.71s     1.07s    6.10s    81.55%
+    Req/Sec     0.34      0.65     6.00     72.96%
+  Latency Distribution
+     50%    1.25s
+     75%    1.61s
+     90%    3.25s
+     99%    5.14s
+  194596 requests in 10.00m, 1.79GB read
+  Socket errors: connect 0, read 0, write 0, timeout 1361
+Requests/sec:    324.25
+Transfer/sec:      3.05MB
+samiras-mbp:wrk samirarabbanian$
+
+##############################################
+##############################################
+server 10 sec
+###############################################
+###############################################
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t400 -c400 -d10 --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 10s test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   866.60ms  121.68ms   1.58s    75.57%
+    Req/Sec     0.75      0.51     3.00     68.24%
+  Latency Distribution
+     50%  852.01ms
+     75%  934.86ms
+     90%    1.02s
+     99%    1.18s
+  4075 requests in 10.00s, 38.34MB read
+Requests/sec:    407.45
+Transfer/sec:      3.83MB
+samiras-mbp:wrk samirarabbanian$
