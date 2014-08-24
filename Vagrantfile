@@ -23,6 +23,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
+  config.vm.define "docker_and_go" do |docker_and_go|
+    docker_and_go.vm.hostname = "docker-and-go"
+    docker_and_go.vm.network "private_network", ip: "192.168.50.7"
+    docker_and_go.vm.provision :shell, :path => "install_docker_and_go.sh"
+    docker_and_go.vm.provider :virtualbox do |vb|
+      vb.memory = 2048
+      vb.cpus = 3
+    end
+  end
+
   config.vm.define "nginx" do |nginx|
     nginx.vm.hostname = "nginx"
     nginx.vm.network "private_network", ip: "192.168.50.20"

@@ -20,6 +20,22 @@ proxy 10 min
 ###############################################
 ###############################################
 
+samiras-mbp:wrk samirarabbanian$ ./wrk -t400 -c400 -d10m --latency http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
+Running 10m test @ http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.28s   773.10ms   5.47s    77.49%
+    Req/Sec     0.86      0.79     8.00     57.15%
+  Latency Distribution
+     50%  911.75ms
+     75%    1.38s
+     90%    2.52s
+     99%    3.57s
+  266316 requests in 10.00m, 2.45GB read
+  Socket errors: connect 0, read 0, write 0, timeout 592
+Requests/sec:    443.74
+Transfer/sec:      4.17MB
+samiras-mbp:wrk samirarabbanian$
 
 
 ##############################################

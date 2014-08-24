@@ -69,25 +69,44 @@ Requests/sec:    324.25
 Transfer/sec:      3.05MB
 samiras-mbp:wrk samirarabbanian$
 
+
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t400 -c400 -d10m --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 10m test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  400 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.45s     1.09s    5.10s    77.76%
+    Req/Sec     0.65      1.06    16.00     94.06%
+  Latency Distribution
+     50%  894.51ms
+     75%    1.57s
+     90%    3.35s
+     99%    4.24s
+  266199 requests in 10.00m, 2.44GB read
+  Socket errors: connect 0, read 0, write 0, timeout 886
+Requests/sec:    443.56
+Transfer/sec:      4.17MB
+samiras-mbp:wrk samirarabbanian$
+
 ##############################################
 ##############################################
 server 10 sec
 ###############################################
 ###############################################
-
- ./wrk -t400 -c400 -d10 --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+samiras-mbp:wrk samirarabbanian$ ./wrk -t400 -c400 -d10 --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
 Running 10s test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
   400 threads and 400 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     1.39s   148.60ms   1.80s    67.39%
-    Req/Sec     0.09      0.30     2.00     91.34%
+    Latency     1.08s   285.42ms   1.52s    59.57%
+    Req/Sec     0.63      1.04    16.00     85.30%
   Latency Distribution
-     50%    1.39s
-     75%    1.49s
-     90%    1.60s
-     99%    1.71s
-  2725 requests in 10.00s, 25.62MB read
-Requests/sec:    272.40
-Transfer/sec:      2.56MB
+     50%    1.02s
+     75%    1.39s
+     90%    1.47s
+     99%    1.52s
+  3882 requests in 10.00s, 36.50MB read
+  Socket errors: connect 0, read 0, write 0, timeout 1
+Requests/sec:    388.06
+Transfer/sec:      3.65MB
 
 
