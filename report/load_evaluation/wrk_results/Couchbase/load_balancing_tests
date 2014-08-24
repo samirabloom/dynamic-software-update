@@ -1,0 +1,29 @@
+##############################################
+Starting the proxy with following config
+###############################################
+
+
+2014/08/24 18:08:09.391236 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"ip": "192.168.50.10", "port": 8091},
+            {"ip": "192.168.50.10", "port": 9091},
+            {"ip": "192.168.50.10", "port": 10091}
+        ],
+        "version": 2.5
+    }
+}
+as:
+Proxy{
+	Proxy Address:      :1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 2.50 [192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
+}
+
