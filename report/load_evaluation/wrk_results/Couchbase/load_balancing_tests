@@ -14,9 +14,9 @@ Running proxy with logLevel INFO
     },
     "cluster": {
         "servers":[
-            {"ip": "192.168.50.10", "port": 8091},
-            {"ip": "192.168.50.10", "port": 9091},
-            {"ip": "192.168.50.10", "port": 10091}
+            {"hostname": "192.168.50.10", "port": 8091},
+            {"hostname": "192.168.50.10", "port": 9091},
+            {"hostname": "192.168.50.10", "port": 10091}
         ],
         "version": 2.5
     }

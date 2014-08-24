@@ -66,11 +66,11 @@ echo
 boot2docker ssh "mkdir /home/docker/config; cd /home/docker/config; cat << EOF > config.json
 {
     "proxy": {
-        "ip": "localhost",
+        "hostname": "localhost",
         "port": 1234
     },
     "server_range":{
-        "ip": "127.0.0.1",
+        "hostname": "127.0.0.1",
         "port": 1024,
         "clusterSize": "8"
     }

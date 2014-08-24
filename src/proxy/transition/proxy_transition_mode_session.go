@@ -5,7 +5,6 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"fmt"
 	"time"
-	"net"
 	"proxy/contexts"
 	"regexp"
 )
@@ -36,7 +35,7 @@ func (router *SessionTransitionRouter) 	route(clusters *contexts.Clusters, conte
 	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s; Expires=%s;\n", cluster.Uuid.String(), time.Now().Add(time.Second*time.Duration(cluster.SessionTimeout)).Format(time.RFC1123))
 
 	// create connection
-	context.To, err = net.DialTCP("tcp", nil, cluster.NextServer())
+	context.To, err = cluster.NextServer()
 
 	return err
 }

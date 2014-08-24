@@ -22,8 +22,8 @@ Usage of proxy:
                                                },
                                                "cluster": {
                                                    "servers":[
-                                                       {"ip": "127.0.0.1", "port": 1034},
-                                                       {"ip": "127.0.0.1", "port": 1035}
+                                                       {"hostname": "127.0.0.1", "port": 1034},
+                                                       {"hostname": "127.0.0.1", "port": 1035}
                                                    ],
                                                    "version": 1.0
                                                }

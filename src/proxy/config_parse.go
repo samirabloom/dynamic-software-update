@@ -2,13 +2,13 @@ package proxy
 
 import (
 	"code.google.com/p/go-uuid/uuid"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
-	"encoding/json"
-	"fmt"
-	"errors"
-	"proxy/log"
 	"proxy/contexts"
+	"proxy/log"
 )
 
 // ==== PARSE CONFIG - START
@@ -45,10 +45,10 @@ func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*
 				if clusterParseErr == nil {
 					// create load balancer
 					proxy = &Proxy{
-						frontendAddr: tcpProxyLocalAddress,
+						frontendAddr:      tcpProxyLocalAddress,
 						configServicePort: configServicePort,
-						clusters: clusters,
-						stop: make(chan bool),
+						clusters:          clusters,
+						stop:              make(chan bool),
 					}
 					log.LoggerFactory().Notice("Parsed config file:\n%s\nas:\n%s", jsonData, proxy)
 
@@ -67,7 +67,7 @@ func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*
 
 func parseProxy(jsonConfig map[string]interface{}) (*net.TCPAddr, error) {
 	var (
-		err error
+		err                  error
 		tcpProxyLocalAddress *net.TCPAddr
 	)
 
@@ -88,7 +88,7 @@ func parseProxy(jsonConfig map[string]interface{}) (*net.TCPAddr, error) {
 
 func parseConfigService(jsonConfig map[string]interface{}) (int, error) {
 	var (
-		err error
+		err               error
 		configServicePort int
 	)
 
@@ -110,8 +110,8 @@ func parseConfigService(jsonConfig map[string]interface{}) (int, error) {
 func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}) (*contexts.Clusters, error) {
 	return func(jsonConfig map[string]interface{}) (*contexts.Clusters, error) {
 		var (
-			err error
-			router *contexts.Cluster
+			err      error
+			router   *contexts.Cluster
 			clusters *contexts.Clusters
 		)
 
@@ -134,26 +134,29 @@ func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map
 func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}) (*contexts.Cluster, error) {
 	return func(clusterConfiguration map[string]interface{}) (*contexts.Cluster, error) {
 		var (
-			err error
-			backendAddresses []*net.TCPAddr
-			version float64
-			sessionTimeout int64
+			err                            error
+			connection 					   *net.TCPAddr
+			backendAddresses               []*contexts.BackendAddress
+			version                        float64
+			sessionTimeout                 int64
 			percentageTransitionPerRequest float64
-			mode contexts.TransitionMode
-			uuidValue uuid.UUID
+			mode                           contexts.TransitionMode
+			uuidValue                      uuid.UUID
 		)
 
 		serversConfiguration := clusterConfiguration["servers"]
 		if serversConfiguration != nil {
 			servers := serversConfiguration.([]interface{})
 			if len(servers) > 0 {
-				backendAddresses = make([]*net.TCPAddr, len(servers))
+				backendAddresses = make([]*contexts.BackendAddress, len(servers))
 				for index := range servers {
 					var server map[string]interface{} = servers[index].(map[string]interface{})
-					backendAddresses[index], err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["ip"], server["port"]))
+					connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["hostname"], server["port"]))
 					if err != nil {
-						errorMessage := "Invalid server address [" + fmt.Sprintf("%s:%v", server["ip"], server["port"]) + "] - " + err.Error()
+						errorMessage := "Invalid server address [" + fmt.Sprintf("%s:%v", server["hostname"], server["port"]) + "] - " + err.Error()
 						err = errors.New(errorMessage)
+					} else {
+						backendAddresses[index] = &contexts.BackendAddress{Address: connection, Host: fmt.Sprintf("%s", server["hostname"]), Port: fmt.Sprintf("%v", server["port"])}
 					}
 				}
 				uuidConfig := clusterConfiguration["uuid"]
@@ -240,14 +243,16 @@ func serialiseCluster(cluster *contexts.Cluster) map[string]interface{} {
 	if cluster != nil {
 		var serversConfig []interface{} = make([]interface{}, len(cluster.BackendAddresses))
 		for index, backendAddress := range cluster.BackendAddresses {
-			serversConfig[index] = map[string]interface{}{"ip": backendAddress.IP.String(), "port": backendAddress.Port}
+			serversConfig[index] = map[string]interface{}{"hostname": backendAddress.Host, "port": backendAddress.Address.Port}
 		}
 		upgradeTransition := map[string]interface{}{"mode": contexts.ModesModeToCode[cluster.Mode]}
 		switch cluster.Mode {
-		case contexts.SessionMode: {
+		case contexts.SessionMode:
+		{
 			upgradeTransition = map[string]interface{}{"mode": contexts.ModesModeToCode[cluster.Mode], "sessionTimeout": cluster.SessionTimeout}
 		}
-		case contexts.GradualMode: {
+		case contexts.GradualMode:
+		{
 			upgradeTransition = map[string]interface{}{"mode": contexts.ModesModeToCode[cluster.Mode], "percentageTransitionPerRequest": cluster.PercentageTransitionPerRequest}
 		}
 		}

@@ -80,8 +80,14 @@ func (clusters *Clusters) String() string {
 	return clusters.ContextsByVersion.Front().Value.(*Cluster).String()
 }
 
+type BackendAddress struct {
+	Address  *net.TCPAddr
+	Host string
+	Port string
+}
+
 type Cluster struct {
-	BackendAddresses                []*net.TCPAddr
+	BackendAddresses                []*BackendAddress
 	RequestCounter                  int64
 	TransitionCounter               float64
 	PercentageTransitionPerRequest  float64
@@ -91,10 +97,10 @@ type Cluster struct {
 	Version                         float64
 }
 
-func (cluster *Cluster) NextServer() *net.TCPAddr {
+func (cluster *Cluster) NextServer() (*TCPConnAndName, error) {
 	cluster.RequestCounter++
 	server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
-	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f] mode: [%s]", cluster.RequestCounter, server.IP, server.Port, cluster.Version, ModesModeToCode[cluster.Mode])
+	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f] mode: [%s]", cluster.RequestCounter, server.Address.IP, server.Address.Port, cluster.Version, ModesModeToCode[cluster.Mode])
 	if cluster.PercentageTransitionPerRequest > 0 {
 		message += fmt.Sprintf(" transition counter [%.2f] percentage transition per request [%.2f]", cluster.TransitionCounter, cluster.PercentageTransitionPerRequest)
 	}
@@ -102,7 +108,8 @@ func (cluster *Cluster) NextServer() *net.TCPAddr {
 		message += fmt.Sprintf(" session timeout [%d] uuid [%s]", cluster.SessionTimeout, cluster.Uuid)
 	}
 	log.LoggerFactory().Info(message)
-	return server
+	connection, err := net.DialTCP("tcp", nil, server.Address)
+	return &TCPConnAndName{connection, server.Host, server.Port}, err
 }
 
 func (cluster *Cluster) String() string {
@@ -111,7 +118,7 @@ func (cluster *Cluster) String() string {
 		if index > 0 {
 			result += ", "
 		}
-		result += fmt.Sprintf("%s", address)
+		result += fmt.Sprintf("%s:%s", address.Host, address.Port)
 	}
 	result += "]"
 	return result

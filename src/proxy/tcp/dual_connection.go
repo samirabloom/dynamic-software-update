@@ -35,10 +35,12 @@ type TCPConnection interface {
 type DualTCPConnection struct {
 	ExpectedStatusCode  int
 	Connections         []TCPConnection
+	Hosts               []string
+	Ports               []string
 	SuccessfulIndex     int
 }
 
-func NewDualTCPConnection(expectedStatusCode int, addresses ...*net.TCPAddr) *DualTCPConnection {
+func NewDualTCPConnection(expectedStatusCode int, addresses []*net.TCPAddr, hosts, ports []string) *DualTCPConnection {
 	connections := make([]TCPConnection, len(addresses))
 	for index, address := range addresses {
 		connection, err := net.DialTCP("tcp", nil, address)
@@ -50,6 +52,8 @@ func NewDualTCPConnection(expectedStatusCode int, addresses ...*net.TCPAddr) *Du
 	return &DualTCPConnection{
 		ExpectedStatusCode: expectedStatusCode,
 		Connections:        connections,
+		Hosts:              hosts,
+		Ports:              ports,
 		SuccessfulIndex:    -1,
 	}
 
@@ -108,7 +112,7 @@ func (dualTCPConnection *DualTCPConnection) Write(writeBuffer []byte) (int, erro
 		errorsList string
 	)
 	for index, connection := range dualTCPConnection.Connections {
-		writeBuffer = http.UpdateHostHeader(writeBuffer, connection.RemoteAddr())
+		writeBuffer = http.UpdateHostHeader(writeBuffer, dualTCPConnection.Hosts[index], dualTCPConnection.Ports[index])
 
 		count, err := connection.Write(writeBuffer)
 		if err != nil {

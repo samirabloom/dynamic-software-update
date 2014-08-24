@@ -24,6 +24,12 @@ type RoutingContext struct {
 	Headers []string
 }
 
+type TCPConnAndName struct {
+	*net.TCPConn
+	Host string
+	Port string
+}
+
 type ChunkContext struct {
 	Data                   []byte
 	To                     tcp.TCPConnection

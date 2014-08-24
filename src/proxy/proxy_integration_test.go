@@ -9,13 +9,18 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"proxy/contexts"
 	"strconv"
+	"fmt"
 )
 
 var testUuid = uuid.NewUUID()
 
-func NewTestProxy(frontendAddr *net.TCPAddr, backendAddresses []*net.TCPAddr) *Proxy {
+func NewTestProxy(frontendAddr *net.TCPAddr, addresses []*net.TCPAddr) *Proxy {
+	var backendAddresses []*contexts.BackendAddress = make([]*contexts.BackendAddress, len(addresses))
+	for index := range addresses {
+		backendAddresses[index] = &contexts.BackendAddress{Address: addresses[index], Host: "127.0.0.1", Port: fmt.Sprintf("%d", addresses[index].Port)}
+	}
 	clusters := &contexts.Clusters{}
-	clusters.Add(&contexts.Cluster{BackendAddresses:  backendAddresses, RequestCounter: -1, Uuid: testUuid, Mode: contexts.SessionMode})
+	clusters.Add(&contexts.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: testUuid, Mode: contexts.SessionMode})
 	return &Proxy{
 		frontendAddr: frontendAddr,
 		clusters: clusters,

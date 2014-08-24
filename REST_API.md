@@ -22,7 +22,7 @@ To add a new cluster make a PUT request to `/configuration/cluster`.
   "cluster": {
     "servers": [
       {
-        "ip": "",
+        "hostname": "",
         "port": 0
       }
     ],
@@ -93,11 +93,11 @@ For example the following JSON would set up a new cluster with two `servers` and
   "cluster": {
     "servers": [
       {
-        "ip": "127.0.0.1", 
+        "hostname": "127.0.0.1", 
         "port": 1036
       },  
       {
-        "ip": "127.0.0.1", 
+        "hostname": "127.0.0.1", 
         "port": 1038
       }
     ], 
@@ -113,7 +113,7 @@ For example the following JSON would set up a new cluster with two `servers` and
 To send this request with `Curl` use the following syntax:
 
 ```bash
-curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"ip": "127.0.0.1", "port": 1036},{"ip": "127.0.0.1", "port": 1038}],"version": 1.1,"upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": 1.1,"upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 ```
 
 ##### Response
@@ -137,7 +137,7 @@ To get a single cluster configuration make a GET request to `/configuration/clus
   "cluster": {
     "servers": [
       {
-        "ip": "",
+        "hostname": "",
         "port": 0
       }
     ],
@@ -168,11 +168,11 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
   "cluster": {
     "servers": [
       {
-        "ip": "127.0.0.1",
+        "hostname": "127.0.0.1",
         "port": 1036
       },
       {
-        "ip": "127.0.0.1",
+        "hostname": "127.0.0.1",
         "port": 1038
       }
      ],
@@ -195,7 +195,7 @@ Date: Sat, 16 Aug 2014 20:37:42 GMT
 Content-Length: 206
 Content-Type: text/plain; charset=utf-8
 
-{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":1.1}}
+{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":1.1}}
 ```
 
 ## GET - /configuration/cluster
@@ -211,7 +211,7 @@ To get all the cluster configurations make a GET request with no cluster id `/co
     "cluster": {
       "servers": [
         {
-          "ip": "",
+          "hostname": "",
           "port": 0
         }
        ],
@@ -228,11 +228,11 @@ To get all the cluster configurations make a GET request with no cluster id `/co
     "cluster": {
       "servers": [
         {
-          "ip": "",
+          "hostname": "",
           "port": 0
         },
         {
-          "ip": "",
+          "hostname": "",
           "port": 0
         }
        ],
@@ -263,11 +263,11 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
     "cluster": {
       "servers": [
         {
-          "ip": "127.0.0.1", 
+          "hostname": "127.0.0.1", 
           "port": 1036
         }, 
         {
-          "ip": "127.0.0.1", 
+          "hostname": "127.0.0.1", 
           "port": 1038
         }
       ], 
@@ -283,11 +283,11 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
     "cluster": {
       "servers": [
         {
-          "ip": "127.0.0.1", 
+          "hostname": "127.0.0.1", 
           "port": 1037
         }, 
         {
-          "ip": "127.0.0.1", 
+          "hostname": "127.0.0.1", 
           "port": 1039
         }
       ], 
@@ -302,11 +302,11 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
     "cluster": {
       "servers": [
         {
-          "ip": "127.0.0.1", 
+          "hostname": "127.0.0.1", 
           "port": 1034
         }, 
         {
-          "ip": "127.0.0.1", 
+          "hostname": "127.0.0.1", 
           "port": 1035
         }
       ], 
@@ -328,7 +328,7 @@ Date: Sun, 17 Aug 2014 12:28:55 GMT
 Content-Length: 583
 Content-Type: text/plain; charset=utf-8
  
-[{"cluster":{"servers":[{"ip":"127.0.0.1","port":1036},{"ip":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1037},{"ip":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"ip":"127.0.0.1","port":1034},{"ip":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]
+[{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1037},{"hostname":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1034},{"hostname":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]
 ```
 
 ## DELETE - /configuration/cluster/{clusterId}

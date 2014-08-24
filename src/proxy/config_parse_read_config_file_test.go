@@ -10,12 +10,12 @@ import (
 
 func writeConfigFile(proxyPort int, configPort int, uuid string, serverPorts []int, version string) string {
 	fileName := "/tmp/system_test_config.json"
-	data := "{\"proxy\":{\"ip\":\"localhost\",\"port\":" + strconv.Itoa(proxyPort) + "},\"configService\":{\"port\":" + strconv.Itoa(configPort) + "},\"cluster\":{\"servers\":["
+	data := "{\"proxy\":{\"hostname\":\"localhost\",\"port\":" + strconv.Itoa(proxyPort) + "},\"configService\":{\"port\":" + strconv.Itoa(configPort) + "},\"cluster\":{\"servers\":["
 	for index, serverPort := range serverPorts {
 		if index > 0 {
 			data += ","
 		}
-		data += "{\"ip\":\"127.0.0.1\",\"port\":"+strconv.Itoa(serverPort)+"}"
+		data += "{\"hostname\":\"127.0.0.1\",\"port\":"+strconv.Itoa(serverPort)+"}"
 	}
 	data += "]"
 	if len(uuid) > 0 {
@@ -39,7 +39,7 @@ func Test_Read_Config_When_File_Exists(testCtx *testing.T) {
 		serverPorts []int   = []int{1024, 1025}
 		version string      = "0.5"
 		fileName            = writeConfigFile(proxyPort, configPort, uuid, serverPorts, version)
-		expectedByteArray   = []byte("{\"proxy\":{\"ip\":\"localhost\",\"port\":1234},\"configService\":{\"port\":4321},\"cluster\":{\"servers\":[{\"ip\":\"127.0.0.1\",\"port\":1024},{\"ip\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\"a37a290f-2088-11e4-b3a6-600308a8245e\", \"version\": 0.5}}")
+		expectedByteArray   = []byte("{\"proxy\":{\"hostname\":\"localhost\",\"port\":1234},\"configService\":{\"port\":4321},\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1024},{\"hostname\":\"127.0.0.1\",\"port\":1025}],\"uuid\":\"a37a290f-2088-11e4-b3a6-600308a8245e\", \"version\": 0.5}}")
 		expectedError error = nil
 	)
 

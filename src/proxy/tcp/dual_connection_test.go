@@ -34,6 +34,8 @@ func Test_Dual_TCP_Connection_When_First_Response_Invalid(testCtx *testing.T) {
 	// given
 	var (
 		servers            = []*net.TCPAddr{networkutil.FindFreeLocalSocket(testCtx), networkutil.FindFreeLocalSocket(testCtx)}
+		hosts              = []string{"127.0.0.1", "127.0.0.1"}
+		ports              = []string{fmt.Sprintf("%v", servers[0].Port), fmt.Sprintf("%v", servers[1].Port)}
 		expectedStatusCode = 200
 		actualResponse     = make([]byte, 0)
 		actualTotalRead    = 0
@@ -46,7 +48,7 @@ func Test_Dual_TCP_Connection_When_First_Response_Invalid(testCtx *testing.T) {
 	)
 
 	StartDualServers(servers, []int{http.StatusInternalServerError, http.StatusOK})
-	dualConnection := NewDualTCPConnection(expectedStatusCode, servers...)
+	dualConnection := NewDualTCPConnection(expectedStatusCode, servers, hosts, ports)
 
 	// when
 	dualConnection.Write([]byte("POST / HTTP/1.1\n" +
@@ -78,6 +80,8 @@ func Test_Dual_TCP_Connection_When_Second_Response_Invalid(testCtx *testing.T) {
 	// given
 	var (
 		servers            = []*net.TCPAddr{networkutil.FindFreeLocalSocket(testCtx), networkutil.FindFreeLocalSocket(testCtx)}
+		hosts              = []string{"127.0.0.1", "127.0.0.1"}
+		ports              = []string{fmt.Sprintf("%v", servers[0].Port), fmt.Sprintf("%v", servers[1].Port)}
 		expectedStatusCode = 200
 		actualResponse     = make([]byte, 0)
 		actualTotalRead    = 0
@@ -90,7 +94,7 @@ func Test_Dual_TCP_Connection_When_Second_Response_Invalid(testCtx *testing.T) {
 	)
 
 	StartDualServers(servers, []int{http.StatusOK, http.StatusInternalServerError})
-	dualConnection := NewDualTCPConnection(expectedStatusCode, servers...)
+	dualConnection := NewDualTCPConnection(expectedStatusCode, servers, hosts, ports)
 
 	// when
 	dualConnection.Write([]byte("POST / HTTP/1.1\n" +
@@ -122,6 +126,8 @@ func Test_Dual_TCP_Connection_When_Both_Responses_Valid(testCtx *testing.T) {
 	// given
 	var (
 		servers            = []*net.TCPAddr{networkutil.FindFreeLocalSocket(testCtx), networkutil.FindFreeLocalSocket(testCtx)}
+		hosts              = []string{"127.0.0.1", "127.0.0.1"}
+		ports              = []string{fmt.Sprintf("%v", servers[0].Port), fmt.Sprintf("%v", servers[1].Port)}
 		expectedStatusCode = 200
 		actualResponse     = make([]byte, 0)
 		actualTotalRead    = 0
@@ -134,7 +140,7 @@ func Test_Dual_TCP_Connection_When_Both_Responses_Valid(testCtx *testing.T) {
 	)
 
 	StartDualServers(servers, []int{http.StatusOK, http.StatusOK})
-	dualConnection := NewDualTCPConnection(expectedStatusCode, servers...)
+	dualConnection := NewDualTCPConnection(expectedStatusCode, servers, hosts, ports)
 
 	// when
 	dualConnection.Write([]byte("POST / HTTP/1.1\n" +
@@ -167,6 +173,8 @@ func Test_Dual_TCP_Connection_When_Both_Responses_Invalid(testCtx *testing.T) {
 	// given
 	var (
 		servers            = []*net.TCPAddr{networkutil.FindFreeLocalSocket(testCtx), networkutil.FindFreeLocalSocket(testCtx)}
+		hosts              = []string{"127.0.0.1", "127.0.0.1"}
+		ports              = []string{fmt.Sprintf("%v", servers[0].Port), fmt.Sprintf("%v", servers[1].Port)}
 		expectedStatusCode = 200
 		actualResponse     = make([]byte, 0)
 		actualTotalRead    = 0
@@ -179,7 +187,7 @@ func Test_Dual_TCP_Connection_When_Both_Responses_Invalid(testCtx *testing.T) {
 	)
 
 	StartDualServers(servers, []int{http.StatusInternalServerError, http.StatusInternalServerError})
-	dualConnection := NewDualTCPConnection(expectedStatusCode, servers...)
+	dualConnection := NewDualTCPConnection(expectedStatusCode, servers, hosts, ports)
 
 	// when
 	dualConnection.Write([]byte("POST / HTTP/1.1\n" +

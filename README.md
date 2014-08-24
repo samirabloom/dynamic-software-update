@@ -25,8 +25,8 @@ Usage of proxy:
                                                },
                                                "cluster": {
                                                    "servers":[
-                                                       {"ip": "127.0.0.1", "port": 1034},
-                                                       {"ip": "127.0.0.1", "port": 1035}
+                                                       {"hostname": "127.0.0.1", "port": 1034},
+                                                       {"hostname": "127.0.0.1", "port": 1035}
                                                    ],
                                                    "version": 1.0
                                                }
@@ -137,7 +137,7 @@ The easiest way to test the config services is to use [DHC](https://chrome.googl
 
  - **PUT Request for Concurrent upgrade**
 ```bash
-curl http://127.0.0.1:9090/server -X PUT --data '{"cluster": {"servers":[{"ip": "127.0.0.1", "port": 1037},{"ip": "127.0.0.1", "port": 1038},{"ip": "127.0.0.1", "port": 1039}],"version": 1.1,"upgradeTransition": { "mode": "CONCURRENT" }}}'
+curl http://127.0.0.1:9090/server -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1037},{"hostname": "127.0.0.1", "port": 1038},{"hostname": "127.0.0.1", "port": 1039}],"version": 1.1,"upgradeTransition": { "mode": "CONCURRENT" }}}'
 ````
 
  - **PUT Request using a config file**
@@ -169,11 +169,11 @@ To make boot2docker work it needs a copy of the config file read by the docker p
 boot2docker ssh "mkdir /home/docker/config; cd /home/docker/config; cat << EOF > config.json
 > {
 >     "proxy": {
->         "ip": "localhost",
+>         "hostname": "localhost",
 >         "port": 1234
 >     },
 >     "server_range":{
->         "ip": "127.0.0.1",
+>         "hostname": "127.0.0.1",
 >         "port": 1024,
 >         "clusterSize": "8"
 >     }

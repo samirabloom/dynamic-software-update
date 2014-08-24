@@ -1,7 +1,6 @@
 package transition
 
 import (
-	"net"
 	"proxy/tcp"
 	"proxy/contexts"
 )
@@ -14,20 +13,22 @@ func (router *ConcurrentTransitionRouter) route(clusters *contexts.Clusters, con
 	cluster := clusters.GetByVersionOrder(0)
 
 	var (
-		previousVersionConnection, latestVersionConnection tcp.TCPConnection
+		previousVersionConnection, latestVersionConnection *contexts.TCPConnAndName
 	)
 
 	// create dual connection
-	latestVersionConnection, err = net.DialTCP("tcp", nil, cluster.NextServer())
+	latestVersionConnection, err = cluster.NextServer()
 	if err == nil {
-		previousVersionConnection, err = net.DialTCP("tcp", nil, clusters.GetByVersionOrder(1).NextServer())
+		previousVersionConnection, err = clusters.GetByVersionOrder(1).NextServer()
 		context.To = &tcp.DualTCPConnection{
 			ExpectedStatusCode: 200,
 			Connections:        []tcp.TCPConnection{previousVersionConnection, latestVersionConnection},
+			Hosts:              []string{previousVersionConnection.Host, latestVersionConnection.Host},
+			Ports:              []string{previousVersionConnection.Port, latestVersionConnection.Port},
 			SuccessfulIndex:    -1,
 		}
 	} else { // fall back to single connection if latest cluster fails on connection
-		context.To, err = net.DialTCP("tcp", nil, clusters.GetByVersionOrder(1).NextServer())
+		context.To, err = clusters.GetByVersionOrder(1).NextServer()
 	}
 
 	return err

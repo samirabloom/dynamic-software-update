@@ -4,7 +4,6 @@ import (
 	"proxy/log"
 	"code.google.com/p/go-uuid/uuid"
 	"fmt"
-	"net"
 	"proxy/contexts"
 	"hash/fnv"
 	"regexp"
@@ -57,7 +56,7 @@ func (router *GradualTransitionRouter) route(clusters *contexts.Clusters, contex
 	context.RoutingContext.Headers[1] = fmt.Sprintf("Set-Cookie: transition=%s;\n", transitionUUID.String())
 
 	// create connection
-	context.To, err = net.DialTCP("tcp", nil, cluster.NextServer())
+	context.To, err = cluster.NextServer()
 
 	return err
 }

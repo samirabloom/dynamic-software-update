@@ -39,7 +39,7 @@ func XTest_Route_For_Request_With_First_Chunk(testCtx *testing.T) {
 	var (
 		mockWrite      = contexts.NewMockStage("mockWrite")
 		mockCreatePipe = contexts.NewMockStage("mockCreatePipe")
-		cluster        = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.InstantMode}
+		cluster        = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.InstantMode}
 		clusters       = &contexts.Clusters{}
 		mockContext    = NewTestRouteChunkContext("Cookie: dynsoftup="+cluster.Uuid.String()+";", true)
 	)
@@ -66,7 +66,7 @@ func XTest_Route_For_Response_With_No_RequestUUID(testCtx *testing.T) {
 		mockWrite             = contexts.NewMockStage("mockWrite")
 		mockCreatePipe        = contexts.NewMockStage("mockCreatePipe")
 		initialTotalReadSize  = int64(10)
-		cluster               = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.SessionMode}
+		cluster               = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.SessionMode}
 		clusters              = &contexts.Clusters{}
 		expectedContentLength = "Content-Length: 40\n"
 		expectedCookieHeader  = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
@@ -95,7 +95,7 @@ func XTest_Route_For_Response_With_RequestUUID(testCtx *testing.T) {
 		mockWrite            = contexts.NewMockStage("mockWrite")
 		mockCreatePipe       = contexts.NewMockStage("mockCreatePipe")
 		initialTotalReadSize = int64(10)
-		cluster              = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.SessionMode}
+		cluster              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}}, RequestCounter: -1, Uuid: uuid.NewUUID(), Mode: contexts.SessionMode}
 		clusters             = &contexts.Clusters{}
 		expectedCookieHeader = "Set-Cookie: dynsoftup=" + cluster.Uuid.String() + "; Expires=" + time.Now().Add(time.Second * time.Duration(0)).Format(time.RFC1123) + ";\n"
 		mockContext          = NewTestRouteChunkContext("this is a request with no cookie \n added\n", false)
@@ -123,7 +123,7 @@ func XTest_Route_For_Request_With_Not_First_Chunk(testCtx *testing.T) {
 		mockContext    = NewTestRouteChunkContext("this is a request with no cookie \n added", true)
 		mockWrite      = contexts.NewMockStage("mockWrite")
 		mockCreatePipe = contexts.NewMockStage("mockCreatePipe")
-		cluster        = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
+		cluster        = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
 		clusters       = &contexts.Clusters{}
 	)
 	clusters.Add(cluster)
@@ -150,7 +150,7 @@ func XTest_Route_For_Response_With_Not_First_Chunk(testCtx *testing.T) {
 		mockContext    = NewTestRouteChunkContext("this is a response with no cookie \n added", false)
 		mockWrite      = contexts.NewMockStage("mockWrite")
 		mockCreatePipe = contexts.NewMockStage("mockCreatePipe")
-		cluster        = &contexts.Cluster{BackendAddresses: []*net.TCPAddr{&net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
+		cluster        = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: &net.TCPAddr{IP: net.IPv4(byte(127), byte(0), byte(0), byte(1)), Port: 1024}}}, RequestCounter: -1, Uuid: uuid.NewUUID()}
 		clusters       = &contexts.Clusters{}
 	)
 	clusters.Add(cluster)

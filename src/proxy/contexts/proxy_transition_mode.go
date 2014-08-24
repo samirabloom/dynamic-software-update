@@ -47,7 +47,7 @@ func (mode *TransitionMode) Route(clusters *Clusters, context *ChunkContext) (er
 
 		// update host header - not for cluster mode as update done inside DualTCPConnection
 		if err == nil && cluster.Mode != ConcurrentMode {
-			context.Data = http.UpdateHostHeader(context.Data, context.To.RemoteAddr())
+			context.Data = http.UpdateHostHeader(context.Data, context.To.(*TCPConnAndName).Host, context.To.(*TCPConnAndName).Port)
 		}
 	}
 

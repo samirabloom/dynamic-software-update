@@ -107,8 +107,8 @@ func GETHandler(urlRegex *regexp.Regexp) func(*contexts.Clusters, http.ResponseW
 		}
 
 		if err == nil {
-			fmt.Fprintf(writer, "%s", jsonBody)
 			writer.WriteHeader(http.StatusOK)
+			fmt.Fprintf(writer, "%s", jsonBody)
 		}
 	}
 }
