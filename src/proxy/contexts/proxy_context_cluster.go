@@ -105,7 +105,7 @@ type Cluster struct {
 func (cluster *Cluster) NextServer() (*tcp.TCPConnAndName, error) {
 	cluster.RequestCounter++
 	server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
-	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f] mode: [%s]", cluster.RequestCounter, server.Address.IP, server.Address.Port, cluster.Version, ModesModeToCode[cluster.Mode])
+	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%s] mode: [%s]", cluster.RequestCounter, server.Address.IP, server.Address.Port, cluster.Version, ModesModeToCode[cluster.Mode])
 	if cluster.PercentageTransitionPerRequest > 0 {
 		message += fmt.Sprintf(" transition counter [%.2f] percentage transition per request [%.2f]", cluster.TransitionCounter, cluster.PercentageTransitionPerRequest)
 	}

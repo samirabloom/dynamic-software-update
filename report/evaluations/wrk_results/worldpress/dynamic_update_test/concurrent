@@ -1,0 +1,158 @@
+##############################################
+Starting the proxy with following config
+###############################################
+// run the proxy with INFO
+./build_run_go.sh INFO
+
+###############################################
+// show proxy is running with the config and explain what the config is
+###############################################
+
+2014/08/25 22:52:03.957686 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"hostname": "192.168.50.30", "port": 80}
+        ],
+        "version": "3.8"
+    }
+}
+
+as:
+Proxy{
+	Proxy Address:      :1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: %!f(string=3.) [192.168.50.30:80]
+}
+
+
+##############################################
+// send the
+###############################################
+curl -v http://127.0.0.1:1235
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+
+##############################################
+// proxy's response to curl request (you can see default is INSTANT)
+
+2014/08/25 22:52:10.087916 proxy_context_cluster.go:115:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [%!!(MISSING)f(string=3.)] mode: [INSTANT]
+
+##############################################
+// received response format (cookie with no expiry)
+
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=0cd51dd8-2ca2-11e4-b479-28cfe9158b63;
+Date: Mon, 25 Aug 2014 21:52:10 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
+
+##############################################
+// send the curl for "CONCURRENT "update
+##############################################
+curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9","upgradeTransition": { "mode": "CONCURRENT"}}}'
+
+PUT /configuration/cluster HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:9090
+Accept: */*
+Content-Length: 128
+Content-Type: application/x-www-form-urlencoded
+
+##############################################
+// proxy response to upgrade
+2014/08/25 22:55:55.454481 config_service.go:66:     INFO - Received new cluster configuration:
+{
+    "cluster": {
+        "servers": [
+            {
+                "hostname": "192.168.50.40",
+                "port": 80
+            }
+        ],
+        "version": "3.9",
+        "upgradeTransition": {
+            "mode": "CONCURRENT"
+        }
+    }
+}
+
+##############################################
+\\received response format (returns cluster id)
+
+HTTP/1.1 202 Accepted
+Date: Mon, 25 Aug 2014 21:55:55 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+
+96d0bf5c-2ca2-11e4-b479-28cfe9158b63
+
+##############################################
+##############################################
+// send curl after upgrade
+##############################################
+##############################################
+curl -v http://127.0.0.1:1235
+
+
+
+##############################################
+##############################################
+// proxy response to curl after first request
+
+
+##############################################
+// response received after first upgrade (new cookie with expiry time)
+
+
+
+<!DOCTYPE html> ... </html>
+
+
+##############################################
+##############################################
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// the WorldPress latest version dies
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+##############################################
+##############################################
+// the normal curl request is sent again to the proxy with no cookie so it should go the newest version
+
+
+
+##############################################
+proxy
+// the proxy does the following and the output is shown
+1- attempt to talk first
+2- fails to connect
+3- removes the failed cluster
+4- goes to previous version adn get the answer
+##############################################
+
+
+##############################################
+response
+##############################################
+
+
+
+
+<!DOCTYPE html> ... </html>
+
+
+

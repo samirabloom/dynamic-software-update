@@ -19,14 +19,14 @@ the proxy was started with a configuration file as shown in the following Termin
             {"ip": "192.168.50.10", "port": 9091},
             {"ip": "192.168.50.10", "port": 10091}
         ],
-        "version": 2.5
+        "version": "2.5"
     }
 }
 as:
 Proxy{
 	Proxy Address:      :1235
 	ConfigService Port: 9090
-	Proxied Servers:    version: 2.50 [192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
+	Proxied Servers:    version: [].50 [192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
 }
 
 ##############################################

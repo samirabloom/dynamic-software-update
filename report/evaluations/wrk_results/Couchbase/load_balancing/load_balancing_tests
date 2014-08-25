@@ -18,14 +18,14 @@ Running proxy with logLevel INFO
             {"hostname": "192.168.50.10", "port": 9091},
             {"hostname": "192.168.50.10", "port": 10091}
         ],
-        "version": 2.5
+        "version": "2.5"
     }
 }
 as:
 Proxy{
 	Proxy Address:      :1235
 	ConfigService Port: 9090
-	Proxied Servers:    version: 2.50 [192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
+	Proxied Servers:    version: [].50 [192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
 }
 2014/08/24 19:50:06.560279 proxy_context_cluster.go:104:     INFO - Serving response 0 from ip: [192.168.50.10] port: [8091] version: [2.50] mode: [INSTANT]
 2014/08/24 19:52:34.576970 proxy_context_cluster.go:104:     INFO - Serving response 1 from ip: [192.168.50.10] port: [9091] version: [2.50] mode: [INSTANT]
