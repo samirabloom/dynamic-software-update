@@ -13,7 +13,7 @@ func (router *ConcurrentTransitionRouter) route(clusters *contexts.Clusters, con
 	cluster := clusters.GetByVersionOrder(0)
 
 	var (
-		previousVersionConnection, latestVersionConnection *contexts.TCPConnAndName
+		previousVersionConnection, latestVersionConnection *tcp.TCPConnAndName
 	)
 
 	// create dual connection

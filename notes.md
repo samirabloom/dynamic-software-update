@@ -67,9 +67,9 @@ working of covering most of the code
 
 1. Writing tests for route function
 
-1. Extend the metric analysis for multi-version response
+1. Dockerisation - half done
 
-1. Dockerisation
+1. Fix issue with failures during read / write for concurrent connections - half done
 
 1. Write documentation on github and add link to REST service error messages
 

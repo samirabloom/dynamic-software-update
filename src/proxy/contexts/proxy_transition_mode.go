@@ -3,6 +3,7 @@ package contexts
 import (
 	"proxy/log"
 	"proxy/http"
+	"proxy/tcp"
 )
 
 type TransitionMode uint64
@@ -47,7 +48,7 @@ func (mode *TransitionMode) Route(clusters *Clusters, context *ChunkContext) (er
 
 		// update host header - not for cluster mode as update done inside DualTCPConnection
 		if err == nil && cluster.Mode != ConcurrentMode {
-			context.Data = http.UpdateHostHeader(context.Data, context.To.(*TCPConnAndName).Host, context.To.(*TCPConnAndName).Port)
+			context.Data = http.UpdateHostHeader(context.Data, context.To.(*tcp.TCPConnAndName).Host, context.To.(*tcp.TCPConnAndName).Port)
 		}
 	}
 

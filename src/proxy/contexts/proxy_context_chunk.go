@@ -6,7 +6,6 @@ import (
 	"proxy/log"
 	"strings"
 	"time"
-	"net"
 )
 
 type Direction bool
@@ -25,12 +24,6 @@ type RoutingContext struct {
 	Headers []string
 }
 
-type TCPConnAndName struct {
-	*net.TCPConn
-	Host string
-	Port string
-}
-
 type ChunkContext struct {
 	Data                   []byte
 	To                     tcp.TCPConnection
@@ -44,25 +37,10 @@ type ChunkContext struct {
 	Direction              Direction
 }
 
-func AllowForNilConnection(connection tcp.TCPConnection, operation func (tcp.TCPConnection)) {
-	_, assertion := connection.(*net.TCPConn)
-	if assertion {
-		if connection.(*net.TCPConn) != nil {
-			operation(connection);
-		}
-	}
-	_, assertion = connection.(*tcp.DualTCPConnection)
-	if assertion {
-		if connection.(*tcp.DualTCPConnection) != nil {
-			operation(connection);
-		}
-	}
-}
-
 func (context *ChunkContext) Close() {
 	// close sockets
 	context.From.Close()
-	AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
+	tcp.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
 			connection.Close()
 			log.LoggerFactory().Debug("Closing connection %s", context)
 	});
@@ -76,12 +54,12 @@ func (context *ChunkContext) String() string {
 		output += "\t data:\n\t\t"+strings.Replace(string(context.Data), "\n", "\n\t\t", -1)
 	}
 	output += "\n"
-	if context.From != nil && context.From.LocalAddr() != nil && context.From.RemoteAddr() != nil {
-		output += fmt.Sprintf("\t from: %s -> %s\n", context.From.LocalAddr(), context.From.RemoteAddr())
-	}
-	if context.To != nil && context.To.LocalAddr() != nil && context.To.RemoteAddr() != nil {
-		output += fmt.Sprintf("\t to: %s -> %s\n", context.To.LocalAddr(), context.To.RemoteAddr())
-	}
+	tcp.AllowForNilConnection(context.From, func(connection tcp.TCPConnection) {
+		output += fmt.Sprintf("\t from: %s -> %s\n", connection.LocalAddr(), connection.RemoteAddr())
+	});
+	tcp.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
+		output += fmt.Sprintf("\t to: %s -> %s\n", connection.LocalAddr(), connection.RemoteAddr())
+	});
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.TotalReadSize)
 	output += fmt.Sprintf("\t totalWriteSize: %d\n", context.TotalWriteSize)
 	output += "}\n"

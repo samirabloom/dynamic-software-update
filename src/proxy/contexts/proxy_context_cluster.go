@@ -6,6 +6,7 @@ import (
 	"net"
 	"fmt"
 	"proxy/log"
+	"proxy/tcp"
 )
 
 type Clusters  struct {
@@ -101,7 +102,7 @@ type Cluster struct {
 	Version                         float64
 }
 
-func (cluster *Cluster) NextServer() (*TCPConnAndName, error) {
+func (cluster *Cluster) NextServer() (*tcp.TCPConnAndName, error) {
 	cluster.RequestCounter++
 	server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
 	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%.2f] mode: [%s]", cluster.RequestCounter, server.Address.IP, server.Address.Port, cluster.Version, ModesModeToCode[cluster.Mode])
@@ -113,7 +114,7 @@ func (cluster *Cluster) NextServer() (*TCPConnAndName, error) {
 	}
 	log.LoggerFactory().Info(message)
 	connection, err := net.DialTCP("tcp", nil, server.Address)
-	return &TCPConnAndName{connection, server.Host, server.Port}, err
+	return &tcp.TCPConnAndName{connection, server.Host, server.Port}, err
 }
 
 func (cluster *Cluster) String() string {

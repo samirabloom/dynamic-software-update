@@ -22,7 +22,7 @@ func complete(context *contexts.ChunkContext) {
 			log.LoggerFactory().Debug("Complete Stage closed WRITE with error %s - %s", closeWriteError, context)
 		}
 	}
-	contexts.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
+	tcp.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
 		closeReadError := connection.CloseRead()
 		log.LoggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
 	});
