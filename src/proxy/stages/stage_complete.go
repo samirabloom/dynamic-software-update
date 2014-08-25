@@ -6,6 +6,7 @@ import (
 	"time"
 	"proxy/log"
 	"proxy/contexts"
+	"proxy/tcp"
 )
 
 // ==== COMPLETE - START
@@ -21,18 +22,10 @@ func complete(context *contexts.ChunkContext) {
 			log.LoggerFactory().Debug("Complete Stage closed WRITE with error %s - %s", closeWriteError, context)
 		}
 	}
-	if context.To != nil {
-		_, assertion := context.To.(*net.TCPConn)
-		if assertion {
-			if context.To.(*net.TCPConn) != nil {
-				closeReadError := context.To.CloseRead()
-				log.LoggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
-			}
-		} else {
-			closeReadError := context.To.CloseRead()
-			log.LoggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
-		}
-	}
+	contexts.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
+		closeReadError := connection.CloseRead()
+		log.LoggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
+	});
 	context.PipeComplete <- context.TotalWriteSize
 	log.LoggerFactory().Debug("Complete Stage END - %s", context)
 }

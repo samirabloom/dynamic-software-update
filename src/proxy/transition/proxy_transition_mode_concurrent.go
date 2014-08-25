@@ -21,7 +21,6 @@ func (router *ConcurrentTransitionRouter) route(clusters *contexts.Clusters, con
 	if err == nil {
 		previousVersionConnection, err = clusters.GetByVersionOrder(1).NextServer()
 		context.To = &tcp.DualTCPConnection{
-			ExpectedStatusCode: 200,
 			Connections:        []tcp.TCPConnection{previousVersionConnection, latestVersionConnection},
 			Hosts:              []string{previousVersionConnection.Host, latestVersionConnection.Host},
 			Ports:              []string{previousVersionConnection.Port, latestVersionConnection.Port},

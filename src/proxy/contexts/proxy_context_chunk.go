@@ -3,6 +3,7 @@ package contexts
 import (
 	"fmt"
 	"proxy/tcp"
+	"proxy/log"
 	"strings"
 	"time"
 	"net"
@@ -43,12 +44,28 @@ type ChunkContext struct {
 	Direction              Direction
 }
 
+func AllowForNilConnection(connection tcp.TCPConnection, operation func (tcp.TCPConnection)) {
+	_, assertion := connection.(*net.TCPConn)
+	if assertion {
+		if connection.(*net.TCPConn) != nil {
+			operation(connection);
+		}
+	}
+	_, assertion = connection.(*tcp.DualTCPConnection)
+	if assertion {
+		if connection.(*tcp.DualTCPConnection) != nil {
+			operation(connection);
+		}
+	}
+}
+
 func (context *ChunkContext) Close() {
 	// close sockets
 	context.From.Close()
-	if context.To != (*net.TCPConn)(nil) {
-		context.To.Close()
-	}
+	AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
+			connection.Close()
+			log.LoggerFactory().Debug("Closing connection %s", context)
+	});
 }
 
 func (context *ChunkContext) String() string {

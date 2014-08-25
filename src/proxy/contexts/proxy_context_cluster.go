@@ -73,7 +73,11 @@ func (clusters *Clusters) GetByVersionOrder(age int) *Cluster {
 		}
 		age--
 	}
-	return element.Value.(*Cluster)
+	if element != nil {
+		return element.Value.(*Cluster)
+	} else {
+		return nil
+	}
 }
 
 func (clusters *Clusters) String() string {

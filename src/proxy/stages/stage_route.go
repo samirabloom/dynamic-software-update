@@ -33,18 +33,26 @@ func route(next func(*contexts.ChunkContext), clusters *contexts.Clusters, creat
 
 			if context.Direction == contexts.ClientToServer {  // on the request
 
-				err := clusters.GetByVersionOrder(0).Mode.Route(clusters, context)
-				if err != nil {
-					log.LoggerFactory().Error("Error communicating with server - %s\n", err)
-					if isConnectionRefused(err) {
-						// no such device or address
+				for {
+					cluster := clusters.GetByVersionOrder(0)
+					if cluster != nil {
+						err := cluster.Mode.Route(clusters, context)
+						if err != nil {
+							log.LoggerFactory().Error("Error communicating with server - %s\n", err)
+							log.LoggerFactory().Warning("Removing cluster from configuration - %s\n", cluster)
+							clusters.Delete(cluster.Uuid)
+							continue;
+						} else {
+							go createBackPipe(contexts.NewBackPipeChunkContext(context))
+							break;
+						}
+					} else {
+						log.LoggerFactory().Error("No clusters in configuration\n")
 						context.Err = &net.OpError{Op: "dial", Err: syscall.ENXIO}
 						context.PipeComplete <- 0
+						return
 					}
-					return
 				}
-
-				go createBackPipe(contexts.NewBackPipeChunkContext(context))
 
 			} else { // on the response
 				var parsedHeader = &headerMetrics{}

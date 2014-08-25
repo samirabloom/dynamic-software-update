@@ -7,8 +7,8 @@
     },
     "cluster": {
         "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
+            {"hostname": "127.0.0.1", "port": 1024}
         ],
-        "version": 3.0
+        "version": 1.0
     }
 }

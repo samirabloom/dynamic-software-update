@@ -25,7 +25,7 @@ func (mockWriter MockWriter) Write(writeBuffer []byte) (n int, err error) {
 }
 
 type MockConn struct {
-	net.TCPConn
+	*net.TCPConn
 	Data            [][]byte
 	Error           error
 	LocalAddress    net.Addr

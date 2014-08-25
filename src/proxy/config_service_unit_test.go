@@ -81,7 +81,7 @@ func Test_Config_PUT_With_Valid_Cluster_Configuration_Object(testCtx *testing.T)
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
-		expectedResponseBody  = []byte("Error parsing cluster configuration - Invalid cluster configuration - \"servers\" list must contain at least one entry")
+		expectedResponseBody  = []byte("Error parsing cluster configuration - Invalid cluster configuration - \"servers\" list must contain at least one entry\n")
 	)
 
 	// when
@@ -101,7 +101,7 @@ func Test_Config_PUT_When_Invalid_JSON(testCtx *testing.T) {
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
-		expectedResponseBody  = []byte("Error decoding json request - invalid character 'i' looking for beginning of object key string")
+		expectedResponseBody  = []byte("Error decoding json request - invalid character 'i' looking for beginning of object key string\n")
 	)
 
 	// when
@@ -121,7 +121,7 @@ func Test_Config_PUT_When_Empty_JSON(testCtx *testing.T) {
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
-		expectedResponseBody  = []byte("Invalid cluster configuration - \"cluster\" config missing")
+		expectedResponseBody  = []byte("Invalid cluster configuration - \"cluster\" config missing\n")
 	)
 
 	// when
