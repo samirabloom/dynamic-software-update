@@ -16,7 +16,7 @@ then
     chmod 777 /var/run/docker.sock
 
     # export docker REST API
-    sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io_cp
+    sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io
     service docker.io restart
 
     # setup go environment variables

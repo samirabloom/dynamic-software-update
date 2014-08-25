@@ -26,6 +26,7 @@ clean:
 	rm -rf $(GOBIN)proxy proxy pkg
 
 test: clean
+	vagrant up docker
 	$(FLAGS) go test -v ./.../$*
 	
 coverage:
