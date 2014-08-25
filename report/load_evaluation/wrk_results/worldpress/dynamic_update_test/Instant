@@ -1,0 +1,132 @@
+##############################################
+Starting the proxy with following config
+###############################################
+// run the proxy with INFO
+./build_run_go.sh INFO
+
+// show proxy is running with the config and explain what the config is
+
+2014/08/25 13:27:52.110240 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"hostname": "192.168.50.30", "port": 80}
+        ],
+        "version": 3.0
+    }
+}
+
+as:
+Proxy{
+	Proxy Address:      :1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 3.00 [192.168.50.30:80]
+}
+
+##############################################
+// send the
+curl -v http://127.0.0.1:1235
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+
+##############################################
+// proxy's response to curl request (you can see default is INSTANT)
+
+2014/08/25 13:27:59.101500 proxy_context_cluster.go:110:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.00] mode: [INSTANT]
+
+
+##############################################
+// received response format (cookie with no expiry)
+
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=3b8f238f-2c53-11e4-9f0f-28cfe9158b63;
+Date: Mon, 25 Aug 2014 12:27:59 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
+
+
+##############################################
+// send the curl for "INSTANT "update
+curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": 3.9,"upgradeTransition": { "mode": "INSTANT" }}}'
+
+PUT /configuration/cluster HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:9090
+Accept: */*
+Content-Length: 126
+Content-Type: application/x-www-form-urlencoded
+
+##############################################
+// proxy response to upgrade
+
+2014/08/25 13:31:31.648302 config_service.go:68:     INFO - Received new cluster configuration:
+{
+    "cluster": {
+        "servers": [
+            {
+                "hostname": "192.168.50.40",
+                "port": 80
+            }
+        ],
+        "version": 3.9,
+        "upgradeTransition": {
+            "mode": "INSTANT"
+        }
+    }
+}
+
+##############################################
+\\received response format (returns cluster id)
+
+HTTP/1.1 202 Accepted
+Date: Mon, 25 Aug 2014 12:31:31 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+
+be69fecd-2c53-11e4-9f0f-28cfe9158b63
+
+##############################################
+// send curl after upgrade (cookie is ignored as the upgrade is instant)
+
+curl -v http://127.0.0.1:1235
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+
+##############################################
+##############################################
+// proxy response to curl after first request
+
+2014/08/25 13:37:35.148207 proxy_context_cluster.go:110:     INFO - Serving response 0 from ip: [192.168.50.40] port: [80] version: [3.90] mode: [INSTANT]
+
+##############################################
+// request received after first upgrade
+
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=be69fecd-2c53-11e4-9f0f-28cfe9158b63;
+Date: Mon, 25 Aug 2014 12:37:35 GMT
+Server: Apache/2.2.22 (Debian)
+X-Powered-By: PHP/5.4.4-14+deb7u12
+X-Pingback: http://192.168.50.40/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>

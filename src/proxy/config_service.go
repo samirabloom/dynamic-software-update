@@ -54,15 +54,15 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.Re
 		var jsonConfig map[string]interface{}
 		err := json.Unmarshal(body[0:size], &jsonConfig)
 		if err != nil {
-			fmt.Fprintf(writer, "Error decoding json request - %s", err.Error())
 			http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			fmt.Fprintf(writer, "Error decoding json request - %s\n", err.Error())
 		} else {
 			clusterConfiguration := jsonConfig["cluster"]
 			if clusterConfiguration != nil {
 				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}))
 				if err != nil {
-					fmt.Fprintf(writer, "Error parsing cluster configuration - %s", err.Error())
 					http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+					fmt.Fprintf(writer, "Error parsing cluster configuration - %s\n", err.Error())
 				} else {
 					routeContexts.Add(cluster)
 					log.LoggerFactory().Info(fmt.Sprintf("Received new cluster configuration:\n%s", body[0:size]))
@@ -70,8 +70,8 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.Re
 					fmt.Fprintf(writer, "%s", cluster.Uuid)
 				}
 			} else {
-				fmt.Fprintf(writer, "Invalid cluster configuration - \"cluster\" config missing")
 				http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+				fmt.Fprintf(writer, "Invalid cluster configuration - \"cluster\" config missing\n")
 			}
 		}
 	}

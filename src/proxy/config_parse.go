@@ -146,8 +146,8 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 
 		serversConfiguration := clusterConfiguration["servers"]
 		if serversConfiguration != nil {
-			servers := serversConfiguration.([]interface{})
-			if len(servers) > 0 {
+			servers, converted := serversConfiguration.([]interface{})
+			if converted && len(servers) > 0 {
 				backendAddresses = make([]*contexts.BackendAddress, len(servers))
 				for index := range servers {
 					var server map[string]interface{} = servers[index].(map[string]interface{})
