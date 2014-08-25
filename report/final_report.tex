@@ -129,8 +129,8 @@ In safety critical industries such as air traffic control or healthcare reliable
 
 All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive. In addition, no existing system or technique is considered robust enough to be used widely for fully automated continuous delivery of upgrades into production.
  
-This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.\\  
-
+{\color{red}This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.}\\  
+\colorbox{yellow}{update summary paragraph this still refers to literature review}
 
 \clearpage
 \section{Overview}
@@ -344,18 +344,9 @@ With Docker, a new application on a host only needs its binaries or libraries bu
 
 %\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
 
-\subsection{CoreOS} \label{CoreOS}
-CoreOS is an open source lightweight operating system based on the Linux Kernel which is designed for security, consistency and relability \footnote {\label{coreos} \url {https://coreos.com/using-coreos/}}. CoreOS does not support any package management tools such as apt \footnote{\url{https://help.ubuntu.com/12.04/serverguide/apt-get.html}} or yum \footnote {\url{http://yum.baseurl.org/}} instead it is a base OS for Docker containers. Therefore, any application can run on CoreOS, using a Docker container. CoreOS has an active/passive dual-partition scheme, similar to ChromeOS \footnote{\url{http://www.chromium.org/chromium-os}} , which is used to update the OS as a single unit instead of package by package. Initially, the system is booted into an active partition, once a new update is detected it is downloaded and installed to the passive parition. To ensure the installation does not affect the running system, it is rate limited using Linux cgroups. The system will switch to the partition with the latest update once it is rebooted \footnote {\label{coreos} \url {https://coreos.com/using-coreos/}}. CoreOS also has several tools to support simple cluster deployment including:
-  \begin{list}{-}{}
-  \itemsep0em
-  \item \underline{etcd} - An open source distributed key value store that handles distributed locking and master election
-  
-  \item \underline{fleet} - A combination of systemd (a system management daemon for Linux kernal) and etcd to provide a distributed init system that supports the control of system services across a cluster. Fleet is a particularly effective method of querying and installing Docker container clusters across a CoreOS cluster.
-  \end{list}
-
 \noindent
 \subsection{Messaging Systems} \label{MOM}
-Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ) \footnote{\label{ZeroMQ} \url{http://zeromq.org/}} are the most common messaging standards. 
+Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ) \footnote{\label{ZeroMQ_1} \url{http://zeromq.org/}} are the most common messaging standards. 
 
 \subsubsection{Broker-Based Messaging Systems} 
 AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
@@ -363,7 +354,7 @@ AMPQ and JMS are popular examples of broker-based messing systems. A message bro
 \subsubsection{Zero Broker Messaging Systems} 
 In a broker-less messaging system each application directly talks to other applications without any middleware, hence, there are no bottlenecks associated with these systems. The application can manage and maintain its own messaging infrastructure and so encapsulation and separation of concerns are increased.
 
-ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications \footnote{\label{ZeroMQ} \url{http://zeromq.org/}}. 
+ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications \footnote{\label{ZeroMQ_2} \url{http://zeromq.org/}}. 
 
 ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
 
@@ -371,12 +362,14 @@ More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the sa
 
 
 \subsection{Hypertext Transfer Protocol} \label{HTTP}
-The Hypertext Transfer Protocol (HTTP) is a generic, stateless application-level protocol for distributed hypermedia information systems. HTTP is the foundation protocol of the World Wide Web and it is widely used between a web browser and a web server. A feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred.  To provide reliability HTTP uses TCP. Since HTTP is stateless, a new TCP connection is created between client and server for each transaction and the TCP connection terminates immediately after the transaction is completed. HTTP functions as a request-response protocol in a client-server interaction. 
+The Hypertext Transfer Protocol (HTTP) is a, stateless application-level protocol for distributed hypertext and hypermedia information systems supporting the interlinking of text and multimedia.  Hypertext, a term coined by Ted Nelson \cite{hypertext}, is text which is not constrained to be linear and contains links to other texts.  Hypermedia is an extension to hypertext adding support for multimedia, such as images, video and sound.
+
+HTTP is the foundation protocol of the World Wide Web and it is widely used between different systems that need to exchange text and multimedia.  The most common HTTP relationships are client - server and server - server.  The most common client - server relationship is when a web browser (or user agent) browses a web site on a web server.  A server - server relationship is when a web service requires information from another web service, a common example is OAuth \footnote{\label{OAuth} \url{http://oauth.net/}} where a web service can act on behalf of a user by interacting with an OAuth web service provider.  An important feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred this is often referred to REpresentational State Transfer (REST).
 
 \subsection{HTTP Requests} \label{Requests}
-The HTTP request sent to the server by client has the following format:\\
+An HTTP request has the following format:\\
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=json]
 <Request> ::=	<Request-Line>
 		<general-headers>
 		|<request-headers>
@@ -386,13 +379,37 @@ The HTTP request sent to the server by client has the following format:\\
 		
 \end{lstlisting} 
 \noindent\\
-The Request-Line consists of a method token, Request-URI and the protocol version. Method token defines HTTP functions such as GET, POST, PUT, DELETE that is performed on the resources identified by Request-URI. General headers provide general control information and they can be included in both requests and responses. Transfer-Encoding is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if Transfer-Encoding is defined as "chunked", the data will be sent to the recipient in a series of "chunks". The request-header fields allow the client to pass additional information about the request, and about the client itself, to the server. Entity-headers define optional and required metainformation about the request body and if the request has no body, provide information about the resource identified by the request. For example, Content-Length header is one of the entity-header fields indicating the size of the request body. CRLF refers to a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n'). CRLF is used to define the end of request line and headers and start of the request body.
+\textit{<Request-Line>} consists of a method, request URI and the protocol version. Method defines the HTTP functions such as GET, POST, PUT, DELETE that is performed on the resources identified by request URI . 
 
+\noindent\\
+\textit{<general-headers>} provide general control information and they can be included in both requests and responses. \textit{Transfer-Encoding} is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if \textit{Transfer-Encoding} is defined as "chunked", the data will be sent to the recipient in a series of "chunks". 
+
+\noindent\\
+\textit{<request-headers>} allow the client to pass additional information about the request, and about the client itself, to the server. 
+
+\noindent\\
+\textit{<entity-headers>} define optional and required meta-information about the request body and if the request has no body, provide information about the resource identified by the request. For example, \textit{Content-Length} header indicates the size of the request body. 
+
+\noindent\\
+\textit{CRLF CRLF} indicating a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n') is used to separate the header section from the body.
+
+\noindent\\
+\textit{<opt-message-body>} contains the and data transmitted in the body of the request.
+
+\noindent\\
+For example the following shows a simple HTTP request:
+
+\begin{lstlisting}[language=bash,xleftmargin=.25in,xrightmargin=.25in]
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+\end{lstlisting} 
 
 \subsection{HTTP Responses}
-Server send HTTP responses to the client after receiving and interpreting requests using the following format: \\
+An HTTP response has the following format:\\
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=json]
 <Response> ::=	<Status-Line>
 		<general-headers>
 		|<response-headers>
@@ -401,9 +418,48 @@ Server send HTTP responses to the client after receiving and interpreting reques
 		<opt-message-body>
 \end{lstlisting} 
 \noindent\\
-The Status-Line consists of the HTTP version followed by a numeric status code and its associated textual phrase. Status code indicates the action taken on the corresponding request such as 'Successful' (The request was successfully received, understood, and accepted), 'Client Error' (The request contains a syntax error or the request cannot be fulfilled) and 'Server Error' (The server failed to fulfill an apparently valid request). Similar to requests, HTTP responses also have several type of headers which provides general or specific information about he response (Section \ref{Requests}). Additionally, CRLF is also used to define the end of response headers and start of the optional response body.   
+\textit{<Status-Line>} consists of the HTTP version followed by a numeric status code and its associated textual phrase. The status code indicates the action taken on the corresponding request.  The status code has 5 groupings as follows:
 
- 
+\begin{list}{-}{}
+\itemsep0em
+\item \textbf{1xx Informational} - request received continue processing i.e. 101 Switching Protocols
+\item \textbf{2xx Success} - request was successfully received, understood, and accepted i.e. 202 Accepted
+\item \textbf{3xx Redirection} - client actions required to complete the request i.e. 301 Moved Permanently
+\item \textbf{4xx Client Error} - request contains a syntax error or cannot be fulfilled i.e. 400 Bad Request
+\item \textbf{5xx Server Error} - server failed to fulfill the request i.e. 500 Internal Server Error
+\end{list}
+\noindent
+\textit{<general-headers>} provide general control information and they can be included in both requests and responses. \textit{Transfer-Encoding} is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if \textit{Transfer-Encoding} is defined as "chunked", the data will be sent to the recipient in a series of "chunks". 
+
+\noindent\\
+\textit{<response-headers>} allow the server to pass additional information about the response, and about the server itself, to the client. 
+
+\noindent\\
+\textit{<entity-headers>} define optional and required meta-information about the response body and if the response has no body, provide information about the resource returned in the response. For example, \textit{Content-Length} header indicates the size of the response body. 
+
+\noindent\\
+\textit{CRLF CRLF} indicating a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n') is used to separate the header section from the body. 
+
+\noindent\\
+\textit{<opt-message-body>} contains the and data transmitted in the body of the response.
+
+\noindent\\
+For example the following shows a simple HTTP response:
+
+\indent
+\begin{lstlisting}[language=bash,xleftmargin=.25in,xrightmargin=.25in]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=be69fecd-2c53-11e4-9f0f-28cfe9158b63;
+Date: Mon, 25 Aug 2014 12:37:35 GMT
+Server: Apache/2.2.22 (Debian)
+X-Powered-By: PHP/5.4.4-14+deb7u12
+X-Pingback: http://192.168.50.40/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
+\end{lstlisting} 
 
 \clearpage
 \section{Design} \label{Design}
@@ -493,7 +549,7 @@ For HTTP requests, the method token in the Request-Line is used to detect what t
 
 \noindent\\
 \textbf{Performance Evaluation}\\
-To evaluate the performance of the aforementioned proxy, two HTTP benchmarking tools called \textit{wrk} \footnote{\label{wrk} \url{https://github.com/wg/wrk}} and \textit{ApacheBench} (\textit{ab}) \footnote{\label{ab} \url{http://httpd.apache.org/docs/2.2/programs/ab.html}}  were used. \textit{wrk} is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{wrk} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}. \textit{ab} is a single-threaded tool used to measure the performance of HTTP web servers by generating stressing conditions.
+To evaluate the performance of the aforementioned proxy a HTTP benchmarking tool called \textit{wrk} \footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. \textit{wrk} is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{kqueue} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}.
 
 
 
@@ -1331,8 +1387,6 @@ Content-Type: text/plain; charset=utf-8
 
  \bibitem {Safety 279} Yves Vandewoude, Peter Ebraert, Yolande Berbers, and Theo D’Hondt. {\em Tranquility: A low disruptive alternative to quiescence for ensuring safe dynamic updates.}, IEEE Trans. Softw. Eng., 2007.
 
-\bibitem {Safety 108} Cristiano Giuffrida, Anton Kuijsten, and Andrew S. Tanenbaum. {\em Enhanced operating system security through efficient and fine-grained address space randomization.}, USENIX Security Symp., 2012.
-
  \bibitem {Cook} Jonathan E. Cook and	Jeffrey A. Dage. {\em “Highly reliable upgrading of components”}, ICSE Conf. on Proceedings of the 21st international conference on Software engineering, 1999.
 
  \bibitem {Berger} Emery D Berger and Benjamin Zorn. {\em DieHard: probabilistic memory safety for unsafe languages.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
@@ -1362,6 +1416,8 @@ Content-Type: text/plain; charset=utf-8
     \bibitem{JMS} Mark Hapner, Rich Burridge, Rahul Sharma, Joseph Fialli, Kate Stout. {\em Java Message Service}, In Oracle America, Inc., 2012.
 
 \bibitem{broker} Aneesh Raj, P. Sreenivasa Kumar, {\em "Branch Sequencing Based XML Message Broker Architecture,"}, IEEE 23rd International Conference on Data Engineering, 2007.  
+
+\bibitem{hypertext} A File Structure for the Complex, the Changing, and the Indeterminate. 20th National Conference, New York, Association for Computing Machinery, 1965
   
   \end{thebibliography}
 
