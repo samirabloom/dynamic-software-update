@@ -463,25 +463,24 @@ Content-Type: text/html; charset=UTF-8
 
 \clearpage
 \section{Design} \label{Design}
-\colorbox{yellow}{change from future tense to current tense}\\
 To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2 \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
 
 In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
 
 \subsection{Proposed Dynamic Software Update System}\label{modes} 
-This project proposes a simple lightweight system to support reliable dynamic software updates suitable for continuous delivery into production. In the proposed system the updated version will run concurrently with previous stable versions. The updated system will be monitored automatically and if the system behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
+To support reliable dynamic software updates a simple lightweight system has been developed suitable for continuous delivery into production. The system runs the updated version concurrently with previous stable versions. The updated version is monitored automatically and if the updated version behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
 
 Four mechanisms will be supported to enable different reliable update strategies depending on the specific software requirements.
 
-\underline{Rapid Update} -  In this mechanism the updated version of software will immediately process all requests. The non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+\underline{Rapid Update} -  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
 
-\underline{New Session Update} - This update mechanism will only switch new sessions to the updated version. A new session will be identified by no requests being received from a client within a configured time period. As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
+\underline{New Session Update} - This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
 
-\underline{Long Term Update} - This mechanism will switch new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
+\underline{Long Term Update} - This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
 
-\underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and  process identical requests for new sessions.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
+\underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and process identical requests.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
 
-In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The response size and delay will be compared with typical values for the non-updated version to verify the updated application behavior. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -730,7 +729,7 @@ Usage of proxy:
                           {"hostname": "127.0.0.1", "port": 1034},
                           {"hostname": "127.0.0.1", "port": 1035}
                       ],
-                      "version": 1.0
+                      "version": "1.0"
                   }
               }
 
@@ -842,7 +841,7 @@ GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single clus
                 "percentageTransitionPerRequest": 0  
         },
         "uuid": "",
-        "version": 0
+        "version": "0"
     }
 }
 
@@ -953,7 +952,7 @@ To add a new cluster make a PUT request to \textit{/configuration/cluster}.\\
         "port": 0
       }
     ],
-    "version": 0,
+    "version": "0",
     "upgradeTransition": {
         "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
         "sessionTimeout": 0  // only supported for a 'mode' value of "SESSION" 
@@ -986,9 +985,9 @@ This value specifies the port of a server in the cluster\\
 \noindent
 \textbf{cluster.version}\\
 \noindent
-Type: 'Number' Default value: '0'\\
+Type: 'String' Default value: '0.0'\\
 \noindent
-This value specifies the cluster version. If no version is specified, the version defaults to '0'. \\
+This value specifies the cluster version. If no version is specified, the version defaults to '0.0'.  The version value is sorted using a string sort so care must be taken when using multi digit version numbers as '13' will be sorted before '3' to resolve this always use '03' for '3'. \\
 
 \noindent
 \textbf{cluster.upgradeTransition}\\
@@ -1045,7 +1044,7 @@ For example the following JSON would set up a new cluster with two 'servers' and
         "port": 1038
       }
     ], 
-    "version": 1.1, 
+    "version": "1.1", 
     "upgradeTransition": {
       "mode": "SESSION", 
       "sessionTimeout": 60
@@ -1151,7 +1150,7 @@ Date: Sat, 16 Aug 2014 20:37:42 GMT
 Content-Length: 206
 Content-Type: text/plain; charset=utf-8
 
-{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":1.1}}
+{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":"1.1"}}
 \end{lstlisting}
 
 \noindent \\
@@ -1290,7 +1289,7 @@ Date: Sun, 17 Aug 2014 12:28:55 GMT
 Content-Length: 583
 Content-Type: text/plain; charset=utf-8
  
-[{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1037},{"hostname":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1034},{"hostname":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]
+[{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":"1.1"}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1037},{"hostname":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":"1.1"}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1034},{"hostname":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":"1"}}]
 \end{lstlisting}
 
 \noindent \\

@@ -53,9 +53,9 @@ Type: `Number` Default value: `undefined`
 This value specifies the port of a server in the cluster
 
 ##### cluster.version
-Type: `Number` Default value: `0`
+Type: `String` Default value: `0.0`
 
-This value specifies the cluster version. If no version is specified, the version defaults to `0`. 
+This value specifies the cluster version. If no version is specified, the version defaults to `0.0`.  The version value is sorted using a string sort so care must be taken when using multi digit version numbers as `13` will be sorted before `3` to resolve this always use `03` for `3`. 
 
 ##### cluster.upgradeTransition
 Type: `Object` Default value: `{ mode: "INSTANT" }`
@@ -195,7 +195,7 @@ Date: Sat, 16 Aug 2014 20:37:42 GMT
 Content-Length: 206
 Content-Type: text/plain; charset=utf-8
 
-{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":1.1}}
+{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":"1.1"}}
 ```
 
 ## GET - /configuration/cluster
@@ -328,7 +328,7 @@ Date: Sun, 17 Aug 2014 12:28:55 GMT
 Content-Length: 583
 Content-Type: text/plain; charset=utf-8
  
-[{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1037},{"hostname":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":1.1}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1034},{"hostname":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":1}}]
+[{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":"1.1"}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1037},{"hostname":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":"1.1"}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1034},{"hostname":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":"1"}}]
 ```
 
 ## DELETE - /configuration/cluster/{clusterId}
