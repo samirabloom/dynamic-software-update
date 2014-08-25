@@ -15,6 +15,10 @@ then
     sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
     chmod 777 /var/run/docker.sock
 
+    # export docker REST API
+    sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io_cp
+    service docker.io restart
+
     # setup go environment variables
     echo "export PATH=/usr/local/go/bin:$PATH" >> /home/vagrant/.bash_profile
     echo "export GOROOT=/usr/local/go" >> /home/vagrant/.bash_profile

@@ -41,6 +41,7 @@ coverage:
 dependencies:
 	go get -v code.google.com/p/go-uuid/uuid
 	go get -v github.com/op/go-logging
+	go get -v github.com/fsouza/go-dockerclient
 
 build: clean dependencies
 	$(FLAGS) go build -v -o proxy ./src/main_run.go
