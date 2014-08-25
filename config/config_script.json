@@ -9,6 +9,6 @@
         "servers":[
             {"hostname": "127.0.0.1", "port": 1024}
         ],
-        "version": 1.0
+        "version": "1.0"
     }
 }

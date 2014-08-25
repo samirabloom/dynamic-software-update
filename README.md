@@ -28,7 +28,7 @@ Usage of proxy:
                                                        {"hostname": "127.0.0.1", "port": 1034},
                                                        {"hostname": "127.0.0.1", "port": 1035}
                                                    ],
-                                                   "version": 1.0
+                                                   "version": "1.0"
                                                }
                                            }
 
@@ -137,7 +137,7 @@ The easiest way to test the config services is to use [DHC](https://chrome.googl
 
  - **PUT Request for Concurrent upgrade**
 ```bash
-curl http://127.0.0.1:9090/server -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1037},{"hostname": "127.0.0.1", "port": 1038},{"hostname": "127.0.0.1", "port": 1039}],"version": 1.1,"upgradeTransition": { "mode": "CONCURRENT" }}}'
+curl http://127.0.0.1:9090/server -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1037},{"hostname": "127.0.0.1", "port": 1038},{"hostname": "127.0.0.1", "port": 1039}],"version": "1.1","upgradeTransition": { "mode": "CONCURRENT" }}}'
 ````
 
  - **PUT Request using a config file**

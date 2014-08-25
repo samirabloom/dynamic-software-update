@@ -17,14 +17,14 @@ func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	// given
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
-		bodyByte              = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1024}, {\"hostname\":\"127.0.0.1\", \"port\":1025}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.1}}")
+		bodyByte              = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1024}, {\"hostname\":\"127.0.0.1\", \"port\":1025}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.1\"}}")
 		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
 		actualRouteContexts   = &contexts.Clusters{}
 		serverOne, _          = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _          = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		expectedRouteContexts = &contexts.Clusters{}
 	)
-	expectedRouteContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne, Host: "127.0.0.1", Port: "1024"}, &contexts.BackendAddress{Address: serverTwo, Host: "127.0.0.1", Port: "1025"}}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 1, Mode: contexts.SessionMode, Version: 1.1})
+	expectedRouteContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne, Host: "127.0.0.1", Port: "1024"}, &contexts.BackendAddress{Address: serverTwo, Host: "127.0.0.1", Port: "1025"}}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 1, Mode: contexts.SessionMode, Version: "1.1"})
 
 	// when
 	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
@@ -38,9 +38,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 	// given
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
-		bodyByte1             = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1011}], \"upgradeTransition\":{\"sessionTimeout\":3}, \"version\": 1.1}}")
-		bodyByte2             = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1009}], \"upgradeTransition\":{\"sessionTimeout\":2}, \"version\": 0.9}}")
-		bodyByte3             = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1015}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.5}}")
+		bodyByte1             = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1011}], \"upgradeTransition\":{\"sessionTimeout\":3}, \"version\": \"1.1\"}}")
+		bodyByte2             = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1009}], \"upgradeTransition\":{\"sessionTimeout\":2}, \"version\": \"0.9\"}}")
+		bodyByte3             = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1015}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.5\"}}")
 		uuid1                 = uuid.Parse("1127596f-1034-11e4-8334-600308a82411")
 		uuid2                 = uuid.Parse("0927596f-1034-11e4-8334-600308a82409")
 		uuid3                 = uuid.Parse("1527596f-1034-11e4-8334-600308a82415")
@@ -48,9 +48,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 		server2, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
 		expectedRouteContexts = &contexts.Clusters{ContextsByVersion: list.New(), ContextsByID: make(map[string]*contexts.Cluster)}
-		cluster1              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server1, Host: "127.0.0.1", Port: "1011"}}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 3, Mode: contexts.SessionMode, Version: 1.1}
-		cluster2              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2, Host: "127.0.0.1", Port: "1009"}}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: contexts.SessionMode, Version: 0.9}
-		cluster3              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3, Host: "127.0.0.1", Port: "1015"}}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 1, Mode: contexts.SessionMode, Version: 1.5}
+		cluster1              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server1, Host: "127.0.0.1", Port: "1011"}}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 3, Mode: contexts.SessionMode, Version: "1.1"}
+		cluster2              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2, Host: "127.0.0.1", Port: "1009"}}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: contexts.SessionMode, Version: "0.9"}
+		cluster3              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3, Host: "127.0.0.1", Port: "1015"}}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 1, Mode: contexts.SessionMode, Version: "1.5"}
 		actualRouteContexts   = &contexts.Clusters{}
 	)
 
@@ -142,10 +142,10 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 		serverTwo, _         = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		routeContexts        = &contexts.Clusters{}
 		responseWriter       = mock.NewMockResponseWriter()
-		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1024},{\"hostname\":\"127.0.0.1\",\"port\":1025}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuidValue.String() + "\",\"version\":1.1}}")
+		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1024},{\"hostname\":\"127.0.0.1\",\"port\":1025}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuidValue.String() + "\",\"version\":\"1.1\"}}")
 		request              = &http.Request{URL: &url.URL{Path: "/server/" + uuidGenerator().String()}}
 	)
-	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne, Host: "127.0.0.1", Port: "1024"}, &contexts.BackendAddress{Address: serverTwo, Host: "127.0.0.1", Port: "1025"}}, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: 1, Mode: contexts.SessionMode, Version: 1.1})
+	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne, Host: "127.0.0.1", Port: "1024"}, &contexts.BackendAddress{Address: serverTwo, Host: "127.0.0.1", Port: "1025"}}, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: 1, Mode: contexts.SessionMode, Version: "1.1"})
 
 	// when
 	GETHandler(urlRegex)(routeContexts, responseWriter, request)
@@ -166,7 +166,7 @@ func Test_Config_GET_With_Non_Existing_Object(testCtx *testing.T) {
 		expectedResponseBody = []byte("404 page not found\n")
 		request              = &http.Request{URL: &url.URL{Path: "/server/incorrect_uuid"}}
 	)
-	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: 1.1})
+	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: "1.1"})
 
 	// when
 	GETHandler(urlRegex)(routeContexts, responseWriter, request)
@@ -187,14 +187,14 @@ func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
 		server1, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1011")
 		server2, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _           = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
-		cluster1             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server1, Host: "127.0.0.1", Port: "1011"}}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 1, Mode: contexts.SessionMode, Version: 1.1}
-		cluster2             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2, Host: "127.0.0.1", Port: "1009"}}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: contexts.SessionMode, Version: 0.9}
-		cluster3             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3, Host: "127.0.0.1", Port: "1015"}}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 3, Mode: contexts.InstantMode, Version: 1.5}
+		cluster1             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server1, Host: "127.0.0.1", Port: "1011"}}, RequestCounter: -1, Uuid: uuid1, SessionTimeout: 1, Mode: contexts.SessionMode, Version: "1.1"}
+		cluster2             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2, Host: "127.0.0.1", Port: "1009"}}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: contexts.SessionMode, Version: "0.9"}
+		cluster3             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3, Host: "127.0.0.1", Port: "1015"}}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 3, Mode: contexts.InstantMode, Version: "1.5"}
 		routeContexts        = &contexts.Clusters{}
 		expectedResponseBody = []byte("[" +
-			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\"},\"uuid\":\"" + uuid3.String() + "\",\"version\":1.5}}," +
-			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid1.String() + "\",\"version\":1.1}}," +
-			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid2.String() + "\",\"version\":0.9}}" +
+			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\"},\"uuid\":\"" + uuid3.String() + "\",\"version\":\"1.5\"}}," +
+			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid1.String() + "\",\"version\":\"1.1\"}}," +
+			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid2.String() + "\",\"version\":\"0.9\"}}" +
 			"]")
 		request              = &http.Request{URL: &url.URL{Path: "/server/"}}
 	)
@@ -221,7 +221,7 @@ func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
 		request               = &http.Request{URL: &url.URL{Path: "/server/" + uuidGenerator().String()}}
 		expectedRouteContexts = &contexts.Clusters{ContextsByVersion: list.New(), ContextsByID: make(map[string]*contexts.Cluster)}
 	)
-	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: 1.1})
+	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: "1.1"})
 
 	// when
 	DeleteHandler(urlRegex)(routeContexts, responseWriter, request)
@@ -245,9 +245,9 @@ func Test_Config_DELETE_With_Existing_Object_Maintains_Order(testCtx *testing.T)
 		server2, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1009")
 		server3, _            = net.ResolveTCPAddr("tcp", "127.0.0.1:1015")
 		expectedRouteContexts = &contexts.Clusters{ContextsByVersion: list.New(), ContextsByID: make(map[string]*contexts.Cluster)}
-		cluster1              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server1}}, RequestCounter: -1, Uuid: uuid1, Version: 1.1}
-		cluster2              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2}}, RequestCounter: -1, Uuid: uuid2, Version: 0.9}
-		cluster3              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3}}, RequestCounter: -1, Uuid: uuid3, Version: 1.5}
+		cluster1              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server1}}, RequestCounter: -1, Uuid: uuid1, Version: "1.1"}
+		cluster2              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2}}, RequestCounter: -1, Uuid: uuid2, Version: "0.9"}
+		cluster3              = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3}}, RequestCounter: -1, Uuid: uuid3, Version: "1.5"}
 		actualRouteContexts   = &contexts.Clusters{}
 	)
 	actualRouteContexts.Add(cluster1)
@@ -280,8 +280,8 @@ func Test_Config_DELETE_With_Non_Existing_Object(testCtx *testing.T) {
 		request               = &http.Request{URL: &url.URL{Path: "/server/incorrect_uuid"}}
 		expectedRouteContexts = &contexts.Clusters{}
 	)
-	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: 1.1})
-	expectedRouteContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: 1.1})
+	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: "1.1"})
+	expectedRouteContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne}, &contexts.BackendAddress{Address: serverTwo}}, RequestCounter: -1, Uuid: uuidGenerator(), Version: "1.1"})
 
 	// when
 	DeleteHandler(urlRegex)(routeContexts, responseWriter, request)

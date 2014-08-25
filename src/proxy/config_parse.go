@@ -137,7 +137,7 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 			err                            error
 			connection 					   *net.TCPAddr
 			backendAddresses               []*contexts.BackendAddress
-			version                        float64
+			version                        string
 			sessionTimeout                 int64
 			percentageTransitionPerRequest float64
 			mode                           contexts.TransitionMode
@@ -168,9 +168,9 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 
 				versionConfig := clusterConfiguration["version"]
 				if versionConfig != nil {
-					version = versionConfig.(float64)
+					version = fmt.Sprintf("%s", versionConfig)
 				} else {
-					version = 0.0
+					version = "0.0"
 				}
 
 				upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]

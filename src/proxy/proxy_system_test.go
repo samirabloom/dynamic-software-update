@@ -58,7 +58,7 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Session_Cluster_Transition(
 
 	// given - new cluster
 	networkutil.Test_server(serverPortsClusterTwo, false)
-	uuidCookieVersion1_1, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.1}}")
+	uuidCookieVersion1_1, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.1\"}}")
 
 	// then - should update cluster configuration
 	assertion.AssertDeepEqual("Update Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
@@ -78,7 +78,7 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Session_Cluster_Transition(
 
 	// given - another new cluster
 	networkutil.Test_server(serverPortsCluster3re, false)
-	uuidCookieVersion1_5, _ := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.5}}")
+	uuidCookieVersion1_5, _ := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.5\"}}")
 
 	// then - should load balance requests against latest cluster
 	assertion.AssertDeepEqual("Latest Cluster When No UUID After Two New Clusters - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[0])+"\n", makeProxyRequest(proxyPort, "", "", ""))
@@ -121,14 +121,14 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Instant_Cluster_Transition(
 
 	// given - another new cluster - no upgrade defined
 	networkutil.Test_server(serverPortsClusterTwo, false)
-	uuidCookieVersion1_1, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.1}}")
+	uuidCookieVersion1_1, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.1\"}}")
 
 	// then - should update cluster configuration
 	assertion.AssertDeepEqual("Update Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
 
 	// given - another new cluster - instant update
 	networkutil.Test_server(serverPortsCluster3re, false)
-	uuidCookieVersion1_5, _ := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"mode\":\"INSTANT\"}, \"version\": 1.5}}")
+	uuidCookieVersion1_5, _ := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"mode\":\"INSTANT\"}, \"version\": \"1.5\"}}")
 
 	// then - should load balance requests against latest cluster
 	assertion.AssertDeepEqual("Latest Cluster When No UUID - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[0])+"\n", makeProxyRequest(proxyPort, "", "", ""))
@@ -164,7 +164,7 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 
 	// given - new cluster
 	networkutil.Test_server(serverPortsClusterTwo, false)
-	uuidCookieVersion1_1, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.1}}")
+	uuidCookieVersion1_1, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.1\"}}")
 
 	// then - should update cluster configuration
 	assertion.AssertDeepEqual("Update Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
@@ -176,7 +176,7 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 
 	// given - another new cluster
 	networkutil.Test_server(serverPortsCluster3re, false)
-	uuidCookieVersion1_5, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.5}}")
+	uuidCookieVersion1_5, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.5\"}}")
 
 	// then - should update cluster configuration
 	assertion.AssertDeepEqual("Update Cluster Again - Correct PUT Status", testCtx, "202 Accepted", putStatus)
@@ -226,7 +226,7 @@ func Test_Proxy_System_Test_Should_Maintain_Version_Order_With_Multiple_Clusters
 
 	// given - new cluster - version less then initial cluster i.e. version 0.9
 	networkutil.Test_server(serverPortsClusterTwo, false)
-	_, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 0.9}}")
+	_, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"0.9\"}}")
 
 	// then - should update cluster configuration
 	assertion.AssertDeepEqual("Update Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
@@ -238,7 +238,7 @@ func Test_Proxy_System_Test_Should_Maintain_Version_Order_With_Multiple_Clusters
 
 	// given - new cluster - version same as initial cluster i.e. version 1.0
 	networkutil.Test_server(serverPortsCluster3re, false)
-	_, putStatus = networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": 1.0}}")
+	_, putStatus = networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.0\"}}")
 
 	// then - should load balance requests against latest cluster
 	assertion.AssertDeepEqual("Latest Cluster When No UUID After Two New Clusters - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsCluster3re[0])+"\n", makeProxyRequest(proxyPort, "", "", ""))
@@ -261,7 +261,7 @@ func Test_Proxy_System_Test_Should_Route_Concurrently(testCtx *testing.T) {
 
 	// given - new concurrent cluster
 	networkutil.Test_server(serverPortsClusterTwo, true)
-	_, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"mode\":\"CONCURRENT\"}, \"version\": 1.1}}")
+	_, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"mode\":\"CONCURRENT\"}, \"version\": \"1.1\"}}")
 
 	// then - should update cluster configuration
 	assertion.AssertDeepEqual("Update Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)

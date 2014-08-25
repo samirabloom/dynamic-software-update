@@ -25,7 +25,7 @@ Usage of proxy:
                                                        {"hostname": "127.0.0.1", "port": 1034},
                                                        {"hostname": "127.0.0.1", "port": 1035}
                                                    ],
-                                                   "version": 1.0
+                                                   "version": "1.0"
                                                }
                                            }
 

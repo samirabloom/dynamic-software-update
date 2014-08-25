@@ -26,7 +26,7 @@ To add a new cluster make a PUT request to `/configuration/cluster`.
         "port": 0
       }
     ],
-    "version": 0,
+    "version": "0",
     "upgradeTransition": {
         "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
         "sessionTimeout": 0  // only supported for a `mode` value of "SESSION" 
@@ -101,7 +101,7 @@ For example the following JSON would set up a new cluster with two `servers` and
         "port": 1038
       }
     ], 
-    "version": 1.1, 
+    "version": "1.1", 
     "upgradeTransition": {
       "mode": "SESSION", 
       "sessionTimeout": 60
@@ -113,7 +113,7 @@ For example the following JSON would set up a new cluster with two `servers` and
 To send this request with `Curl` use the following syntax:
 
 ```bash
-curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": 1.1,"upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": "1.1","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 ```
 
 ##### Response
@@ -147,7 +147,7 @@ To get a single cluster configuration make a GET request to `/configuration/clus
       "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
     },
     "uuid": "",
-    "version": 0
+    "version": "0"
   }
 } 
 ```
@@ -181,7 +181,7 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
         "sessionTimeout": 60
     },
     "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e",
-    "version": 1.1
+    "version": "1.1"
   }
 }
   
@@ -221,7 +221,7 @@ To get all the cluster configurations make a GET request with no cluster id `/co
         "percentageTransitionPerRequest": 0  // only returned when `mode` is "GRADUAL"
       },
       "uuid": "",
-      "version": 0
+      "version": "0"
     }
   },
   {
@@ -240,7 +240,7 @@ To get all the cluster configurations make a GET request with no cluster id `/co
         "mode": "CONCURRENT"
       },
       "uuid": "",
-      "version": 0
+      "version": "0"
     }
   }
 ]
@@ -276,7 +276,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
         "sessionTimeout": 60
       }, 
       "uuid": "1f6a0854-2608-11e4-ab79-600308a8245e", 
-      "version": 1.1
+      "version": "1.1"
     }
   }, 
   {
@@ -295,7 +295,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
         "mode": "CONCURRENT"
       }, 
       "uuid": "01386f1f-2608-11e4-ab79-600308a8245e", 
-      "version": 1.1
+      "version": "1.1"
     }
   }, 
   {
@@ -314,7 +314,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
         "mode": "INSTANT"
       }, 
       "uuid": "ffde36ce-2607-11e4-ab79-600308a8245e", 
-      "version": 1
+      "version": "1"
     }
   }
 ]

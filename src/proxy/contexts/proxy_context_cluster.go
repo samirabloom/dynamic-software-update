@@ -99,7 +99,7 @@ type Cluster struct {
 	Uuid                            uuid.UUID
 	SessionTimeout                  int64
 	Mode                            TransitionMode
-	Version                         float64
+	Version                         string
 }
 
 func (cluster *Cluster) NextServer() (*tcp.TCPConnAndName, error) {
