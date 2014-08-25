@@ -24,6 +24,11 @@ pkg
 *.zip
 mods
 
+# third party APIs #
+####################
+src/github.com
+src/code.google.com
+
 # Logs and databases #
 ######################
 *.log
