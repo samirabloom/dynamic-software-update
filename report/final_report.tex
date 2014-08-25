@@ -507,10 +507,10 @@ The following technology stack has been chosen for the dynamic software update s
 
 \clearpage
 \section{Implementation} \label{Implementation}
-To produce an efficient and reliable dynamic software update system several versions of a load balancing proxy was implemented using Go programming language as described in this section. 
+To produce an efficient and reliable dynamic software update system several versions of a dynamic software update proxy was implemented using Go programming language as described in this section. 
 
 \subsection{Message Based Proxy Using ZeroMQ}
-The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}. The ZeroMQ load balancing HTTP reverse proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
+The first proxy developed to support dynamic software update was a HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}. The proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
  
 \begin{list}{-}{}
   \itemsep0em
@@ -530,21 +530,41 @@ The first proxy developed to support dynamic software update was a HTTP reverse 
 \end{figure}
 
 \subsubsection{Performance Evaluation}
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chnuked HTTP requests and content switching load balancing can be achieved using raw Go sockets. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems such as nanomsg were not explored for developing a content switching load balancer. 
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chunked HTTP requests and a simpler approach would be to use raw Go sockets directly. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems such as nanomsg were not explored for developing a content switching load balancer. 
 
-In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update and an alternative one with no messaging system was sought to be developed. 
+In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update instead an alternative approach using raw sockets was developed. 
 
 \subsection{Socket Based Proxies}
-As it was explained in the previous section, a messaging system-based proxy was not the correct choice to create a reliable and efficient dynamic software update system. This section describes different approaches used to develop load balancing HTTP proxies using raw Go sockets with no messaging systems.   
+As it was explained in the previous section using a messaging system was not the correct choice to develop a dynamic software update proxy. This section describes two different approaches using raw Go sockets.   
 
 \subsubsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in figure xxx. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections (Figure xxx). In the case of a new connection, the listener creates a dedicated TCP connection between the client and the server. The new connection receives HTTP requests in a  \textit{Read} loop and distributes them across a cluster of HTTP services (Figure xx).  
+The first version of the socket based proxy was designed as demonstrated in figure \ref{prototype}. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections. 
+
+When a new connection is received, a TCP connection between the client and the proxy is created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component creates another connection between the proxy and the server.  The HTTP request is then written to the server inside a \textit{Write} loop.
+
+An identical but opposite set of \textit{Read} and \textit{Write} loops are created to return the response from the server back to the client.
+
+%\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.31]{content_counting_proxy}
+  \caption{Socket Based Proxy With Content Counting}
+  \label{prototype}
+\end{figure}
 
 \noindent\\
 \textbf{Content Counting}\\
-The content counting proxy uses HTTP format to detect the end of requests and responses \ref{HTTP}. Detecting the end of requests/responses is essential in order to reliably close Go sockets such as read and write and terminating TCP connections. 
+The content counting proxy uses the HTTP format to detect the end of each request and response \ref{HTTP}. Detecting the end of requests/responses is used to close connection sockets when the complete message has been transmitted.   For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the \textit{Read} loop ends after the first read containing all the headers. However, for other HTTP functions such as POST or PUT and for HTTP responses, the Transfer-Encoding and Content-Length headers were used (Section \ref{HTTP}). 
 
-For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the  \textit{Read} loop ends after the first read. However, for other HTTP functions such as POST or PUT and for HTTP responses, headers such as Transfer-Encoding and Content-Length were used (Section \ref{HTTP}). When the size of message body is defined by Content-Length header, proxy searches  in requests/responses for the first CRLF, which defines the end of headers and start of the message body (Section \ref{HTTP}), and it counts the length of read data after the first CRLF. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates. However, when the Content-Length header is not set and the Transfer-Encoding header is defined as "chunked", HTTP messages are sent to the recipient in a series of chunks. At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n' as a line separator, therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the content counting proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
+\noindent\\
+\textbf{Content-Length}
+
+When Content-Length header is provided the size of message body is known upfront.  The proxy then counts the number of bytes in each chunk.  The first chunk can contain both headers and part of the the message body so the CRLF CRLF is used to detect where the message body starts (Section \ref{HTTP}). For each subsequent chunk the content length is counted. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates.
+
+\noindent\\
+\textbf{Transfer-Encoding: "chunked"}
+
+However, when no Content-Length header is provided the size of the message body is not known upfront.  Instead the Transfer-Encoding header with a value of "chunked" indicates the message body is chunked and a zero chunk will mark the end of the message body.  At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n', therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the content counting proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
 
 
 \noindent\\
@@ -553,7 +573,7 @@ To evaluate the performance of the aforementioned proxy a HTTP benchmarking tool
 
 
 
-HTTP Requests were fired to an example Go web service either directly or via the implemented content counting proxy. The processed time for each request was calculated using both \textit{wrk} and \textit{ab}. The following terminal outputs are an example of results obtained by \textit{wrk} when the benchmark was run for 2 minutes, using 400 threads and keeping 400 HTTP connections open.  \\  
+HTTP Requests were fired to an example Go web service either directly or via the implemented content counting proxy. The processed time for each request was calculated using \textit{wrk}. The following terminal outputs are an example of results obtained by \textit{wrk} when the benchmark was run for 2 minutes, using 400 threads and keeping 400 HTTP connections open.  \\  
 
 \noindent
 \underline{Direct HTTP Requests To Go Server}
@@ -596,30 +616,27 @@ Transfer/sec:     32.58KB
 
 
 \noindent \\
-The above results show that significant socket errors such as read and write errors occur when the requests are sent to the Go server via proxy. The socket errors consequently reduce the number of requests processed by the server (\textit{e.g.} from 7123.93/second to  215.24/second), the amount of data transferred (\textit{e.g.} from 1.05MB/second to 32.58KB/second) and finally increases the time taken for each request to be processed (average time increased from 56.33ms to 381.51ms). The results obtained from \textit{wrk} were consistent and similar results were obtained when \textit{ab} was used for evaluations. Detailed analysis of the proxy showed that the content counting proxy is not persistantly detecting the end of messages, therefore, the read and write sockets do not close appropriately which results in socket errors. 
+The above results show that significant socket errors such as read and write errors occur when the requests are sent to the Go server via proxy. The socket errors consequently reduce the number of requests processed by the server (\textit{e.g.} from 7123.93/second to  215.24/second), the amount of data transferred (\textit{e.g.} from 1.05MB/second to 32.58KB/second) and finally increases the time taken for each request to be processed (average time increased from 56.33ms to 381.51ms). Detailed analysis of the proxy showed that the content counting proxy is not consistently detecting the end of messages, therefore, the read and write sockets do not close appropriately which results in socket errors. 
 
-In conclusion, the significant overhead and socket errors associated with the implemented proxy lead us think that a proxy with content counting is not suitable for supporting reliable and efficient dynamic software updates. Therefore, another version of the socket based proxy was developed as described in the next section.
+In conclusion, the significant overhead and socket errors associated with the implemented proxy lead to the conclusion that a proxy with content counting is not suitable for supporting reliable and efficient dynamic software updates. Therefore, another version of the socket based proxy was developed as described in the next section.
 
 \subsubsection{Socket Based Staged Proxy With End Of File Signal}\label{staged}
-The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in figure \ref{proxy}. The SBD  approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
+The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in figure \ref{proxy}. The SBD approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
 
 \begin{list}{-}{}
   \itemsep0em
-  \item\textbf{Encapsulation And Separation Of Concerns} - resulted in separating logic for each functional area into a single component. This creates a simple and isolated code that focuses on one topic, making it clear and easier to understand. Additionally, encapsulation and separation of concerns simplified testing by allowing each test to be focused on one specific area. For example, multiple tests could be done on reading from a socket and dealing with different errors and situation that can occur to insure a reliable reading process unlike the unreliable  \textit{Read} loop described in section \ref{Content-Counting}. 
+  \item\textbf{Encapsulation And Separation Of Concerns} - resulted in separating logic for each functional area into a single component. This creates a simple and isolated code that focuses on one topic, making it clear and easier to understand. Additionally, encapsulation and separation of concerns simplified testing by allowing each test to be focused on one specific area. For example, multiple tests could be writing focusing on reading from a socket and dealing with different errors and situations that can occur.  This approach increase overall reliability in comparison to the \ref{Content-Counting} proxy. 
 
-  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP load balancing proxy shown in figure \ref{proxy} the  \textit{Read} and  \textit{write} stages were first developed. That was followed by development of the  \textit{Complete} and  \textit{Route} stages respectively and then the rest of proxy was implemented. This approach also simplified testing of the proxy for the following reasons:
+  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP dynamic update proxy shown in figure \ref{proxy} the \textit{Read} and \textit{write} stages were first developed. That was followed by development of the  \textit{Complete} and \textit{Route} stages respectively and then the rest of proxy was implemented. This approach also simplified testing of the proxy for the following reasons:
 \begin{list}{-}{}
   \itemsep0em
-  \item allowing the code-under-test to be isolated by mocking all dependencies 
-  
-  \item allowing the mocking of different error situations that would be impossible to test without mocking dependencies
-  
+  \item allowing the code-under-test to be isolated by mocking all dependencies   
+  \item allowing the mocking of different error situations that would be impossible to test without mocking dependencies  
 \end{list}
-
 \end{list}
 
 \noindent
-To prevent socket errors occured in the content counting proxy \ref{Content-Counting}, the staged HTTP load balancing proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\\
+To prevent the socket errors that occured in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\\
 
 \begin{figure}[!ht]
   \centering
@@ -631,7 +648,7 @@ To prevent socket errors occured in the content counting proxy \ref{Content-Coun
 
 \noindent
 \textbf{Accept Loop} \\
- \textit{Accept} loop accepts incoming HTTP connections on a listener and creates a  \textit{Forward pipe} for each request.\\  
+ \textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.\\  
 
 \noindent
 \textbf{Forward Pipe} \\
@@ -654,7 +671,7 @@ type ChunkContext struct {
 
 \noindent\\
 \textbf{Read Stage} \\
-\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available)  occurs, \textit{Read} treats this condition as an error and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests/responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.\\
+\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests/responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.\\
 
 \noindent
 \textbf{Route Stage} \\
