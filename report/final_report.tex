@@ -485,7 +485,7 @@ In all four mechanisms the behavior of the updated software will be automaticall
 %\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.62]{proposed_solution}
+     \includegraphics[scale=0.31]{proposed_solution}
   \caption{Component interactions within the proposed  dynamic software update system}
   \label{proposed_solution}
 \end{figure}
@@ -497,11 +497,11 @@ The following technology stack has been chosen for the dynamic software update s
 
 \begin{list}{-}{}
   \itemsep0em
-  \item Go \footnote{\url{http://golang.org/}} programming language for building proxy \textit{i.e.} the content switching load balancer. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C\textsuperscript{++} and Java was considered to use. However, C\textsuperscript{++} was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go and it does not give the programmer control over the memory management.  
+  \item Go \footnote{\url{http://golang.org/}} programming language for building the proxy \textit{i.e.} the content switching load balancer. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C\textsuperscript{++} and Java was considered. However, C\textsuperscript{++} was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go, does not give the programmer control over the memory management and is therefore not likely to be as efficient as Go.
     
-  \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer
+  \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
   
-  \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware  
+  \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
 
     \end{list}
 
@@ -524,7 +524,7 @@ The first proxy developed to support dynamic software update was a HTTP reverse 
 %\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.62]{prototype}
+     \includegraphics[scale=0.31]{prototype}
   \caption{ZeroMQ, Go and Docker Prototype}
   \label{prototype}
 \end{figure}
@@ -623,7 +623,7 @@ To prevent socket errors occured in the content counting proxy \ref{Content-Coun
 
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.60]{proxy}
+     \includegraphics[scale=0.30]{proxy}
   \caption{Socket Based Staged Proxy Design Supporting Dynamic Software Update}
   \label{proxy}
 \end{figure}
