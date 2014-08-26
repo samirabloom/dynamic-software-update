@@ -31,6 +31,7 @@ func (router *SessionTransitionRouter) 	route(clusters *contexts.Clusters, conte
 		cluster = clusters.ContextsByID[requestUUID.String()]
 	}
 
+	// add uuid cookie for cluster with expiry time
 	context.RoutingContext = &contexts.RoutingContext{Headers: make([]string, 1)}
 	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s; Expires=%s;\n", cluster.Uuid.String(), time.Now().Add(time.Second*time.Duration(cluster.SessionTimeout)).Format(time.RFC1123))
 

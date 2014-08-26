@@ -39,7 +39,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 
 	// then
 	assertion.AssertDeepEqual("Correct PUT Status", testCtx, "200 OK", getStatus)
-	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1024},{\"hostname\":\"127.0.0.1\",\"port\":1025}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\""+uuidResponse+"\",\"version\":\"1.1\"}}", jsonResponse)
+	assertion.AssertDeepEqual("Correct GET Response", testCtx, "{\n    \"cluster\": {\n        \"servers\": [\n            {\n                \"hostname\": \"127.0.0.1\",\n                \"port\": 1024\n            },\n            {\n                \"hostname\": \"127.0.0.1\",\n                \"port\": 1025\n            }\n        ],\n        \"upgradeTransition\": {\n            \"mode\": \"SESSION\",\n            \"sessionTimeout\": 1\n        },\n        \"uuid\": \"" + uuidResponse + "\",\n        \"version\": \"1.1\"\n    }\n}", jsonResponse)
 
 
 

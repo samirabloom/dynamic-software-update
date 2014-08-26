@@ -88,7 +88,7 @@ func GETHandler(urlRegex *regexp.Regexp) func(*contexts.Clusters, http.ResponseW
 		if len(uuidValue) > 0 {
 			routeContext := routeContexts.Get(uuid.Parse(uuidValue))
 			if routeContext != nil {
-				jsonBody, err = json.Marshal(serialiseCluster(routeContext));
+				jsonBody, err = json.MarshalIndent(serialiseCluster(routeContext), "", "    ");
 			} else {
 				http.NotFound(writer, request)
 				return
@@ -100,7 +100,7 @@ func GETHandler(urlRegex *regexp.Regexp) func(*contexts.Clusters, http.ResponseW
 				routeContextsJSON[index] = serialiseCluster(element.Value.(*contexts.Cluster))
 				index++
 			}
-			jsonBody, err = json.Marshal(routeContextsJSON);
+			jsonBody, err = json.MarshalIndent(routeContextsJSON, "", "    ");
 		}
 
 		if err == nil {

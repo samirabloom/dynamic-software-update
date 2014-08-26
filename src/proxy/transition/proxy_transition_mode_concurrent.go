@@ -3,6 +3,7 @@ package transition
 import (
 	"proxy/tcp"
 	"proxy/contexts"
+	"fmt"
 )
 
 var ConcurrentMode contexts.TransitionMode = RegisterTransitionMode(contexts.ConcurrentMode, &ConcurrentTransitionRouter{});
@@ -18,6 +19,9 @@ func (router *ConcurrentTransitionRouter) route(clusters *contexts.Clusters, con
 
 	// create dual connection
 	latestVersionConnection, err = cluster.NextServer()
+	// add uuid cookie for cluster
+	context.RoutingContext = &contexts.RoutingContext{Headers: make([]string, 1)}
+	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", cluster.Uuid.String())
 	if err == nil {
 		previousVersionConnection, err = clusters.GetByVersionOrder(1).NextServer()
 		context.To = &tcp.DualTCPConnection{

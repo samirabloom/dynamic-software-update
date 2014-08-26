@@ -168,7 +168,12 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 
 				versionConfig := clusterConfiguration["version"]
 				if versionConfig != nil {
-					version = fmt.Sprintf("%s", versionConfig)
+					floatVersion, isFloat := versionConfig.(float64)
+					if isFloat {
+						version = fmt.Sprintf("%.2f", floatVersion)
+					} else {
+						version = fmt.Sprintf("%s", versionConfig)
+					}
 				} else {
 					version = "0.0"
 				}

@@ -118,7 +118,7 @@ func (cluster *Cluster) NextServer() (*tcp.TCPConnAndName, error) {
 }
 
 func (cluster *Cluster) String() string {
-	var result string = fmt.Sprintf("version: %.2f [", cluster.Version)
+	var result string = fmt.Sprintf("version: %s [", cluster.Version)
 	for index, address := range cluster.BackendAddresses {
 		if index > 0 {
 			result += ", "

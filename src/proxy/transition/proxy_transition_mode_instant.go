@@ -13,6 +13,7 @@ func (router *InstantTransitionRouter) route(clusters *contexts.Clusters, contex
 	cluster := clusters.GetByVersionOrder(0)
 
 	context.To, err = cluster.NextServer()
+	// add uuid cookie for cluster
 	context.RoutingContext = &contexts.RoutingContext{Headers: make([]string, 1)}
 	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", cluster.Uuid.String())
 

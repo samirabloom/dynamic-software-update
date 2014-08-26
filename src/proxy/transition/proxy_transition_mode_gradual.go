@@ -51,6 +51,7 @@ func (router *GradualTransitionRouter) route(clusters *contexts.Clusters, contex
 		}
 	}
 
+	// add uuid and transition cookies
 	context.RoutingContext = &contexts.RoutingContext{Headers: make([]string, 2)}
 	context.RoutingContext.Headers[0] = fmt.Sprintf("Set-Cookie: dynsoftup=%s;\n", cluster.Uuid.String())
 	context.RoutingContext.Headers[1] = fmt.Sprintf("Set-Cookie: transition=%s;\n", transitionUUID.String())

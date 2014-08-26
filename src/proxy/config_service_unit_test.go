@@ -142,7 +142,7 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 		serverTwo, _         = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
 		routeContexts        = &contexts.Clusters{}
 		responseWriter       = mock.NewMockResponseWriter()
-		expectedResponseBody = []byte("{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1024},{\"hostname\":\"127.0.0.1\",\"port\":1025}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuidValue.String() + "\",\"version\":\"1.1\"}}")
+		expectedResponseBody = []byte("{\n    \"cluster\": {\n        \"servers\": [\n            {\n                \"hostname\": \"127.0.0.1\",\n                \"port\": 1024\n            },\n            {\n                \"hostname\": \"127.0.0.1\",\n                \"port\": 1025\n            }\n        ],\n        \"upgradeTransition\": {\n            \"mode\": \"SESSION\",\n            \"sessionTimeout\": 1\n        },\n        \"uuid\": \"" + uuidValue.String() + "\",\n        \"version\": \"1.1\"\n    }\n}")
 		request              = &http.Request{URL: &url.URL{Path: "/server/" + uuidGenerator().String()}}
 	)
 	routeContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne, Host: "127.0.0.1", Port: "1024"}, &contexts.BackendAddress{Address: serverTwo, Host: "127.0.0.1", Port: "1025"}}, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: 1, Mode: contexts.SessionMode, Version: "1.1"})
@@ -152,7 +152,7 @@ func Test_Config_GET_With_Existing_Object(testCtx *testing.T) {
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusOK, responseWriter.ResponseCodes[0])
-	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, string(expectedResponseBody), string(responseWriter.WrittenBodyBytes[0]))
 }
 
 func Test_Config_GET_With_Non_Existing_Object(testCtx *testing.T) {
@@ -191,10 +191,10 @@ func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
 		cluster2             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server2, Host: "127.0.0.1", Port: "1009"}}, RequestCounter: -1, Uuid: uuid2, SessionTimeout: 2, Mode: contexts.SessionMode, Version: "0.9"}
 		cluster3             = &contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: server3, Host: "127.0.0.1", Port: "1015"}}, RequestCounter: -1, Uuid: uuid3, SessionTimeout: 3, Mode: contexts.InstantMode, Version: "1.5"}
 		routeContexts        = &contexts.Clusters{}
-		expectedResponseBody = []byte("[" +
-			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1015}],\"upgradeTransition\":{\"mode\":\"INSTANT\"},\"uuid\":\"" + uuid3.String() + "\",\"version\":\"1.5\"}}," +
-			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1011}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":1},\"uuid\":\"" + uuid1.String() + "\",\"version\":\"1.1\"}}," +
-			"{\"cluster\":{\"servers\":[{\"hostname\":\"127.0.0.1\",\"port\":1009}],\"upgradeTransition\":{\"mode\":\"SESSION\",\"sessionTimeout\":2},\"uuid\":\"" + uuid2.String() + "\",\"version\":\"0.9\"}}" +
+		expectedResponseBody = []byte("[\n    " +
+			"{\n        \"cluster\": {\n            \"servers\": [\n                {\n                    \"hostname\": \"127.0.0.1\",\n                    \"port\": 1015\n                }\n            ],\n            \"upgradeTransition\": {\n                \"mode\": \"INSTANT\"\n            },\n            \"uuid\": \"" + uuid3.String() + "\",\n            \"version\": \"1.5\"\n        }\n    },\n    " +
+			"{\n        \"cluster\": {\n            \"servers\": [\n                {\n                    \"hostname\": \"127.0.0.1\",\n                    \"port\": 1011\n                }\n            ],\n            \"upgradeTransition\": {\n                \"mode\": \"SESSION\",\n                \"sessionTimeout\": 1\n            },\n            \"uuid\": \"" + uuid1.String() + "\",\n            \"version\": \"1.1\"\n        }\n    },\n    " +
+			"{\n        \"cluster\": {\n            \"servers\": [\n                {\n                    \"hostname\": \"127.0.0.1\",\n                    \"port\": 1009\n                }\n            ],\n            \"upgradeTransition\": {\n                \"mode\": \"SESSION\",\n                \"sessionTimeout\": 2\n            },\n            \"uuid\": \"" + uuid2.String() + "\",\n            \"version\": \"0.9\"\n        }\n    }\n" +
 			"]")
 		request              = &http.Request{URL: &url.URL{Path: "/server/"}}
 	)
@@ -207,7 +207,7 @@ func Test_Config_GET_With_No_UUID(testCtx *testing.T) {
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusOK, responseWriter.ResponseCodes[0])
-	assertion.AssertDeepEqual("Correct Response Body", testCtx, expectedResponseBody, responseWriter.WrittenBodyBytes[0])
+	assertion.AssertDeepEqual("Correct Response Body", testCtx, string(expectedResponseBody), string(responseWriter.WrittenBodyBytes[0]))
 }
 
 func Test_Config_DELETE_With_Existing_Object(testCtx *testing.T) {
