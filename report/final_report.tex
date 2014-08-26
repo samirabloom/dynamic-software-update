@@ -30,14 +30,12 @@
 
 \lstdefinelanguage{json}{
     basicstyle=\ttfamily\small,
-%    xleftmargin=71 
-%    numbers=left,
-  %  numberstyle=\scriptsize,
-  %  stepnumber=1,
-%    numbersep=8pt,
-%    showstringspaces=false,
     breaklines=true,
-%   frame=lines,
+    frame=tblr,
+    framesep=3pt,
+    framerule=0pt,
+    frameround=tttt, 
+    rulecolor=\color{background},
     backgroundcolor=\color{background},
     literate=
      *{0}{{{\color{numb}0}}}{1}
@@ -60,29 +58,17 @@
 
 % end of jason config
 
+\lstset{escapeinside={<@}{@>}}
 \lstdefinelanguage{terminal}{
     basicstyle=\ttfamily\small,
     breaklines=true,
-%   frame=lines,
+    frame=tblr,
+    framesep=3pt,
+    framerule=0pt,
+    frameround=tttt, 
+    rulecolor=\color{background},
     backgroundcolor=\color{background},
 }
-
-\lstdefinestyle{TerminalInputStyle}{
-  language=terminal,
-  basicstyle=\small\sffamily,
-  frame=lines,
-  frameround=tttt
-%  numbers=left,
-  numberstyle=\tiny,
-  numbersep=3pt,
-  frame=tb,
-  frameround =ht|fiht|fiht|fiht|fi 
-  columns=fullflexible,
-  backgroundcolor=\color{yellow!20},
-  linewidth=0.9\linewidth,
-  xleftmargin=0.1\linewidth
-}
-
 
 \usepackage{caption}
 \usepackage{subcaption}
@@ -395,7 +381,7 @@ HTTP is the foundation protocol of the World Wide Web and it is widely used betw
 \subsection{HTTP Requests} \label{Requests}
 A HTTP request has the following format:\bigskip
 
-\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=2.25in]
+\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=3.25in]
 <Request> ::=	<Request-Line>
 		<general-headers>
 		|<request-headers>
@@ -435,7 +421,7 @@ Accept: */*
 \subsection{HTTP Responses}
 A HTTP response has the following format:\bigskip
 
-\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=2.25in]
+\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=3.25in]
 <Response> ::=	<Status-Line>
 		<general-headers>
 		|<response-headers>
@@ -697,51 +683,51 @@ type ChunkContext struct {
 \textbf{Read Stage} 
 
 \noindent
-\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests/responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.\bigskip
+\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests / responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.  In addition the socket based proxy handles socket interaction efficiently by only closing sockets when the other end of the connection closes its socket.  This avoids overhead associated with creating new TCP connections such as the TCP 3-way handshake and TCP slow start.\bigskip
 
 \noindent
 \textbf{Route Stage} 
 
 \noindent
-\textit{Route} stage has different functionality in the \textit{Forward Pipe}, \textit{i.e.} processing requests and \textit{Back pipe}, \textit{i.e.} processing responses. \bigskip  
+\textit{Route} stage has different functionality in the \textit{Forward Pipe}, for processing requests and \textit{Back pipe}, for processing responses. \bigskip  
 
 \noindent
-\underline{Routing in \textit{Forward Pipe}} - When a new request arrives in the \textit{Route} stage, the \textit{Route} checks the upgrade transition mode of the most updated cluster and forwards the request chunks to the correct instance of the cluster accordingly. Currently the proxy supports four different upgrade transition modes; INSTANT, SESSION, GRADUAL and CONCURRENT (Section \ref{modes}). The \textit{Route} stage distributes the requests using the modes according to the rules summarized below: 
+\underline{Routing in \textit{Forward Pipe}} - When a new request arrives in the \textit{Route} stage the upgrade transition mode of the cluster with the highest version determines how the request is forwarded. Currently the proxy supports four different upgrade transition modes; INSTANT, SESSION, GRADUAL and CONCURRENT (Section \ref{modes}). The \textit{Route} stage distributes the requests using the modes according to the rules summarized below: 
 
 \begin{list}{-}{}
   \itemsep0em
-  \item{\textbf{INSTANT}} - If the upgrade transition mode in the most updated version of the cluster is defined as INSTANT, \textit{Route} stage forwards the requests to the latest cluster. If no upgrade transition is defined in the cluster configuration, INSTANT mode will be the default mode (Section \ref{PUT}).\medskip
+  \item{\textbf{INSTANT}} - for INSTANT mode requests are always forwarded to the cluster with the highest version.  INSTANT is the default mode so if no upgrade transition for a cluster then it is given INSTANT mode (Section \ref{PUT}).  In INSTANT mode if the latest cluster fails it will be removed from the set of available clusters resulting in all client requests being routed to the previous version.\medskip
   
-  \item{\textbf{SESSION}} -  When upgrade transition mode of a cluster is defined as SESSION, the proxy will generate a  session cookie with a configured expiry time for each request forwarded to that cluster. The session cookie will be added as a header to the HTTP response using  Set-Cookie. If the request arrived in \textit{Route} stage has an assigned cookie and it is not timed out, \textit{Route} stage forwards the request to the cluster associated with the cookie, otherwise requests will be forwarded according to the upgrade transition mode of the cluster with highest version number. If the cluster configuration has an upgrade transition but the mode is not defined, SESSION mode will be assigned to that cluster.\medskip
+  \item{\textbf{SESSION}} -  in SESSION mode the proxy generates a  session cookie with a configured expiry time for each request forwarded to that cluster. The session cookie is added as a Set-Cookie header to all HTTP responses. An HTTP client will return the cookie as long as it has not expired.  This ensures that a client will remain on the same cluster version until it has not interacted with the proxy for >= the cookie expiry period.  If a request has a cookie (\textit{i.e.} it has not timed out) the \textit{Route} stage forwards the request to the cluster associated with the uuid in the cookie.  If no cookie is found requests will be forwarded according to the upgrade transition mode of the cluster with highest version number.  In SESSION mode if the latest cluster fails it will be removed from the set of available clusters resulting in all client requests being routed to the previous version.\medskip
   
-   \item{\textbf{GRADUAL}} - When a client connects to a cluster with GRADUAL transition mode, a transition cookie will be added to responses associated to that client. The transition cookie refers to a percentage determining when the client should switch to the new version of the system. As an example, if the transition percentage is 15\%, this means that the \textit{Route} stag forwards the first 15\% of the requests to the old version before forwarding the requests to the new version.\medskip
+   \item{\textbf{GRADUAL}} - an additional transition cookie is used to control GRADUAL mode routing.  The transition cookies is added to each response but as it does not have an expiry time each client should keep the same cookie. The transition cookie is used to randomly allocate each client a number between 0 and 100. This number is then used to determine which clients should be routed to the latest cluster version.   If the randomly allocate value is <= to a defined threshold then it will be routed to the latest cluster version.   As more request are correctly processed by the latest cluster version the threshold is continually increase.  This results in a gradual increase in the percentage of clients being forward to the latest cluster version.  As an example, if the threshold is is 15 then 15\% of random clients will used the latest cluster version.  Once a client is assigned a random value the client will keep that value therefore once a client starts to use the latest cluster is will remain on the latest cluster.  However, if the latest cluster fails it will be removed from the set of available clusters resulting in all client requests being routed to the previous version. \medskip
    
-   \item{\textbf{CONCURRENT}} - When the upgrade transition mode is set to CONCURRENT, the \textit{Route} stage forwards requests concurrently to the two most updated cluster versions.        
+   \item{\textbf{CONCURRENT}} - for CONCURRENT mode, the \textit{Route} stage forwards requests concurrently to the two most updated cluster versions.  If the latest cluster version correctly accepts a new TCP connection and responds with an HTTP status code that is not in the 5xx range, for server errors, then the client will receive a response from the latest cluster.  If the latest cluster does not accept a new TCP connection or responds with an HTTP status code in the 5xx range then the client will receive a response from the previous cluster version.
 \end{list}
 
 \noindent
-If the user decide to delete the updated version of the cluster or an error occurs while routing the requests to a cluster, the request will be forwarded to the older version of the cluster. If routing to all versions failed, the process stops and returns an appropriate error to the client. If the request is successfully routed, a \textit{Back pipe} will be created by \textit{Route} stage for processing responses.   
+If the latest cluster version is deleted using the REST API or an error occurs while routing the requests to the latest cluster version, the request will be automatically routed to the previous cluster version. If routing to all versions fails, the proxy returns an an empty response and outputs an appropriate error to the terminal indicating that no clusters are available. If the request is successfully routed, a \textit{Back pipe} will be created by \textit{Route} stage for processing responses.   
 
 \noindent\\
-\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses differently according to the configuration of the cluster which the response is originated from. If the upgrade transition mode in the cluster is defined as INSTANT, the response will be sent to the client with no further modifications. If the mode is set to SESSION or GRADUAL, \textit{Route} stage sets the session cookie or the transition cookie to the response respectively before forwarding it to the client. Finally, if the mode is defined as CONCURRENT, the response from each cluster version will be parsed and HTTP headers such as status code, Transfer-Encoding, Content-Length and the response delays are compared. If the characteristics  of the response from the new cluster is identical to the old one, only the response from the new version will be send to the client. Otherwise the response from the new version will be dropped and the old version's response will be used.\bigskip
+\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses by adding the appropriate cookie headers.  In INSTANT mode a cluster uuid cookie is added with no expiry time.  In SESSION mode a cluster uuid cookie is added with the configured expiry time.  In GRADUAL mode two cookies with no expiry time are added for the cluster uuid and the randomly assigned transition value.  Finally, if the mode is defined as CONCURRENT, the response status code is checked if the response from the latest version is in the 5xx range that response will be dropped and the response from the previous version will be returned.  Also in CONCURRENT mode a cluster uuid cookie is added with no expiry time.\bigskip
 
 \noindent
 \textbf{Write Stage} 
 
 \noindent
-\textit{Write} stage writes received requests/responses to an underlying data stream. The writing process stops if any errors such as \textit{ErrShortWrite} encountered while writing to a socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client. \bigskip
+\textit{Write} stage writes requests / responses to output stream for the appropriate socket. The writing process stops if any errors such as \textit{ErrShortWrite} are encountered while writing to the socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client. \bigskip
 
 \noindent
 \textbf{Complete Stage}
 
 \noindent 
-\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. This proved to be essential for generating a fast and reliable dynamic software update system.\bigskip 
+\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended.\bigskip 
 
 \noindent
 \textbf{Back Pipe}
 
 \noindent
-\textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
+\textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for responses and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
 \subsection{Proxy Installation}
 The proxy can be installed in two simple steps as follows:
@@ -905,19 +891,18 @@ why didn't use fleet system and coreOS? \bigskip
 \subsection{Testing}
 As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\bigskip
 
-XXXXXXXX A FIGURE FOR TESTING XXXXXXXXXXXXXXXXXXXXXXXXXXXXX\bigskip
+XXXXXXXX ADD TEST LEVELS DIAGRAM  XXXXXXXXXXXXXXXXXXX\bigskip
 
 \subsubsection{Unit Testing}
-These tests focus on low level checking of the functionality of each proxy component. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component and be mocked. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.\bigskip    
+These tests focus on low level checking of the functionality of each proxy component or function. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component or function and therefore supported mocking of all dependencies. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.\bigskip    
 
-XXXXXXXX MAYBE ADD A SCREEN SHOT XXXXXXXXXXXXXXXXXXX
+XXXXXXXX ADD COVERAGE REPORT XXXXXXXXXXXXXXXXXXX\bigskip
 
 \subsubsection{Integration Testing}
-These testes focus on the integration between different components of the REST API and the poxy. To ensure each component of the REST API integrates correctly, tests were designed to send simultaneous PUT, GET and DELETE requests to the REST server and the responses were analyzed. In addition, integration of different stages of the proxy was tested using different scenarios such as testing the behavior of when the proxy is configured for SESSION or CONCURRENT upgrade or when a cluster configuration is deleted from the proxy.
+These tests focus on the integration between different components of the REST API and the proxy. To ensure each component of the REST API integrates correctly, tests were designed to send simultaneous PUT, GET and DELETE requests to the REST server and the responses were asserted. In addition, integration of different stages of the proxy was tested using different scenarios such as testing the behavior of when the proxy is configured for SESSION or CONCURRENT upgrade modes or when a cluster configuration is deleted from the proxy.
 
 \subsubsection{System Testing}
-The aim of these tests is to check that the components of the dynamic software update system including proxy and the REST API work together. System tests were written to cover complete user scenarios. The tests are executed by starting the proxy with an initial configuration. Then HTTP requests is fired at the proxy and the test checks that the proxy is distributing the requests to the cluster of servers correctly. Afterwards, the four different upgrade modes described in section \ref{modes} are applied via the REST API and the behavior of the  proxy is tested. Finally, the proxy is tested when clusters are deleted from the proxy.   
-
+The aim of these tests is to check that all components of the dynamic software update system including proxy and the REST API work together. System tests were written to cover complete user scenarios. The tests were executed by starting the proxy with an initial cluster configuration. The cluster configuration was then extended using the REST API.  HTTP requests were then sent to the proxy to confirm that the proxy routed the requests to the correct clusters.  Other scenarios also included deleting cluster configuration using the REST API and confirming the routing continued to behave as expected.
 
 \clearpage
 \section{Evaluation}
@@ -963,7 +948,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 \subsection{Qualitative Analysis}
 \subsubsection{Load Balancing Feature}
-To test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster running in a Docker container (Figure \ref{couchbase_cluster}). The cluster contained three nodes running Couchbase server 2.5.1. Couchbase servers were chosen for load balancing evaluation since they are designed to be clustered from a single machine to very large scale deployments. The following section summarizes steps executed for load balancing evaluation. 
+To test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster with each node running in a separate Docker container.  As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase was chosen for the load balancing evaluation since it forms a cluster, which all share data, therefore each server returns an identical response to a given request. The following section summarizes the steps executed for load balancing evaluation. 
 
 \begin{figure}[!ht]
   \centering
@@ -973,7 +958,30 @@ To test the load balancing feature of the dynamic software update proxy, HTTP re
 \end{figure}
 
 \noindent
-\textit{Proxy Configuration} - the proxy was configured to direct HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) as shown in the following terminal output. Since the nodes are running within a Docker container, their IP address has been exposed and therefore, the IP address seen in figure \ref{couchbase_cluster} is different from the one proxy is configured with xxxxxxxx also TALK ABOUT THE 1 HR TIME DIFFERENCE IN THE PROXY WITH WORLDPRESS AND COACHBASE\bigskip
+Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each docker container for each Couchbase node used a different internal ip address on the 172.16.0.0 - 172.31.255.255 private range as reserved by IANA \footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However as the port has been mapped from each docker container to the virtual machine each node can be address on a different port of the virtual machine.\bigskip
+
+\begin{lstlisting}[language=terminal]
+<@\textcolor{blue}{\# run first node}@>
+docker run --name node_one -i -t -d -p 8091:8091 \
+		-e CLUSTER_INIT_USER=Administrator \
+		-e CLUSTER_INIT_PASSWORD=password \
+		-e SAMPLE_BUCKETS=\"beer-sample\" couchbase
+
+<@\textcolor{blue}{\# run second node}@>
+docker run --name node_two -i -t -d -p 9091:8091 \
+		--link node_one:couchbase \
+		-e CLUSTER_INIT_USER=Administrator \
+		-e CLUSTER_INIT_PASSWORD=password couchbase
+
+<@\textcolor{blue}{\# run third node}@>
+docker run --name node_three -i -t -d -p 10091:8091 \
+		--link node_one:couchbase \
+		-e CLUSTER_INIT_USER=Administrator \
+		-e CLUSTER_INIT_PASSWORD=password couchbase
+\end{lstlisting}
+
+\noindent\\
+\textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) using round-robin loading balancing.   The proxy echos back the start-up configuration as shown in the following terminal output.\bigskip
 \begin{lstlisting}[language=terminal]
 2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
 {
@@ -1002,37 +1010,62 @@ Proxy{
 }
 \end{lstlisting}
 \noindent\\
-\textit{HTTP Requests} - simultaneous HTTP requests were sent to the running proxy using cURL as follows:
+\textit{HTTP Requests} - simultaneous HTTP requests were sent to the running proxy using cURL \footnote{\label{curl_link} \url{http://curl.haxx.se/}}.
 \begin{lstlisting}[language=terminal]
-curl -v http://127.0.0.1:1235
+curl -v \ 
+http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
 \end{lstlisting}
 
 \noindent\\
-\textit{Load balancing proxy} - analysis of the proxy showed that the HTTP requests were successfully distributed to the the cluster of Couchbase servers by proxy in a round-robin order. The following terminal output demonstrates the network address of each server that the proxy has received the response from. 
+\textit{Load balancing proxy} - when the proxy is configured to run with INFO level logging it prints log entries to the terminal that demonstrate the HTTP requests are being distributed between each node in the cluster using round-robin order.
+
+%2014/08/26 21:53:44.763483 proxy_context_cluster.go:115:     
+%   INFO - Serving response 0 from ip: [127.0.0.1] port: [1036] 
+%   version: [9.20] mode: [GRADUAL] 
+%   transition counter [100.00] percentage transition per request [50.00]
 
 \begin{lstlisting}[language=terminal]
 2014/08/24 19:50:06.560279 proxy_context_cluster.go:104:     
-INFO - Serving response 0 from ip: [192.168.50.10] port: [8091] 
+   INFO - Serving response 0 from ip: [192.168.50.10] port: [8091] 
+   version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:52:34.576970 proxy_context_cluster.go:104:     
-INFO - Serving response 1 from ip: [192.168.50.10] port: [9091] 
+   INFO - Serving response 1 from ip: [192.168.50.10] port: [9091] 
+   version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:00.452493 proxy_context_cluster.go:104:     
-INFO - Serving response 2 from ip: [192.168.50.10] port: [10091] 
+   INFO - Serving response 2 from ip: [192.168.50.10] port: [10091] 
+   version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:07.619419 proxy_context_cluster.go:104:     
-INFO - Serving response 3 from ip: [192.168.50.10] port: [8091] 
+   INFO - Serving response 3 from ip: [192.168.50.10] port: [8091] 
+   version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:09.137194 proxy_context_cluster.go:104:     
-INFO - Serving response 4 from ip: [192.168.50.10] port: [9091] 
+   INFO - Serving response 4 from ip: [192.168.50.10] port: [9091] 
+   version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:19.655983 proxy_context_cluster.go:104:     
-INFO - Serving response 5 from ip: [192.168.50.10] port: [10091] 
+   INFO - Serving response 5 from ip: [192.168.50.10] port: [10091] 
+   version: [2.5] mode: [INSTANT]
 \end{lstlisting}
 
 \noindent\\
-\textit{HTTP Responses} - the following is an example HTTP response received from servers in the Couchbase cluster via proxy: 
+\textit{HTTP Requests \& Responses} - the following shows an HTTP request and the associated HTTP response received via the proxy from a node in the Couchbase cluster.  Note the time zone used inside the docker container was set to UTC (Coordinated Universal Time) where as the time zone on the computer running the proxy was set to BST (British Summer Time) therefore terminal log output was 1 hour ahead of the Date header in the responses from Couchbase.
 
+\noindent\\
+\textit{Request}
+\begin{lstlisting}[language=terminal]
+GET /pools/default/buckets/beer-sample HTTP/1.1
+Authorization: Basic QWRtaW5pc3RyYXRvcjpwYXNzd29yZA==
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+<@\\@>
+\end{lstlisting}
+
+\noindent\\
+\textit{Request}
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
 Set-Cookie: dynsoftup=369f06ad-2bbf-11e4-9034-28cfe9158b63;
@@ -1203,7 +1236,6 @@ A cluster id is returned representing the new cluster entity that has been added
 For example the following JSON would set up a new cluster with two 'servers' and 'SESSION' upgrade transition:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
-
 {
   "cluster": {
     "servers": [
@@ -1228,14 +1260,16 @@ For example the following JSON would set up a new cluster with two 'servers' and
 \noindent \\
 To send this request with 'cURL' use the following syntax:\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
-curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": "1.1","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+\begin{lstlisting}[language=terminal,firstnumber=1]
+curl \
+http://127.0.0.1:9090/configuration/cluster -X PUT \
+--data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": "1.1","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 \end{lstlisting}
 
 \noindent \\
 \textbf{Response}
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal,firstnumber=1]
 HTTP/1.1 202 Accepted
 Date: Sat, 16 Aug 2014 19:54:21 GMT
 Content-Length: 36
@@ -1282,8 +1316,10 @@ To get a single cluster configuration make a GET request to \textit{/configurati
 \noindent 
 For example the following 'curl' request would get the cluster configuration with cluster id '1dcbb083-257f-11e4-bcbc-600308a8245e':\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
-curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a8245e -X GET
+\begin{lstlisting}[language=terminal,firstnumber=1]
+curl \
+http://127.0.0.1:9090/configuration/cluster/\
+1dcbb083-257f-11e4-bcbc-600308a8245e -X GET
 \end{lstlisting}
 
 \noindent \\
@@ -1316,13 +1352,32 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
 \noindent \\
 For example the response when using curl is as follows:\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal,firstnumber=1]
 HTTP/1.1 200 OK
 Date: Sat, 16 Aug 2014 20:37:42 GMT
 Content-Length: 206
 Content-Type: text/plain; charset=utf-8
 
-{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"016ca2cd-2585-11e4-ab5c-600308a8245e","version":"1.1"}}
+{
+    "cluster": {
+        "servers": [
+            {
+                "hostname": "127.0.0.1", 
+                "port": 1036
+            }, 
+            {
+                "hostname": "127.0.0.1", 
+                "port": 1038
+            }
+        ], 
+        "upgradeTransition": {
+            "mode": "SESSION", 
+            "sessionTimeout": 60
+        }, 
+        "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e", 
+        "version": "1.1"
+    }
+}
 \end{lstlisting}
 
 \noindent \\
@@ -1334,7 +1389,6 @@ To get all the cluster configurations make a GET request with no cluster id \tex
 \textbf{Response Body}
 
 \begin{lstlisting}[language=json,firstnumber=1]
-
 [
   {
     "cluster": {
@@ -1384,7 +1438,7 @@ To get all the cluster configurations make a GET request with no cluster id \tex
 \noindent 
 For example the following 'curl' request would get a list of all cluster configurations\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal,firstnumber=1]
 curl http://127.0.0.1:9090/configuration/cluster/ -X GET
 '''
 ##### Response
@@ -1455,13 +1509,72 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
 \noindent \\
 For example the response when using curl is as follows:\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal,firstnumber=1]
 HTTP/1.1 200 OK
 Date: Sun, 17 Aug 2014 12:28:55 GMT
 Content-Length: 583
 Content-Type: text/plain; charset=utf-8
  
-[{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1036},{"hostname":"127.0.0.1","port":1038}],"upgradeTransition":{"mode":"SESSION","sessionTimeout":60},"uuid":"1f6a0854-2608-11e4-ab79-600308a8245e","version":"1.1"}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1037},{"hostname":"127.0.0.1","port":1039}],"upgradeTransition":{"mode":"CONCURRENT"},"uuid":"01386f1f-2608-11e4-ab79-600308a8245e","version":"1.1"}},{"cluster":{"servers":[{"hostname":"127.0.0.1","port":1034},{"hostname":"127.0.0.1","port":1035}],"upgradeTransition":{"mode":"INSTANT"},"uuid":"ffde36ce-2607-11e4-ab79-600308a8245e","version":"1"}}]
+[
+    {
+        "cluster": {
+            "servers": [
+                {
+                    "hostname": "127.0.0.1", 
+                    "port": 1036
+                }, 
+                {
+                    "hostname": "127.0.0.1", 
+                    "port": 1038
+                }
+            ], 
+            "upgradeTransition": {
+                "mode": "SESSION", 
+                "sessionTimeout": 60
+            }, 
+            "uuid": "1f6a0854-2608-11e4-ab79-600308a8245e", 
+            "version": "1.1"
+        }
+    }, 
+    {
+        "cluster": {
+            "servers": [
+                {
+                    "hostname": "127.0.0.1", 
+                    "port": 1037
+                }, 
+                {
+                    "hostname": "127.0.0.1", 
+                    "port": 1039
+                }
+            ], 
+            "upgradeTransition": {
+                "mode": "CONCURRENT"
+            }, 
+            "uuid": "01386f1f-2608-11e4-ab79-600308a8245e", 
+            "version": "1.1"
+        }
+    }, 
+    {
+        "cluster": {
+            "servers": [
+                {
+                    "hostname": "127.0.0.1", 
+                    "port": 1034
+                }, 
+                {
+                    "hostname": "127.0.0.1", 
+                    "port": 1035
+                }
+            ], 
+            "upgradeTransition": {
+                "mode": "INSTANT"
+            }, 
+            "uuid": "ffde36ce-2607-11e4-ab79-600308a8245e", 
+            "version": "1"
+        }
+    }
+]
 \end{lstlisting}
 
 \noindent \\
@@ -1477,10 +1590,12 @@ To delete a single cluster configuration make a DELETE request to \textit{/confi
 \textbf{Request}
 
 \noindent 
-For example the following 'curl' request would delete the cluster configuration with id '1dcbb083-257f-11e4-bcbc-600308a8245e':\bigskip
+For example the following cURL request would delete the cluster configuration with id '1dcbb083-257f-11e4-bcbc-600308a8245e':\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
-curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a8245e -X DELETE
+\begin{lstlisting}[language=terminal,firstnumber=1]
+curl \
+http://127.0.0.1:9090/configuration/cluster/\
+1dcbb083-257f-11e4-bcbc-600308a8245e -X DELETE
 \end{lstlisting}
 
 \noindent \\
@@ -1489,7 +1604,7 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
 \noindent 
 For example the response when using curl is as follows:\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal,firstnumber=1]
 HTTP/1.1 202 Accepted
 Date: Sat, 16 Aug 2014 21:28:38 GMT
 Content-Length: 0
