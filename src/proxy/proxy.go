@@ -68,7 +68,11 @@ func CLI() {
 }
 
 func (proxy *Proxy) String() string {
-	return fmt.Sprintf("Proxy{\n\tProxy Address:      %s\n\tConfigService Port: %v\n\tProxied Servers:    %s\n}", proxy.frontendAddr, proxy.configServicePort, proxy.clusters)
+	proxyAddress := proxy.frontendAddr.String()
+	if len(proxy.frontendAddr.IP) == 0 {
+		proxyAddress = fmt.Sprintf("0.0.0.0:%d", proxy.frontendAddr.Port)
+	}
+	return fmt.Sprintf("Proxy{\n\tProxy Address:      %s\n\tConfigService Port: %v\n\tProxied Servers:    %s\n}", proxyAddress, proxy.configServicePort, proxy.clusters)
 }
 
 func (proxy *Proxy) Start(blocking bool) {
