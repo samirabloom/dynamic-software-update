@@ -12,10 +12,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "docker" do |docker|
     docker.vm.hostname = "docker"
     docker.vm.network "private_network", ip: "192.168.50.5"
-    docker.vm.network "forwarded_port", guest: 1234, host: 1234
-    docker.vm.network "forwarded_port", guest: 1025, host: 1025
-    docker.vm.network "forwarded_port", guest: 1026, host: 1026
-    docker.vm.network "forwarded_port", guest: 1027, host: 1027
+    #docker.vm.network "forwarded_port", guest: 1234, host: 1234
+    #docker.vm.network "forwarded_port", guest: 1025, host: 1025
+    #docker.vm.network "forwarded_port", guest: 1026, host: 1026
+    #docker.vm.network "forwarded_port", guest: 1027, host: 1027
     docker.vm.provision :shell, :path => "install_docker.sh"
     docker.vm.provider :virtualbox do |vb|
       vb.memory = 2048

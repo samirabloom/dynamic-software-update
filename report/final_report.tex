@@ -4,8 +4,9 @@
 \usepackage[nodayofweek]{datetime}
 \longdate
 \setcounter{tocdepth}{4}
-\setcounter{secnumdepth}{4}   
-
+\setcounter{secnumdepth}{4}
+\setlength{\headheight}{14pt}   
+%\smallskip, \medskip or \bigskip
 
 \usepackage{enumitem}
 \usepackage{hyperref}
@@ -130,7 +131,7 @@ In safety critical industries such as air traffic control or healthcare reliable
 All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive. In addition, no existing system or technique is considered robust enough to be used widely for fully automated continuous delivery of upgrades into production.
  
 {\color{red}This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.}\\  
-\colorbox{yellow}{update summary paragraph this still refers to literature review}
+\colorbox{yellow}{This paragraph will be updated when the report is finished}
 
 \clearpage
 \section{Overview}
@@ -157,11 +158,11 @@ System availability is the percentage of time the system is available to users. 
 
 Once faults, such as bugs and security vulnerabilities, have been detected software must be updated to remove these faults. Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP) \footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.
 
-Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, updating or patching software is not risk free as stated by Fred Brooks in The Mythical Man-Month. \\
+Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, updating or patching software is not risk free as stated by Fred Brooks in The Mythical Man-Month.\bigskip
 
 \noindent\textit{ "The fundamental problem with program maintenance is that fixing a defect has a substantial (20-50\%) chance of introducing another. So the whole process is two steps forward and one step back"}  
 
-\hfill \textbf{Fred Brooks, Turing Award Winner (1999) -  The Mythical Man-Month} \\
+\hfill \textbf{Fred Brooks, Turing Award Winner (1999) -  The Mythical Man-Month}\bigskip
 
 Software update typically requires restarting of the system that is to be updated. This can happen in two ways either the system is stopped, the update is applied and the system is restarted. Alternatively the update is applied while the system is still running and then the application is restarted. In the second scenario the system's binary code on persistent storage (\textit{e.g.} disk) is updated while the system is running in memory before it is restarted and the new binary code is loaded into memory \cite{Java}. 
 
@@ -246,13 +247,14 @@ As described in section \ref{Architectures} clustering supports dynamic software
 
 Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system \footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
 
-The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.
+The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.\bigskip
 
 
 \noindent
-\textbf{Hypervisor Virtualization}\\
+\textbf{Hypervisor Virtualization}
+
 \noindent
-Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware \footnote{\url{http://www.vmware.com/}} or VirtualBox \footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\\
+Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware \footnote{\url{http://www.vmware.com/}} or VirtualBox \footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\bigskip
 
 
 %\vspace{-8pt}
@@ -268,7 +270,7 @@ Operating system virtualization that is called hypervisor virtualization allows 
 \textbf{Container Virtualization} 
 
 \noindent
-Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2) \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \\
+Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2) \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \bigskip
 
 
 %\vspace{-8pt}
@@ -311,11 +313,11 @@ Control groups is used to provide:
   \end{list}
 
 \noindent
-Chroots, also know as “chroot jails”, are used to change the apparent root directory in the filesystem ensuring applications cannot view files and folders outside of the chroot.
+Chroots, also know as "chroot jails", are used to change the apparent root directory in the filesystem ensuring applications cannot view files and folders outside of the chroot.
 
 AppArmor and SELinux are used to improve security and ensure that applications cannot break out of the LXC \cite{security}.
 
-LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system \footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \\
+LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system \footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \bigskip
 
 %\textsuperscript{\ref{LCX}}
 
@@ -331,7 +333,7 @@ In addition,  Docker provides a scripting language for creating containers and i
 
 Docker also provides a registry of containers called the Docker Index. It allows containers to be publicly shared. The index contains images created by committing a filesystem layer and images created by the Docker Index build system using a Dockerfile \cite{docker2}.
    
-With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately \footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \\
+With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately \footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \bigskip
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -362,12 +364,12 @@ More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the sa
 
 
 \subsection{Hypertext Transfer Protocol} \label{HTTP}
-The Hypertext Transfer Protocol (HTTP) is a, stateless application-level protocol for distributed hypertext and hypermedia information systems supporting the interlinking of text and multimedia.  Hypertext, a term coined by Ted Nelson \cite{hypertext}, is text which is not constrained to be linear and contains links to other texts.  Hypermedia is an extension to hypertext adding support for multimedia, such as images, video and sound.
+The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed hypertext and hypermedia information systems supporting the interlinking of text and multimedia.  Hypertext, a term coined by Ted Nelson \cite{hypertext}, is text which is not constrained to be linear and contains links to other texts.  Hypermedia is an extension to hypertext adding support for multimedia, such as images, video and sound.
 
-HTTP is the foundation protocol of the World Wide Web and it is widely used between different systems that need to exchange text and multimedia.  The most common HTTP relationships are client - server and server - server.  The most common client - server relationship is when a web browser (or user agent) browses a web site on a web server.  A server - server relationship is when a web service requires information from another web service, a common example is OAuth \footnote{\label{OAuth} \url{http://oauth.net/}} where a web service can act on behalf of a user by interacting with an OAuth web service provider.  An important feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred this is often referred to REpresentational State Transfer (REST).
+HTTP is the foundation protocol of the World Wide Web and it is widely used between different systems that need to exchange text and multimedia.  The most common HTTP relationships are client - server and server - server.  The most common client - server relationship is when a web browser (or user agent) browses a web site on a web server.  A server - server relationship is when a web service requires information from another web service, a common example is OAuth \footnote{\label{OAuth} \url{http://oauth.net/}} where a web service can act on behalf of a user by interacting with an OAuth web service provider.  An important feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred. This is often referred to REpresentational State Transfer (REST).
 
 \subsection{HTTP Requests} \label{Requests}
-An HTTP request has the following format:\\
+A HTTP request has the following format:\bigskip
 
 \begin{lstlisting}[language=json]
 <Request> ::=	<Request-Line>
@@ -394,7 +396,7 @@ An HTTP request has the following format:\\
 \textit{CRLF CRLF} indicating a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n') is used to separate the header section from the body.
 
 \noindent\\
-\textit{<opt-message-body>} contains the and data transmitted in the body of the request.
+\textit{<opt-message-body>} contains the data transmitted in the body of the request.
 
 \noindent\\
 For example the following shows a simple HTTP request:
@@ -407,7 +409,7 @@ Accept: */*
 \end{lstlisting} 
 
 \subsection{HTTP Responses}
-An HTTP response has the following format:\\
+A HTTP response has the following format:\bigskip
 
 \begin{lstlisting}[language=json]
 <Response> ::=	<Status-Line>
@@ -422,17 +424,17 @@ An HTTP response has the following format:\\
 
 \begin{list}{-}{}
 \itemsep0em
-\item \textbf{1xx Informational} - request received continue processing i.e. 101 Switching Protocols
-\item \textbf{2xx Success} - request was successfully received, understood, and accepted i.e. 202 Accepted
-\item \textbf{3xx Redirection} - client actions required to complete the request i.e. 301 Moved Permanently
-\item \textbf{4xx Client Error} - request contains a syntax error or cannot be fulfilled i.e. 400 Bad Request
-\item \textbf{5xx Server Error} - server failed to fulfill the request i.e. 500 Internal Server Error
+\item \textbf{1xx Informational} - request received continue processing \textit{e.g.} 101 Switching Protocols
+\item \textbf{2xx Success} - request was successfully received, understood, and accepted \textit{e.g.} 202 Accepted
+\item \textbf{3xx Redirection} - client actions required to complete the request \textit{e.g.} 301 Moved Permanently
+\item \textbf{4xx Client Error} - request contains a syntax error or cannot be fulfilled \textit{e.g.} 400 Bad Request
+\item \textbf{5xx Server Error} - server failed to fulfill the request \textit{e.g.} 500 Internal Server Error
 \end{list}
 \noindent
 \textit{<general-headers>} provide general control information and they can be included in both requests and responses. \textit{Transfer-Encoding} is an example of general headers which defines what (if any) type of transformation has been applied to the message body for its safe transfer between the sender and the recipient. For example if \textit{Transfer-Encoding} is defined as "chunked", the data will be sent to the recipient in a series of "chunks". 
 
 \noindent\\
-\textit{<response-headers>} allow the server to pass additional information about the response, and about the server itself, to the client. 
+\textit{<response-headers>} allow the server to pass additional information about the response and about the server itself to the client. 
 
 \noindent\\
 \textit{<entity-headers>} define optional and required meta-information about the response body and if the response has no body, provide information about the resource returned in the response. For example, \textit{Content-Length} header indicates the size of the response body. 
@@ -441,7 +443,7 @@ An HTTP response has the following format:\\
 \textit{CRLF CRLF} indicating a carriage return ('\textbackslash r') followed by a line feed ('\textbackslash n') is used to separate the header section from the body. 
 
 \noindent\\
-\textit{<opt-message-body>} contains the and data transmitted in the body of the response.
+\textit{<opt-message-body>} contains the data transmitted in the body of the response.
 
 \noindent\\
 For example the following shows a simple HTTP response:
@@ -467,20 +469,20 @@ To manage the ever-increasing size of E-commerce and web related services large-
 
 In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
 
-\subsection{Proposed Dynamic Software Update System}\label{modes} 
+\subsection{Dynamic Software Update System}\label{modes} 
 To support reliable dynamic software updates a simple lightweight system has been developed suitable for continuous delivery into production. The system runs the updated version concurrently with previous stable versions. The updated version is monitored automatically and if the updated version behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
 
-Four mechanisms will be supported to enable different reliable update strategies depending on the specific software requirements.
+Four mechanisms are supported to enable different reliable update strategies depending on the specific software requirements.
 
-\underline{Rapid Update} -  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+\underline{Instant Update} -  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
 
-\underline{New Session Update} - This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Rapid Update, the non-updated version will however remain running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
+\underline{Session Update} - This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Instant Update, the non-updated version however remains running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
 
-\underline{Long Term Update} - This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version will incrementally receive a greater percentage of requests.
+\underline{Gradual Update} - This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version incrementally receives a greater percentage of requests.
 
-\underline{Multi-Version Update} - In this mechanism the updated and non-updated versions will run concurrently and process identical requests.  In this strategy, both the old and the new versions will handle all requests and the characteristics of each response will be compared to ensure the update is behaving correctly.
+\underline{Concurrent Update} - In this mechanism the updated and non-updated versions run concurrently and process identical requests.  In this strategy, both the old and the new versions handle all requests and the characteristics of each response is compared to ensure the update is behaving correctly.
 
-In all four mechanisms the behavior of the updated software will be automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system.  The focus for the proposed solution will be on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\\\\
+In all four mechanisms the behavior of the updated software is automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system. The focus for the dynamic software update system is on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\bigskip
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -492,7 +494,7 @@ In all four mechanisms the behavior of the updated software will be automaticall
 %\vspace{-18pt}
 
 
-\subsection{Proposed Technology Stack} 
+\subsection{Technology Stack} 
 The following technology stack has been chosen for the dynamic software update system:
 
 \begin{list}{-}{}
@@ -525,7 +527,7 @@ The first proxy developed to support dynamic software update was a HTTP reverse 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.31]{prototype}
-  \caption{ZeroMQ, Go and Docker Prototype}
+  \caption{Message Based Proxy Using ZeroMQ}
   \label{prototype}
 \end{figure}
 
@@ -538,7 +540,7 @@ In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support
 As it was explained in the previous section using a messaging system was not the correct choice to develop a dynamic software update proxy. This section describes two different approaches using raw Go sockets.   
 
 \subsubsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in figure \ref{prototype}. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections. 
+The first version of the socket based proxy was designed as demonstrated in figure \ref{content_counting_proxy}. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections. 
 
 When a new connection is received, a TCP connection between the client and the proxy is created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component creates another connection between the proxy and the server.  The HTTP request is then written to the server inside a \textit{Write} loop.
 
@@ -549,7 +551,7 @@ An identical but opposite set of \textit{Read} and \textit{Write} loops are crea
   \centering
      \includegraphics[scale=0.31]{content_counting_proxy}
   \caption{Socket Based Proxy With Content Counting}
-  \label{prototype}
+  \label{content_counting_proxy}
 \end{figure}
 
 \noindent\\
@@ -559,12 +561,12 @@ The content counting proxy uses the HTTP format to detect the end of each reques
 \noindent\\
 \textbf{Content-Length}
 
-When Content-Length header is provided the size of message body is known upfront.  The proxy then counts the number of bytes in each chunk.  The first chunk can contain both headers and part of the the message body so the CRLF CRLF is used to detect where the message body starts (Section \ref{HTTP}). For each subsequent chunk the content length is counted. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates.
+When Content-Length header is provided, the size of message body is known upfront.  The proxy then counts the number of bytes in each chunk.  The first chunk can contain both headers and part of the the message body so the CRLF CRLF is used to detect where the message body starts (Section \ref{HTTP}). For each subsequent chunk the content length is counted. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates.
 
 \noindent\\
 \textbf{Transfer-Encoding: "chunked"}
 
-However, when no Content-Length header is provided the size of the message body is not known upfront.  Instead the Transfer-Encoding header with a value of "chunked" indicates the message body is chunked and a zero chunk will mark the end of the message body.  At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n', therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the content counting proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
+However, when no Content-Length header is provided, the size of the message body is not known upfront. Instead the Transfer-Encoding header with a value of "chunked" indicates the message body is chunked and a zero chunk will mark the end of the message body.  At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n', therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the content counting proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
 
 
 \noindent\\
@@ -573,7 +575,7 @@ To evaluate the performance of the aforementioned proxy a HTTP benchmarking tool
 
 
 
-HTTP Requests were fired to an example Go web service either directly or via the implemented content counting proxy. The processed time for each request was calculated using \textit{wrk}. The following terminal outputs are an example of results obtained by \textit{wrk} when the benchmark was run for 2 minutes, using 400 threads and keeping 400 HTTP connections open.  \\  
+HTTP Requests were fired to an example Go web service either directly or via the implemented content counting proxy. The processed time for each request was calculated using \textit{wrk}. The following terminal outputs are an example of results obtained by \textit{wrk} when the benchmark was run for 2 minutes, using 400 threads and keeping 400 HTTP connections open. \bigskip  
 
 \noindent
 \underline{Direct HTTP Requests To Go Server}
@@ -627,16 +629,11 @@ The final version of the socket based proxy was implemented using a Stage Based 
   \itemsep0em
   \item\textbf{Encapsulation And Separation Of Concerns} - resulted in separating logic for each functional area into a single component. This creates a simple and isolated code that focuses on one topic, making it clear and easier to understand. Additionally, encapsulation and separation of concerns simplified testing by allowing each test to be focused on one specific area. For example, multiple tests could be writing focusing on reading from a socket and dealing with different errors and situations that can occur.  This approach increase overall reliability in comparison to the \ref{Content-Counting} proxy. 
 
-  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP dynamic update proxy shown in figure \ref{proxy} the \textit{Read} and \textit{write} stages were first developed. That was followed by development of the  \textit{Complete} and \textit{Route} stages respectively and then the rest of proxy was implemented. This approach also simplified testing of the proxy for the following reasons:
-\begin{list}{-}{}
-  \itemsep0em
-  \item allowing the code-under-test to be isolated by mocking all dependencies   
-  \item allowing the mocking of different error situations that would be impossible to test without mocking dependencies  
-\end{list}
+  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP dynamic update proxy shown in figure \ref{proxy} the \textit{Read} and \textit{write} stages were first developed. That was followed by development of the  \textit{Complete} and \textit{Route} stages respectively and then the rest of proxy was implemented. Furthermore, This approach also simplified testing of the proxy by allowing the code-under-test to be isolated by mocking all dependencies and permitting the mocking of different error situations that would be impossible to test without mocking dependencies  
 \end{list}
 
 \noindent
-To prevent the socket errors that occured in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\\
+To prevent the socket errors that occured in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\bigskip
 
 \begin{figure}[!ht]
   \centering
@@ -647,12 +644,16 @@ To prevent the socket errors that occured in the content counting proxy \ref{Con
 % \vspace{-18pt}
 
 \noindent
-\textbf{Accept Loop} \\
- \textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.\\  
+\textbf{Accept Loop} 
 
 \noindent
-\textbf{Forward Pipe} \\
-\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \\ 
+\textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.\bigskip 
+
+\noindent
+\textbf{Forward Pipe} 
+
+\noindent
+\textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \bigskip  
 
 \begin{lstlisting}[language=json,firstnumber=1]
 type ChunkContext struct {
@@ -670,50 +671,54 @@ type ChunkContext struct {
 \end{lstlisting} 
 
 \noindent\\
-\textbf{Read Stage} \\
-\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests/responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.\\
+\textbf{Read Stage} 
 
 \noindent
-\textbf{Route Stage} \\
-\textit{Route} stage has different functionality in the \textit{Forward Pipe}, \textit{i.e.} processing requests and \textit{Back pipe}, \textit{i.e.} processing responses. \\   
+\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests/responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.\bigskip
+
+\noindent
+\textbf{Route Stage} 
+
+\noindent
+\textit{Route} stage has different functionality in the \textit{Forward Pipe}, \textit{i.e.} processing requests and \textit{Back pipe}, \textit{i.e.} processing responses. \bigskip  
 
 \noindent
 \underline{Routing in \textit{Forward Pipe}} - When a new request arrives in the \textit{Route} stage, the \textit{Route} checks the upgrade transition mode of the most updated cluster and forwards the request chunks to the correct instance of the cluster accordingly. Currently the proxy supports four different upgrade transition modes; INSTANT, SESSION, GRADUAL and CONCURRENT (Section \ref{modes}). The \textit{Route} stage distributes the requests using the modes according to the rules summarized below: 
 
 \begin{list}{-}{}
   \itemsep0em
-  \item{\textbf{INSTANT}} - If the upgrade transition mode in the most updated version of the cluster is defined as INSTANT, \textit{Route} stage forwards the requests to the latest cluster. If no upgrade transition is defined in the cluster configuration, INSTANT mode will be the default mode (Section \ref{PUT}).\\
+  \item{\textbf{INSTANT}} - If the upgrade transition mode in the most updated version of the cluster is defined as INSTANT, \textit{Route} stage forwards the requests to the latest cluster. If no upgrade transition is defined in the cluster configuration, INSTANT mode will be the default mode (Section \ref{PUT}).\medskip
   
-  \item{\textbf{SESSION}} -  When upgrade transition mode of a cluster is defined as SESSION, the proxy will generate a  session cookie with a configured expiry time for each request forwarded to that cluster. The session cookie will be added as a header to the HTTP response using  Set-Cookie. If the request arrived in \textit{Route} stage has an assigned cookie and it is not timed out, \textit{Route} stage forwards the request to the cluster associated with the cookie, otherwise requests will be forwarded according to the upgrade transition mode of the cluster with highest version number. If the cluster configuration has an upgrade transition but the mode is not defined, SESSION mode will be assigned to that cluster. \\
+  \item{\textbf{SESSION}} -  When upgrade transition mode of a cluster is defined as SESSION, the proxy will generate a  session cookie with a configured expiry time for each request forwarded to that cluster. The session cookie will be added as a header to the HTTP response using  Set-Cookie. If the request arrived in \textit{Route} stage has an assigned cookie and it is not timed out, \textit{Route} stage forwards the request to the cluster associated with the cookie, otherwise requests will be forwarded according to the upgrade transition mode of the cluster with highest version number. If the cluster configuration has an upgrade transition but the mode is not defined, SESSION mode will be assigned to that cluster.\medskip
   
-   \item{\textbf{GRADUAL}} - When a client connects to a cluster with GRADUAL transition mode, a transition cookie will be added to responses associated to that client. The transition cookie refers to a percentage determining when the client should switch to the new version of the system. As an example, if the transition percentage is 15\%, this means that the \textit{Route} stag forwards the first 15\% of the requests to the old version before forwarding the requests to the new version.\\
+   \item{\textbf{GRADUAL}} - When a client connects to a cluster with GRADUAL transition mode, a transition cookie will be added to responses associated to that client. The transition cookie refers to a percentage determining when the client should switch to the new version of the system. As an example, if the transition percentage is 15\%, this means that the \textit{Route} stag forwards the first 15\% of the requests to the old version before forwarding the requests to the new version.\medskip
    
    \item{\textbf{CONCURRENT}} - When the upgrade transition mode is set to CONCURRENT, the \textit{Route} stage forwards requests concurrently to the two most updated cluster versions.        
 \end{list}
+
 \noindent
 If the user decide to delete the updated version of the cluster or an error occurs while routing the requests to a cluster, the request will be forwarded to the older version of the cluster. If routing to all versions failed, the process stops and returns an appropriate error to the client. If the request is successfully routed, a \textit{Back pipe} will be created by \textit{Route} stage for processing responses.   
 
 \noindent\\
-\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses differently according to the configuration of the cluster which the response is originated from. If the upgrade transition mode in the cluster is defined as INSTANT, the response will be sent to the client with no further modifications. If the mode is set to SESSION or GRADUAL, \textit{Route} stage sets the session cookie or the transition cookie to the response respectively before forwarding it to the client. Finally, if the mode is defined as CONCURRENT, the response from each cluster version will be parsed and HTTP headers such as status code, Transfer-Encoding, Content-Length and the response delays are compared. If the characteristics  of the response from the new cluster is identical to the old one, only the response from the new version will be send to the client. Otherwise the response from the new version will be dropped and the old version's response will be used.\\
+\underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses differently according to the configuration of the cluster which the response is originated from. If the upgrade transition mode in the cluster is defined as INSTANT, the response will be sent to the client with no further modifications. If the mode is set to SESSION or GRADUAL, \textit{Route} stage sets the session cookie or the transition cookie to the response respectively before forwarding it to the client. Finally, if the mode is defined as CONCURRENT, the response from each cluster version will be parsed and HTTP headers such as status code, Transfer-Encoding, Content-Length and the response delays are compared. If the characteristics  of the response from the new cluster is identical to the old one, only the response from the new version will be send to the client. Otherwise the response from the new version will be dropped and the old version's response will be used.\bigskip
 
 \noindent
-\textbf{Write Stage} \\
-\textit{Write} stage writes received requests/responses to an underlying data stream. The writing process stops if any errors such as \textit{ErrShortWrite} encountered while writing to a socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client.   \\
+\textbf{Write Stage} 
 
 \noindent
-\textbf{Complete Stage}\\ 
-\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. This proved to be essential for generating a fast and reliable dynamic software update system.\\ 
+\textit{Write} stage writes received requests/responses to an underlying data stream. The writing process stops if any errors such as \textit{ErrShortWrite} encountered while writing to a socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client. \bigskip
 
 \noindent
-\textbf{Back Pipe}\\
-\textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.\\\\
+\textbf{Complete Stage}
 
-xxxxxxxx\\\\
-HAVE A DIAGRAM ABOUT COMPARING ALL THREE PROXIES AND SAY THEREFORE THE LAST VERSION WAS USED FOR FURTHERER ADVANCEMENT\\\\
+\noindent 
+\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. This proved to be essential for generating a fast and reliable dynamic software update system.\bigskip 
 
-XXXXXXXXX\\
+\noindent
+\textbf{Back Pipe}
 
-
+\noindent
+\textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for the received response and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
 \subsection{Proxy Installation}
 The proxy can be installed in two simple steps as follows:
@@ -727,7 +732,7 @@ The proxy can be installed in two simple steps as follows:
 The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
 
 \subsection{Command Line Interface}
-The proxy runs from the command line with the following options:\\
+The proxy runs from the command line with the following options:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 Usage of proxy:
@@ -793,7 +798,7 @@ The REST API supports the following HTTP response codes:
 \end{list}
 
 \subsubsection{PUT /configuration/cluster}\label{PUT}
-The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:\\
+The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 {
@@ -841,7 +846,7 @@ The JSON fields are used for the following reasons:
 When the user send a PUT request and successfully adds a new cluster, the proxy responds by returning a cluster id representing the new cluster entity that has been added. Appendix \ref{Appendix  I} demonstrates detailed examples of the PUT requests and responses supported by proxy and the type of values that can be used in each field of the message body.
 
 \subsubsection{GET - /configuration/cluster/\{clusterId\}} 
-GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single cluster configuration. If no cluster id is specified and the GET request is sent to \textit{/configuration/cluster/}, a list of all the cluster configurations added to the proxy will be returned. The format of the response body for getting a cluster configuration with a specific cluster entity is shown below and detailed examples of GET requests and responses are demonstrated in Appendix \ref{Appendix  I}.\\
+GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single cluster configuration. If no cluster id is specified and the GET request is sent to \textit{/configuration/cluster/}, a list of all the cluster configurations added to the proxy will be returned. The format of the response body for getting a cluster configuration with a specific cluster entity is shown below and detailed examples of GET requests and responses are demonstrated in Appendix \ref{Appendix  I}.\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 {
@@ -867,33 +872,28 @@ GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single clus
 \subsubsection{DELETE - /configuration/cluster/\{clusterId\}}
 DELETE requests to \textit{/configuration/cluster/\{clusterId\}} deletes a single cluster configuration. No request body and response body is defined for the DELETE request. Appendix \ref{Appendix I} shows an example of a DELETE request and the response received from the proxy.
 
-\subsection{Testing}
-As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\\
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-XXXXXXXX A FIGURE FOR TESTING XXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\ 
+\subsection{Dockerising the proxy}
+Talk about how I dockerised the proxy \bigskip
+
+
+why didn't use fleet system and coreOS? \bigskip
+
+\subsection{Testing}
+As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\bigskip
+
+XXXXXXXX A FIGURE FOR TESTING XXXXXXXXXXXXXXXXXXXXXXXXXXXXX\bigskip
 
 \subsubsection{Unit Testing}
-These tests focus on low level checking of the functionality of each proxy component. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component and be mocked. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.    
+These tests focus on low level checking of the functionality of each proxy component. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component and be mocked. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.\bigskip    
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-XXXXXXXX MAYBE ADD A SCREEN SHOT XXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\ 
-
+XXXXXXXX MAYBE ADD A SCREEN SHOT XXXXXXXXXXXXXXXXXXX
 
 \subsubsection{Integration Testing}
 These testes focus on the integration between different components of the REST API and the poxy. To ensure each component of the REST API integrates correctly, tests were designed to send simultaneous PUT, GET and DELETE requests to the REST server and the responses were analyzed. In addition, integration of different stages of the proxy was tested using different scenarios such as testing the behavior of when the proxy is configured for SESSION or CONCURRENT upgrade or when a cluster configuration is deleted from the proxy.
 
 \subsubsection{System Testing}
 The aim of these tests is to check that the components of the dynamic software update system including proxy and the REST API work together. System tests were written to cover complete user scenarios. The tests are executed by starting the proxy with an initial configuration. Then HTTP requests is fired at the proxy and the test checks that the proxy is distributing the requests to the cluster of servers correctly. Afterwards, the four different upgrade modes described in section \ref{modes} are applied via the REST API and the behavior of the  proxy is tested. Finally, the proxy is tested when clusters are deleted from the proxy.   
-
-\subsection{Dockerising the proxy}
-Talk about how I dockerised the proxy\\\\
-why didn't use fleet system and coreOS? \\\\
-
-
-
 
 
 \clearpage
@@ -924,9 +924,11 @@ The system to support dynamic software update will be evaluated as described bel
 
 \clearpage
 \section{Conclusions \& Future Plans}
-xxxxxxxxx\\
-xxxxxxxxx\\
-xxxxxxxxx\\
+xxxxxxxxx\bigskip
+
+xxxxxxxxx\bigskip
+
+xxxxxxxxx\bigskip
 
 
 \clearpage
@@ -954,8 +956,10 @@ The proxy provides a simple REST API to support dynamically updating the cluster
 \end{list}
 
 \noindent
-\textbf{PUT - /configuration/cluster}\\
-To add a new cluster make a PUT request to \textit{/configuration/cluster}.\\
+\textbf{PUT - /configuration/cluster}
+
+\noindent
+To add a new cluster make a PUT request to \textit{/configuration/cluster}.\bigskip
 
 \noindent
 \textit{\textbf{Request Body}}
@@ -978,74 +982,93 @@ To add a new cluster make a PUT request to \textit{/configuration/cluster}.\\
     }
 }
 \end{lstlisting}
-\noindent \\
-\textbf{cluster.servers}\\
-\noindent
-Type: 'Array'  Default value: '[]'\\
-\noindent
-This value specifies the list of servers in the cluster\\
+
+\noindent\\
+\textbf{cluster.servers}
 
 \noindent
-\textbf{cluster.servers[i].ip}\\
-\noindent
-Type: 'String' Default value: 'undefined'\\
-\noindent
-This value specifies the ip address or hostname of a server in the cluster\\
+Type: 'Array'  Default value: '[]'\smallskip
 
 \noindent
-\textbf{cluster.servers[i].port}\\
-\noindent
-Type: 'Number' Default value: 'undefined'\\
-\noindent
-This value specifies the port of a server in the cluster\\
+This value specifies the list of servers in the cluster\bigskip
 
 \noindent
-\textbf{cluster.version}\\
-\noindent
-Type: 'String' Default value: '0.0'\\
-\noindent
-This value specifies the cluster version. If no version is specified, the version defaults to '0.0'.  The version value is sorted using a string sort so care must be taken when using multi digit version numbers as '13' will be sorted before '3' to resolve this always use '03' for '3'. \\
+\textbf{cluster.servers[i].ip}
 
 \noindent
-\textbf{cluster.upgradeTransition}\\
-\noindent
-Type: 'Object' Default value: ''INSTANT'\\
-\noindent
-This value allows the configuration of the upgrade transition. If no 'upgradeTransition' is specified, the upgrade transition mode defaults to 'INSTANT'.\\
+Type: 'String' Default value: 'undefined'\smallskip
 
 \noindent
-\textbf{cluster.upgradeTransition.mode}\\
-\noindent
-Type: 'String' Default value: 'SESSION'\\
-\noindent
-This value specifies the upgrade transition mode and support the following values: 'INSTANT', 'SESSION', 'GRADUAL', 'CONCURRENT'.\\
+This value specifies the ip address or hostname of a server in the cluster\bigskip
 
 \noindent
-\textbf{cluster.upgradeTransition.sessionTimeout}\\
-\noindent
-Type: 'Number' Default value: 'undefined'\\
-\noindent
-This value specifies the timeout period assigned to the 'SESSION' transition mode. \\
+\textbf{cluster.servers[i].port}
 
 \noindent
-\textbf{cluster.upgradeTransition.percentageTransitionPerRequest}\\
-\noindent
-Type: 'Number' Default value: 'undefined'\\
-\noindent
-This value specifies the transition percentage associated with each request in the `GRADUAL` transition mode. \\
+Type: 'Number' Default value: 'undefined'\smallskip
 
 \noindent
-\textbf{Response Body}\\
-\noindent
-A cluster id is returned representing the new cluster entity that has been added. \\
+This value specifies the port of a server in the cluster\bigskip
 
 \noindent
-\textbf{Example}\\
+\textbf{cluster.version}
 
 \noindent
-\textbf{Request}\\
+Type: 'String' Default value: '0.0'\smallskip
+
 \noindent
-For example the following JSON would set up a new cluster with two 'servers' and 'SESSION' upgrade transition:
+This value specifies the cluster version. If no version is specified, the version defaults to '0.0'.  The version value is sorted using a string sort so care must be taken when using multi digit version numbers as '13' will be sorted before '3' to resolve this always use '03' for '3'. \bigskip
+
+\noindent
+\textbf{cluster.upgradeTransition}
+
+\noindent
+Type: 'Object' Default value: ''INSTANT'\smallskip
+
+\noindent
+This value allows the configuration of the upgrade transition. If no 'upgradeTransition' is specified, the upgrade transition mode defaults to 'INSTANT'.\bigskip
+
+\noindent
+\textbf{cluster.upgradeTransition.mode}
+
+\noindent
+Type: 'String' Default value: 'SESSION'\smallskip
+
+\noindent
+This value specifies the upgrade transition mode and support the following values: 'INSTANT', 'SESSION', 'GRADUAL', 'CONCURRENT'.\bigskip
+
+\noindent
+\textbf{cluster.upgradeTransition.sessionTimeout}
+
+\noindent
+Type: 'Number' Default value: 'undefined'\smallskip
+
+\noindent
+This value specifies the timeout period assigned to the 'SESSION' transition mode. \bigskip
+
+\noindent
+\textbf{cluster.upgradeTransition.percentageTransitionPerRequest}
+
+\noindent
+Type: 'Number' Default value: 'undefined'\smallskip
+
+\noindent
+This value specifies the transition percentage associated with each request in the `GRADUAL` transition mode. \bigskip
+
+\noindent
+\textbf{Response Body}
+
+\noindent
+A cluster id is returned representing the new cluster entity that has been added. \bigskip
+
+\noindent
+\textbf{Example}\bigskip
+
+\noindent
+\textbf{Request}
+
+\noindent
+For example the following JSON would set up a new cluster with two 'servers' and 'SESSION' upgrade transition:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 
@@ -1071,14 +1094,14 @@ For example the following JSON would set up a new cluster with two 'servers' and
 \end{lstlisting}
 
 \noindent \\
-To send this request with 'Curl' use the following syntax:\\
+To send this request with 'Curl' use the following syntax:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": 1.1,"upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 \end{lstlisting}
 
 \noindent \\
-\textbf{Response}\\
+\textbf{Response}
 
 \begin{lstlisting}[language=json,firstnumber=1]
 HTTP/1.1 202 Accepted
@@ -1090,13 +1113,13 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}
 
 \noindent \\
-\textit{\textbf{GET - /configuration/cluster/{clusterId}}}\\
+\textit{\textbf{GET - /configuration/cluster/{clusterId}}}\bigskip
 
 \noindent 
-To get a single cluster configuration make a GET request to \textit{/configuration/cluster/{clusterId}}.\\ 
+To get a single cluster configuration make a GET request to \textit{/configuration/cluster/{clusterId}}.\bigskip 
 
 \noindent 
-\textbf{Response Body}\\
+\textbf{Response Body}
 
 \begin{lstlisting}[language=json,firstnumber=1]
 {
@@ -1125,14 +1148,14 @@ To get a single cluster configuration make a GET request to \textit{/configurati
 \textbf{Request}
 
 \noindent 
-For example the following 'curl' request would get the cluster configuration with cluster id '1dcbb083-257f-11e4-bcbc-600308a8245e':\\
+For example the following 'curl' request would get the cluster configuration with cluster id '1dcbb083-257f-11e4-bcbc-600308a8245e':\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a8245e -X GET
 \end{lstlisting}
 
 \noindent \\
-\textbf{Response}\\
+\textbf{Response}
 
 \begin{lstlisting}[language=json,firstnumber=1]
 {
@@ -1159,7 +1182,7 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
 \end{lstlisting}
 
 \noindent \\
-For example the response when using curl is as follows:
+For example the response when using curl is as follows:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 HTTP/1.1 200 OK
@@ -1176,7 +1199,7 @@ Content-Type: text/plain; charset=utf-8
 To get all the cluster configurations make a GET request with no cluster id \textit{/configuration/cluster/}.
 
 \noindent \\
-\textbf{Response Body}\\
+\textbf{Response Body}
 
 \begin{lstlisting}[language=json,firstnumber=1]
 
@@ -1224,10 +1247,10 @@ To get all the cluster configurations make a GET request with no cluster id \tex
 \textbf{Example}
 
 \noindent \\
-\textbf{Request}\\
+\textbf{Request}
 
 \noindent 
-For example the following 'curl' request would get a list of all cluster configurations\\
+For example the following 'curl' request would get a list of all cluster configurations\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 curl http://127.0.0.1:9090/configuration/cluster/ -X GET
@@ -1298,7 +1321,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
 \end{lstlisting}
 
 \noindent \\
-For example the response when using curl is as follows:
+For example the response when using curl is as follows:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 HTTP/1.1 200 OK
@@ -1313,26 +1336,26 @@ Content-Type: text/plain; charset=utf-8
 \textbf{DELETE - /configuration/cluster/{clusterId}}
 
 \noindent 
-To delete a single cluster configuration make a DELETE request to \textit{/configuration/cluster/{clusterId}}.\\
+To delete a single cluster configuration make a DELETE request to \textit{/configuration/cluster/{clusterId}}.\bigskip
 
 \noindent 
-\textbf{Example}\\
+\textbf{Example}\bigskip
 
 \noindent 
-\textbf{Request}\\
+\textbf{Request}
 
 \noindent 
-For example the following 'curl' request would delete the cluster configuration with id '1dcbb083-257f-11e4-bcbc-600308a8245e':\\
+For example the following 'curl' request would delete the cluster configuration with id '1dcbb083-257f-11e4-bcbc-600308a8245e':\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a8245e -X DELETE
 \end{lstlisting}
 
 \noindent \\
-\textbf{Response}\\
+\textbf{Response}
 
 \noindent 
-For example the response when using curl is as follows:
+For example the response when using curl is as follows:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
 HTTP/1.1 202 Accepted
