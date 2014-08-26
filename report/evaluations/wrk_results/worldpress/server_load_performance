@@ -43,6 +43,24 @@ Requests/sec:     59.84
 Transfer/sec:    453.97KB
 samiras-mbp:wrk samirarabbanian$
 
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t10 -c10 -d1h --latency http://192.168.50.30/
+Running 60m test @ http://192.168.50.30/
+  10 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   126.42ms   23.98ms 284.99ms   68.86%
+    Req/Sec     7.50      1.93    19.00     79.05%
+  Latency Distribution
+     50%  126.75ms
+     75%  142.40ms
+     90%  156.52ms
+     99%  183.30ms
+  289283 requests in 60.00m, 2.09GB read
+Requests/sec:     80.35
+Transfer/sec:    609.58KB
+samiras-mbp:wrk samirarabbanian$ 
+
+
 ##############################################
 ##############################################
 server 10 min

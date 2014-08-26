@@ -5,7 +5,8 @@
 \longdate
 \setcounter{tocdepth}{4}
 \setcounter{secnumdepth}{4}
-\setlength{\headheight}{14pt}   
+\setlength{\headheight}{14pt} 
+
 %\smallskip, \medskip or \bigskip
 
 \usepackage{enumitem}
@@ -31,12 +32,12 @@
     basicstyle=\ttfamily\small,
 %    xleftmargin=71 
 %    numbers=left,
- %   numberstyle=\scriptsize,
+  %  numberstyle=\scriptsize,
   %  stepnumber=1,
 %    numbersep=8pt,
 %    showstringspaces=false,
     breaklines=true,
- %   frame=lines,
+%   frame=lines,
     backgroundcolor=\color{background},
     literate=
      *{0}{{{\color{numb}0}}}{1}
@@ -49,8 +50,8 @@
       {7}{{{\color{numb}7}}}{1}
       {8}{{{\color{numb}8}}}{1}
       {9}{{{\color{numb}9}}}{1}
-      {:}{{{\color{punct}{:}}}}{1}
-      {,}{{{\color{punct}{,}}}}{1}
+     % {:}{{{\color{punct}{:}}}}{1}
+      %{,}{{{\color{punct}{,}}}}{1}
       {\{}{{{\color{delim}{\{}}}}{1}
       {\}}{{{\color{delim}{\}}}}}{1}
       {[}{{{\color{delim}{[}}}}{1}
@@ -58,6 +59,29 @@
 }
 
 % end of jason config
+
+\lstdefinelanguage{terminal}{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+%   frame=lines,
+    backgroundcolor=\color{background},
+}
+
+\lstdefinestyle{TerminalInputStyle}{
+  language=terminal,
+  basicstyle=\small\sffamily,
+  frame=lines,
+  frameround=tttt
+%  numbers=left,
+  numberstyle=\tiny,
+  numbersep=3pt,
+  frame=tb,
+  frameround =ht|fiht|fiht|fiht|fi 
+  columns=fullflexible,
+  backgroundcolor=\color{yellow!20},
+  linewidth=0.9\linewidth,
+  xleftmargin=0.1\linewidth
+}
 
 
 \usepackage{caption}
@@ -371,7 +395,7 @@ HTTP is the foundation protocol of the World Wide Web and it is widely used betw
 \subsection{HTTP Requests} \label{Requests}
 A HTTP request has the following format:\bigskip
 
-\begin{lstlisting}[language=json]
+\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=2.25in]
 <Request> ::=	<Request-Line>
 		<general-headers>
 		|<request-headers>
@@ -401,7 +425,7 @@ A HTTP request has the following format:\bigskip
 \noindent\\
 For example the following shows a simple HTTP request:
 
-\begin{lstlisting}[language=bash,xleftmargin=.25in,xrightmargin=.25in]
+\begin{lstlisting}[language=bash,xleftmargin=.25in,  xrightmargin=.25in]
 GET / HTTP/1.1
 User-Agent: curl/7.30.0
 Host: 127.0.0.1:1235
@@ -411,7 +435,7 @@ Accept: */*
 \subsection{HTTP Responses}
 A HTTP response has the following format:\bigskip
 
-\begin{lstlisting}[language=json]
+\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=2.25in]
 <Response> ::=	<Status-Line>
 		<general-headers>
 		|<response-headers>
@@ -447,7 +471,6 @@ A HTTP response has the following format:\bigskip
 
 \noindent\\
 For example the following shows a simple HTTP response:
-
 \indent
 \begin{lstlisting}[language=bash,xleftmargin=.25in,xrightmargin=.25in]
 HTTP/1.1 200 OK
@@ -579,7 +602,7 @@ HTTP Requests were fired to an example Go web service either directly or via the
 
 \noindent
 \underline{Direct HTTP Requests To Go Server}
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal]
 $ ./wrk -t400 -c400 -d120 --latency http://127.0.0.1:1024
 Running 2m test @ http://127.0.0.1:1024
   400 threads and 400 connections
@@ -598,7 +621,7 @@ Transfer/sec:      1.05MB
 
 \noindent\\
 \underline{HTTP Requests To Go Server Via Content Counting Proxy} 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal]
 $ ./wrk -t400 -c400 -d120 --latency http://127.0.0.1:1234
 Running 2m test @ http://127.0.0.1:1234
   400 threads and 400 connections
@@ -655,7 +678,7 @@ To prevent the socket errors that occured in the content counting proxy \ref{Con
 \noindent
 \textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \bigskip  
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal, xleftmargin= .5in, xrightmargin= 1.75in]
 type ChunkContext struct {
 	Data                   []byte
 	To                     tcp.TCPConnection
@@ -734,7 +757,7 @@ The above steps install the proxy to the PATH by adding it to the \textit{/usr/l
 \subsection{Command Line Interface}
 The proxy runs from the command line with the following options:\bigskip
 
-\begin{lstlisting}[language=json,firstnumber=1]
+\begin{lstlisting}[language=terminal,firstnumber=1]
 Usage of proxy:
   -configFile="./config.json":  Set the location of the configuration file 
   that should contain configuration to start the proxy, 
@@ -809,7 +832,7 @@ The PUT request to \textit{/configuration/cluster}  is used to add a new cluster
                 "port": 0
             }
         ], 
-        "version": 0, 
+        "version": "", 
         "upgradeTransition": {
             "mode": ""
             "sessionTimeout": 0  
@@ -863,7 +886,7 @@ GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single clus
                 "percentageTransitionPerRequest": 0  
         },
         "uuid": "",
-        "version": "0"
+        "version": ""
     }
 }
 
@@ -898,19 +921,16 @@ The aim of these tests is to check that the components of the dynamic software u
 
 \clearpage
 \section{Evaluation}
-The system to support dynamic software update will be evaluated as described below.
+This section summarizes the qualitative and quantitative evaluation performed on the implemented dynamic software update system.
 
-\subsection{Qualitative Analysis}
+\subsection{Quantitative Analysis xxxxxxxxxxx}
+xxxx talk about couchbase and worldpress and why we chose those two...\bigskip
+
 \noindent
-\underline{Handling Incorrect Behavior } - To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
-
-\noindent
-\underline{Automated Software Update} - To prove the suitability of the proposed system for continuous delivery, application updates will be performed using both a bash script \footnote{\url{http://www.tldp.org/LDP/abs/html/}} and a puppet manifest \footnote{\url{https://puppetlabs.com/}}. Puppet has been chosen since it is the most widely used automated deployment tool. In addition bash has been chosen since all automated deployment tools have the ability to run bash commands. 
+xxxxxx These applications must service many concurrent users; creating, storing, retrieving, aggregating, manipulating and presenting data. In support of these kinds of application needs, Couchbase is designed to provide easy-to-scale key-value or document access with low latency and high sustained throughput. It is designed to be clustered from a single machine to very large scale deployments. http://www.couchbase.com/couchbase-server/architecture (especially server architecture section) \bigskip
 
 
-\subsection{Quantitative Analysis}
-\noindent
-\underline{Load Test} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
+\subsubsection{Load Test}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
 
 \noindent
 \underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
@@ -919,7 +939,119 @@ The system to support dynamic software update will be evaluated as described bel
 \underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
 
 \noindent
-\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version.
+\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. \bigskip
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+\noindent
+\underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
+
+\noindent
+\underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
+
+\noindent
+\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. \bigskip
+
+\noindent
+\underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
+
+\noindent
+\underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
+\noindent
+\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. \bigskip
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+\subsection{Qualitative Analysis}
+\subsubsection{Load Balancing Feature}
+To test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster running in a Docker container (Figure \ref{couchbase_cluster}). The cluster contained three nodes running Couchbase server 2.5.1. Couchbase servers were chosen for load balancing evaluation since they are designed to be clustered from a single machine to very large scale deployments. The following section summarizes steps executed for load balancing evaluation. 
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.40]{couchbase_cluster}
+  \caption{Couchbase Cluster With Three Servers}
+  \label{couchbase_cluster}
+\end{figure}
+
+\noindent
+\textit{Proxy Configuration} - the proxy was configured to direct HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) as shown in the following terminal output. Since the nodes are running within a Docker container, their IP address has been exposed and therefore, the IP address seen in figure \ref{couchbase_cluster} is different from the one proxy is configured with xxxxxxxx also TALK ABOUT THE 1 HR TIME DIFFERENCE IN THE PROXY WITH WORLDPRESS AND COACHBASE\bigskip
+\begin{lstlisting}[language=terminal]
+2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"ip": "192.168.50.10", "port": 8091},
+            {"ip": "192.168.50.10", "port": 9091},
+            {"ip": "192.168.50.10", "port": 10091}
+        ],
+        "version": "2.5.1"
+    }
+}
+as:
+Proxy{
+	Proxy Address:      127.0.0.1:1235
+	ConfigService Port: 9090
+	Proxied Servers:    
+		version: [2.5.1] 
+		[192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
+}
+\end{lstlisting}
+\noindent\\
+\textit{HTTP Requests} - simultaneous HTTP requests were sent to the running proxy using cURL as follows:
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}
+
+\noindent\\
+\textit{Load balancing proxy} - analysis of the proxy showed that the HTTP requests were successfully distributed to the the cluster of Couchbase servers by proxy in a round-robin order. The following terminal output demonstrates the network address of each server that the proxy has received the response from. 
+
+\begin{lstlisting}[language=terminal]
+2014/08/24 19:50:06.560279 proxy_context_cluster.go:104:     
+INFO - Serving response 0 from ip: [192.168.50.10] port: [8091] 
+
+2014/08/24 19:52:34.576970 proxy_context_cluster.go:104:     
+INFO - Serving response 1 from ip: [192.168.50.10] port: [9091] 
+
+2014/08/24 19:56:00.452493 proxy_context_cluster.go:104:     
+INFO - Serving response 2 from ip: [192.168.50.10] port: [10091] 
+
+2014/08/24 19:56:07.619419 proxy_context_cluster.go:104:     
+INFO - Serving response 3 from ip: [192.168.50.10] port: [8091] 
+
+2014/08/24 19:56:09.137194 proxy_context_cluster.go:104:     
+INFO - Serving response 4 from ip: [192.168.50.10] port: [9091] 
+
+2014/08/24 19:56:19.655983 proxy_context_cluster.go:104:     
+INFO - Serving response 5 from ip: [192.168.50.10] port: [10091] 
+\end{lstlisting}
+
+\noindent\\
+\textit{HTTP Responses} - the following is an example HTTP response received from servers in the Couchbase cluster via proxy: 
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=369f06ad-2bbf-11e4-9034-28cfe9158b63;
+Server: Couchbase Server
+Pragma: no-cache
+Date: Sun, 24 Aug 2014 18:50:06 GMT
+Content-Type: application/json
+Content-Length: 10972
+Cache-Control: no-cache
+
+{"name":"beer-sample","bucketType":"membase", ... }
+\end{lstlisting}
+
+
+\subsubsection{Handling Incorrect Behavior} 
+To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
+
+\subsubsection{Automated Software Update} 
+To prove the suitability of the proposed system for continuous delivery, application updates will be performed using both a bash script \footnote{\url{http://www.tldp.org/LDP/abs/html/}} and a puppet manifest \footnote{\url{https://puppetlabs.com/}}. Puppet has been chosen since it is the most widely used automated deployment tool. In addition bash has been chosen since all automated deployment tools have the ability to run bash commands. 
 
 
 \clearpage
@@ -973,7 +1105,7 @@ To add a new cluster make a PUT request to \textit{/configuration/cluster}.\bigs
         "port": 0
       }
     ],
-    "version": "0",
+    "version": "",
     "upgradeTransition": {
         "mode": ""  // allowed values are "INSTANT", "SESSION", "GRADUAL", "CONCURRENT"
         "sessionTimeout": 0  // only supported for a 'mode' value of "SESSION" 
@@ -1094,10 +1226,10 @@ For example the following JSON would set up a new cluster with two 'servers' and
 \end{lstlisting}
 
 \noindent \\
-To send this request with 'Curl' use the following syntax:\bigskip
+To send this request with 'cURL' use the following syntax:\bigskip
 
 \begin{lstlisting}[language=json,firstnumber=1]
-curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": 1.1,"upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+curl http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "127.0.0.1", "port": 1036},{"hostname": "127.0.0.1", "port": 1038}],"version": "1.1","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 \end{lstlisting}
 
 \noindent \\
@@ -1136,7 +1268,7 @@ To get a single cluster configuration make a GET request to \textit{/configurati
       "percentageTransitionPerRequest": 0  // only returned when 'mode' is "GRADUAL"
     },
     "uuid": "",
-    "version": 0
+    "version": ""
   }
 } 
 \end{lstlisting}
@@ -1175,7 +1307,7 @@ curl http://127.0.0.1:9090/configuration/cluster/1dcbb083-257f-11e4-bcbc-600308a
         "sessionTimeout": 60
     },
     "uuid": "016ca2cd-2585-11e4-ab5c-600308a8245e",
-    "version": 1.1
+    "version": "1.1"
   }
 }
   
@@ -1218,7 +1350,7 @@ To get all the cluster configurations make a GET request with no cluster id \tex
         "percentageTransitionPerRequest": 0  // only returned when 'mode' is "GRADUAL"
       },
       "uuid": "",
-      "version": 0
+      "version": ""
     }
   },
   {
@@ -1237,7 +1369,7 @@ To get all the cluster configurations make a GET request with no cluster id \tex
         "mode": "CONCURRENT"
       },
       "uuid": "",
-      "version": 0
+      "version": ""
     }
   }
 ]
@@ -1276,7 +1408,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
         "sessionTimeout": 60
       }, 
       "uuid": "1f6a0854-2608-11e4-ab79-600308a8245e", 
-      "version": 1.1
+      "version": "1.1"
     }
   }, 
   {
@@ -1295,7 +1427,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
         "mode": "CONCURRENT"
       }, 
       "uuid": "01386f1f-2608-11e4-ab79-600308a8245e", 
-      "version": 1.1
+      "version": "1.1"
     }
   }, 
   {
@@ -1314,7 +1446,7 @@ curl http://127.0.0.1:9090/configuration/cluster/ -X GET
         "mode": "INSTANT"
       }, 
       "uuid": "ffde36ce-2607-11e4-ab79-600308a8245e", 
-      "version": 1
+      "version": "1"
     }
   }
 ]
