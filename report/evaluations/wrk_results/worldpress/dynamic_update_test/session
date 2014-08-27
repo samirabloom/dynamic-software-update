@@ -21,7 +21,7 @@ Running proxy with logLevel INFO
         "servers":[
             {"hostname": "192.168.50.30", "port": 80}
         ],
-        "version": "3.8"
+        "version": "3.9.1"
     }
 }
 
@@ -29,7 +29,7 @@ as:
 Proxy{
 	Proxy Address:      :1235
 	ConfigService Port: 9090
-	Proxied Servers:    version: [].80 [192.168.50.30:80]
+	Proxied Servers:    version: [3.9.1] [192.168.50.30:80]
 }
 
 ##############################################
@@ -45,7 +45,7 @@ Accept: */*
 ##############################################
 // proxy's response to curl request (you can see default is INSTANT)
 
-2014/08/25 21:11:18.216192 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.8] mode: [INSTANT]
+2014/08/25 21:11:18.216192 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
 
 ##############################################
 // received response format (cookie with no expiry)
@@ -64,7 +64,7 @@ Content-Type: text/html; charset=UTF-8
 
 ##############################################
 // send the curl for "SESSION "update
-curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 
 PUT /configuration/cluster HTTP/1.1
 User-Agent: curl/7.30.0
@@ -86,7 +86,7 @@ Content-Type: application/x-www-form-urlencoded
                 "port": 80
             }
         ],
-        "version": "3.9",
+        "version": "3.9.2",
         "upgradeTransition": {
             "mode": "SESSION",
             "sessionTimeout": 60
@@ -120,7 +120,7 @@ Accept: */*
 ##############################################
 // proxy response to curl after first request
 
-2014/08/25 21:17:22.866773 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.40] port: [80] version: [3.9] mode: [SESSION] session timeout [60] uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
+2014/08/25 21:17:22.866773 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [SESSION] session timeout [60] uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
 
 ##############################################
 // response received after first upgrade (new cookie with expiry time)
@@ -153,7 +153,7 @@ Cookie:   dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;
 ##############################################
 // proxy response to curl after request with the cookie from the old version
 
-2014/08/25 21:24:17.273012 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.30] port: [80] version: [3.8] mode: [INSTANT]
+2014/08/25 21:24:17.273012 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
 
 ##############################################
 // response received from the old version because i provided cookie, however, this cookie will have a time-out becuase we are in the SESSION mode even though we r hitting the old
@@ -196,12 +196,12 @@ proxy
 4- goes to previous version adn get the answer
 ##############################################
 
-2014/08/25 21:35:10.120521 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.40] port: [80] version: [3.9] mode: [SESSION] session timeout [60] uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
+2014/08/25 21:35:10.120521 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [SESSION] session timeout [60] uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
 2014/08/25 21:35:10.120978 stage_route.go:41:    ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused
 
-2014/08/25 21:35:10.120999 stage_route.go:42:  WARNING - Removing cluster from configuration - version: 3.9 [192.168.50.40:80]
+2014/08/25 21:35:10.120999 stage_route.go:42:  WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]
 
-2014/08/25 21:35:10.121034 proxy_context_cluster.go:114:     INFO - Serving response 3 from ip: [192.168.50.30] port: [80] version: [3.8] mode: [INSTANT]
+2014/08/25 21:35:10.121034 proxy_context_cluster.go:114:     INFO - Serving response 3 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
 
 
 ##############################################

@@ -1106,7 +1106,7 @@ To prove the proxy is capable of coping with dynamic software updates and it is 
 \textbf{INSTANT Update}
 
 \noindent
-The following steps were followed for evaluation of the proxy using INSTANT mode.\medskip
+The following steps were followed for evaluation of the proxy using INSTANT mode (Section \ref{modes}).\medskip
 
 \noindent
 \textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the cluster running version 3.9.1 of the WorldPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
@@ -1151,7 +1151,7 @@ When the proxy was run in the INFO level logging, its output to the terminal dem
 \end{lstlisting} 
 
 \noindent\\
-This was further confirmed by the response received from the WorldPress application via proxy. Note that the X-Powered-By and X-Pingback headers refer to the PHP version and the netwrok address of version 3.9.1 of WorldPress application respectively. \smallskip 
+This was further confirmed by the response received from the WorldPress application via proxy. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.1 of WorldPress application respectively. \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 HTTP/1.1 200 OK
@@ -1168,7 +1168,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{INSTANT Upgrade Using PUT Request} - To upgrade the WorldPress application from version 3.9.1. to version 3.9.2 instantly, a cluster containing new version was added to the proxy using the following PUT request: \smallskip 
+\textit{PUT Request For INSTANT Upgrade} - To upgrade the WorldPress application from version 3.9.1. to version 3.9.2 instantly, a cluster containing new version was added to the proxy using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 curl -v \
@@ -1224,7 +1224,7 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}  
 
 \noindent\\
-\textit{INSTANT Upgrade} - Since the new version was added to the proxy with INSTANT upgrade transition mode, the proxy output and the responses received from the WorldPress via proxy showed that the new version is processing the requests. Note that the X-Powered-By and X-Pingback headers refer to the PHP version and the netwrok address of version 3.9.2 of WorldPress application respectively. \smallskip 
+\textit{INSTANT Upgrade} - Since the new version was added to the proxy with INSTANT upgrade transition mode, the proxy output and the responses received from the WorldPress via proxy showed that the new version is processing the requests. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.2 of WorldPress application respectively. \smallskip 
 
 
 \noindent
@@ -1300,135 +1300,241 @@ Content-Type: text/html; charset=UTF-8
 \textbf{SESSION Update}
 
 \noindent
-The following steps were followed for evaluation of the proxy using SESSION mode.\medskip
+The following steps were followed for evaluation of the proxy using SESSION mode (Section \ref{modes}).\medskip
 
 \noindent
-\textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the cluster running version 3.9.1 of the WorldPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy Configuration} - The proxy was configured with a cluster running version 3.9.1 of the WorldPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
-xx
+2014/08/25 21:10:46.064526 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"hostname": "192.168.50.30", "port": 80}
+        ],
+        "version": "3.9.1"
+    }
+}
+as:
+Proxy{
+	Proxy Address:      0.0.0.0:1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: [3.9.1] [192.168.50.30:80]
+}
 \end{lstlisting}
 
 \noindent \\
-\textit{HTTP Requests \& Responses} - 
-
-
+\textit{HTTP Requests \& Responses} - HTTP requests were sent to the WorldPress cluster via proxy suing the following cURL syntax:\smallskip  
 
 \begin{lstlisting}[language=terminal]
-xx
+curl -v http://127.0.0.1:1235
+\end{lstlisting} 
+
+\noindent\\Since no upgrade transition was defined for the initial configuration, INSTANT mode was assigned to the cluster with version 3.9.1 as shown in the following terminal output echoed by proxy. In addition, The output shows that the proxy is forwarding responses from WorldPress with version 3.9.1. \smallskip
+
+\begin{lstlisting}[language=terminal] 
+2014/08/25 21:11:18.216192 proxy_context_cluster.go:114:     
+   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
 \end{lstlisting} 
 
 \noindent\\
-
-
-\smallskip
+The "X-Powered-By" and "X-Pingback" headers received by the client also confirmed that the response has been sent by WorldPress version 3.9.1.  Note that the Set-Cookie header in the response is set and it has no expiry date. \smallskip 
 
 \begin{lstlisting}[language=terminal] 
-xx
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;
+Date: Mon, 25 Aug 2014 20:11:18 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
 \end{lstlisting} 
 
 \noindent\\
-
- \smallskip 
-
-\begin{lstlisting}[language=terminal] 
-xx
-\end{lstlisting} 
-
-\noindent\\
-\textit{SESSION Upgrade Using PUT Request} - 
-
- \smallskip 
+\textit{PUT Request For SESSION Upgrade} - A cluster running the version 3.9.2 of the WorldPress was added to the proxy with SESSION upgrade transition mode and 60 seconds session time out using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
-xx
+curl -v http://127.0.0.1:9090/configuration/cluster -X PUT \
+--data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
 \end{lstlisting}
 
 \noindent\\
-The proxy acknowledges addition of the new cluster by outputting the following message in terminal when it runs in the INFO logging level: \smallskip 
+The proxy acknowledged addition of the new cluster by outputting the following message in terminal when it runs in the INFO logging level: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
-xx
+2014/08/25 21:14:10.079590 config_service.go:66:     
+   INFO - Received new cluster configuration:
+   {
+       "cluster": {
+           "servers": [
+               {
+                   "hostname": "192.168.50.40",
+                   "port": 80
+               }
+           ],
+           "version": "3.9.2",
+           "upgradeTransition": {
+               "mode": "SESSION",
+               "sessionTimeout": 60
+           }
+       }
+   }
 \end{lstlisting}   
 
 \noindent\\
-The following shows the PUT request and the associated HTTP response with a cluster id received from the proxy.\smallskip 
+The following shows the PUT request and the associated HTTP response containing the cluster id received from the proxy.\smallskip 
 
 \noindent
 \textit{Request}
 \begin{lstlisting}[language=terminal]
-xx
+PUT /configuration/cluster HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:9090
+Accept: */*
+Content-Length: 148
+Content-Type: application/x-www-form-urlencoded
 <@\\@>
 \end{lstlisting}
 
 \noindent\\
 \textit{Response}
 \begin{lstlisting}[language=terminal]
-xx
+HTTP/1.1 202 Accepted
+Date: Mon, 25 Aug 2014 20:14:10 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+
+5fba791f-2c94-11e4-88f5-28cfe9158b63s
 \end{lstlisting}  
 
 \noindent\\
-\textit{SESSION Upgrade} - 
+\textit{HTTP Requests Without Cookie} - To check the proxy behaves correctly with a SESSION upgrade, a HTTP request with no cookie was sent to the proxy. The proxy forwarded the HTTP request to the new cluster as shown in the following terminal output: \smallskip   
+
+%2014/08/26 21:53:44.763483 proxy_context_cluster.go:115:     
+%   INFO - Serving response 0 from ip: [127.0.0.1] port: [1036] 
+%   version: [9.20] mode: [GRADUAL] 
+%   transition counter [100.00] percentage transition per request [50.00]
+
+\begin{lstlisting}[language=terminal]
+2014/08/25 21:17:22.866773 proxy_context_cluster.go:114:     
+   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [SESSION] 
+   session timeout [60] uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
+\end{lstlisting}
+
+\noindent\\
+Analyzing the headers in the response (\textit{i.e.} "X-Powered-By" and "X-Pingback") also confirmed that the responses are coming from the new cluster with version 3.9.2. Note that the Set-Cookie header in the response from a cluster with SESSION upgrade mode has an expiry date. \smallskip
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=5fba791f-2c94-11e4-88f5-28cfe9158b63; Expires=Mon, 25 Aug 2014 21:18:22 BST;
+Date: Mon, 25 Aug 2014 20:17:23 GMT
+Server: Apache/2.2.22 (Debian)
+X-Powered-By: PHP/5.4.4-14+deb7u12
+X-Pingback: http://192.168.50.40/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
+\end{lstlisting}
+
+\noindent\\
+\textit{HTTP Requests With Cookie} - After the SESSION upgrade when the HTTP requests were sent to the proxy with a uuid cookie associated with a cluster with older version, the proxy forwarded the request to the old cluster rather than the new version as it is shown in the following proxy output printed in the terminal and the response received by the client. \medskip 
 
 \noindent
-\textit{HTTP Request Using cURL}
+\textit{HTTP request with cookie Using cURL}
 \begin{lstlisting}[language=terminal]
-xx
+curl -v 'http://127.0.0.1:1235/' \
+-H 'Cookie:   dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;'
 \end{lstlisting}
 
 \noindent\\
 \textit{Proxy's output}
 \begin{lstlisting}[language=terminal]
-xx
+2014/08/25 21:24:17.273012 proxy_context_cluster.go:114:     
+   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
 
 \noindent\\
 \textit{Response}
 \begin{lstlisting}[language=terminal]
-xx
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63; Expires=Mon, 25 Aug 2014 21:24:17 BST;
+Date: Mon, 25 Aug 2014 20:24:17 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
 
+<!DOCTYPE html> ... </html>
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - \smallskip 
+\textit{Handling Incorrect Behavior} - To insure the proxy can handle any errors occur by the updated cluster, the Docker container running the WorldPress version 3.9.2 was stopped. HTTP requests subsequently were sent to the proxy and its behavior was screened. The proxy terminal output demonstrated that when the proxy fails to send requests to the most updated cluster, it removes that cluster and forwards the requests to the previous cluster version.  \smallskip
 
 \noindent\\
 \textit{Proxy's output}
 \begin{lstlisting}[language=terminal]
-xx
+2014/08/25 21:35:10.120521 proxy_context_cluster.go:114:     
+   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [SESSION] session timeout [60] 
+   uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
+
+2014/08/25 21:35:10.120978 stage_route.go:41:    
+   ERROR - Error communicating with server - 
+   dial tcp 192.168.50.40:80: connection refused
+
+2014/08/25 21:35:10.120999 stage_route.go:42:  
+   WARNING - Removing cluster from configuration - 
+   version: 3.9.2 [192.168.50.40:80]
+
+2014/08/25 21:35:10.121034 proxy_context_cluster.go:114:     
+   INFO - Serving response 3 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
-
-
-
-
-
-
+ 
+\noindent\\
+The response received via proxy from the WorldPress application after the oldest version failed is shown here. Note that the "X-Pingback" header shows the network address of old version of the WorldPress application. In addition, Since the cluster with SESSION upgrade mode has been deleted by proxy the uuid cookie in the "Set-Cookie" header does not have an expiry date.\smallskip 
 
 \noindent\\
 \textit{Response}
 \begin{lstlisting}[language=terminal]
-xx
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;
+Date: Mon, 25 Aug 2014 20:35:10 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7467
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
 \end{lstlisting}
+
+\noindent\\
+\textbf{GRADUAL Update}
+
+\noindent\\
+\textbf{CONCURRENT Update}
    
-   
 
    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 \subsubsection{Handling Incorrect Behavior} 
