@@ -20,7 +20,7 @@ then
     service docker.io restart
 
     echo ===========
-    echo   SUCCESS
+    echo "  SUCCESS  "
     echo ===========
     echo
     echo now run: vagrant ssh docker
