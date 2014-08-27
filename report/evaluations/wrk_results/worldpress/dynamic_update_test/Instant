@@ -21,7 +21,7 @@ Running proxy with logLevel INFO
         "servers":[
             {"hostname": "192.168.50.30", "port": 80}
         ],
-        "version": "3.8"
+        "version": "3.9.1"
     }
 }
 
@@ -29,7 +29,7 @@ as:
 Proxy{
 	Proxy Address:      :1235
 	ConfigService Port: 9090
-	Proxied Servers:    version: 3.8 [192.168.50.30:80]
+	Proxied Servers:    version: [3.9.1] [192.168.50.30:80]
 }
 
 
@@ -46,7 +46,7 @@ Accept: */*
 ##############################################
 // proxy's response to curl request (you can see default is INSTANT)
 
-2014/08/25 20:22:56.415432 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.8] mode: [INSTANT]
+2014/08/25 20:22:56.415432 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
 
 ##############################################
 // received response format (cookie with no expiry)
@@ -67,7 +67,7 @@ Content-Type: text/html; charset=UTF-8
 
 ##############################################
 // send the curl for "INSTANT "update
-curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9","upgradeTransition": { "mode": "INSTANT" }}}'
+curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "INSTANT" }}}'
 
 PUT /configuration/cluster HTTP/1.1
 User-Agent: curl/7.30.0
@@ -88,7 +88,7 @@ Content-Type: application/x-www-form-urlencoded
                 "hostname": "192.168.50.40", "port": 80
             }
         ],
-        "version": "3.9",
+        "version": "3.9.2",
         "upgradeTransition": {
             "mode": "INSTANT"
         }
@@ -120,7 +120,7 @@ Accept: */*
 ##############################################
 // proxy response to curl after first request
 
-2014/08/25 20:28:20.400747 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.40] port: [80] version: [3.9] mode: [INSTANT]
+2014/08/25 20:28:20.400747 proxy_context_cluster.go:114:     INFO - Serving response 0 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [INSTANT]
 
 ##############################################
 // response received after first upgrade
@@ -161,12 +161,12 @@ proxy
 4- goes to previous version adn get the answer
 ##############################################
 
-2014/08/25 20:32:59.897032 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.40] port: [80] version: [3.9] mode: [INSTANT]
+2014/08/25 20:32:59.897032 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [INSTANT]
 2014/08/25 20:32:59.897433 stage_route.go:41:    ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused
 
-2014/08/25 20:32:59.899682 stage_route.go:42:  WARNING - Removing cluster from configuration - version: 3.9 [192.168.50.40:80]
+2014/08/25 20:32:59.899682 stage_route.go:42:  WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]
 
-2014/08/25 20:32:59.899707 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.30] port: [80] version: [3.8] mode: [INSTANT]
+2014/08/25 20:32:59.899707 proxy_context_cluster.go:114:     INFO - Serving response 1 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
 
 ##############################################
 response (note cookie the same as the very fist version... each version has only one cookie associated to it so if
