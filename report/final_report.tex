@@ -664,7 +664,7 @@ The final version of the socket based proxy was implemented using a Stage Based 
 \end{list}
 
 \noindent
-To prevent the socket errors that occured in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\bigskip
+To prevent the socket errors that occurred in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\bigskip
 
 \begin{figure}[!ht]
   \centering
@@ -1151,7 +1151,7 @@ When the proxy was run in the INFO level logging, its output to the terminal dem
 \end{lstlisting} 
 
 \noindent\\
-This was further confirmed by the response received from the WorldPress application via proxy. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.1 of WorldPress application respectively. \smallskip 
+This was further confirmed by the response received from the WorldPress application via proxy. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.1 of WorldPress application respectively. Note that cookie associated with a cluster with INSTANT upgrade mode does not have an expiry date. \smallskip  
 
 \begin{lstlisting}[language=terminal] 
 HTTP/1.1 200 OK
@@ -1268,12 +1268,10 @@ Content-Type: text/html; charset=UTF-8
    version: [3.9.2] mode: [INSTANT]
    
 2014/08/25 20:32:59.897433 stage_route.go:41:    
-   ERROR - Error communicating with server - 
-   dial tcp 192.168.50.40:80: connection refused
+   <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused}@>
 
 2014/08/25 20:32:59.899682 stage_route.go:42:  
-   WARNING - Removing cluster from configuration - 
-   version: 3.9.2 [192.168.50.40:80]
+   <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]}@>
 
 2014/08/25 20:32:59.899707 proxy_context_cluster.go:114:     
    INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
@@ -1496,12 +1494,10 @@ Content-Type: text/html; charset=UTF-8
    uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
 
 2014/08/25 21:35:10.120978 stage_route.go:41:    
-   ERROR - Error communicating with server - 
-   dial tcp 192.168.50.40:80: connection refused
-
+    <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused}@>
+   
 2014/08/25 21:35:10.120999 stage_route.go:42:  
-   WARNING - Removing cluster from configuration - 
-   version: 3.9.2 [192.168.50.40:80]
+    <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]}@>
 
 2014/08/25 21:35:10.121034 proxy_context_cluster.go:114:     
    INFO - Serving response 3 from ip: [192.168.50.30] port: [80] 
@@ -1529,6 +1525,178 @@ Content-Type: text/html; charset=UTF-8
 
 \noindent\\
 \textbf{GRADUAL Update}
+
+\noindent
+This section summarizes the performance evaluation of the proxy when a GRADUAL upgrade of the WorldPress from version 3.9.1 to 3.9.2 was applied using proxy. \medskip
+
+\noindent
+\textit{Proxy Configuration} - the initial configuration of the proxy is shown in the following terminal output echoed by proxy when it was started. Note that the proxy was configured with version 3.9.1 of WorldPress application.\smallskip
+
+\begin{lstlisting}[language=terminal]
+2014/08/28 11:05:30.745828 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"hostname": "192.168.50.30", "port": 80}
+        ],
+        "version": "3.9.1"
+    }
+}
+
+as:
+Proxy{
+	Proxy Address:      0.0.0.0:1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 3.9.1 [192.168.50.30:80]
+}
+\end{lstlisting}
+
+\noindent\\
+\textit{HTTP Requests \& Responses} - HTTP requests were sent to WorldPress application via proxy using the following the cURL syntax:\smallskip
+
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}
+
+\noindent\\
+The following proxy output confirms that the HTTP requests were forwarded to the WorldPress application version 3.9.1. Since no upgrade mode was chosen for the cluster, the default mode \textit{i.e.} INSTANT mode was chosen by proxy. \smallskip
+
+\begin{lstlisting}[language=terminal]
+2014/08/28 11:06:01.661061 proxy_context_cluster.go:115:     
+   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+\end{lstlisting}
+
+\noindent\\
+"X-Pingback" header of the response received from the proxy further confirmed that proxy is receiving responses from WorldPress application version 3.9.1.\smallskip 
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=d7bf97fc-2e9a-11e4-8d7c-600308a8245e;
+Date: Thu, 28 Aug 2014 10:06:10 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+ 
+<!DOCTYPE html> ... </html>
+\end{lstlisting}
+
+\noindent\\
+\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy for upgrading WorldPress application from version 3.9.1 to version 3.9.2.
+
+\begin{lstlisting}[language=terminal]
+curl -v \
+http://127.0.0.1:9090/configuration/cluster -X PUT \
+--data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "GRADUAL", "percentageTransitionPerRequest": 1 }}}'
+\end{lstlisting}
+ 
+\noindent \\
+The following output echoed by the proxy showing successful addition of the new cluster with GRADUAL transition mode and version 3.9.2 to the proxy. \smallskip
+
+\begin{lstlisting}[language=terminal]
+2014/08/28 11:11:57.781817 config_service.go:66:     
+   INFO - Received new cluster configuration:
+   {
+       "cluster": {
+           "servers": [
+               {
+                   "hostname": "192.168.50.40", 
+                   "port": 80
+               }
+           ], 
+           "version": "3.9.2", 
+           "upgradeTransition": {
+               "mode": "GRADUAL", 
+               "percentageTransitionPerRequest": 1
+           }
+       }
+   }
+\end{lstlisting}
+
+\noindent\\ 
+A cluster associated to the version 3.9.2 of the WolrdPress application was returned by proxy.\smallskip
+
+\begin{lstlisting}[language=terminal]
+PUT /configuration/cluster HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:9090
+Accept: */*
+Content-Length: 167
+Content-Type: application/x-www-form-urlencoded
+ 
+HTTP/1.1 202 Accepted
+Date: Thu, 28 Aug 2014 10:11:57 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+ 
+be709f8f-2e9b-11e4-8d7c-600308a8245e
+\end{lstlisting}
+
+\noindent\\
+\textit{GRADUAL Upgrade} - HTTP requests with a transition cookie were sent to the proxy after the new cluster was added.\smallskip
+
+\begin{lstlisting}[language=terminal]
+curl -v 'http://127.0.0.1:1235/' -H 'Cookie: transition=952c8557-2088-11e4-87e3-600308a8245e;'
+\end{lstlisting}
+
+The proxy used the transition cookie to randomly generate a number which determines when the client will be upgraded to the new version. When multiple HTTP requests were sent to the proxy using the same transition cookie, It was noticed that the upgrade occurred after three requests as it is shown in the following terminal output: \smallskip
+
+\begin{lstlisting}[language=terminal]
+2014/08/28 11:15:21.019897 proxy_context_cluster.go:115:     
+   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+
+2014/08/28 11:15:22.190838 proxy_context_cluster.go:115:     
+   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+
+2014/08/28 11:15:22.988277 proxy_context_cluster.go:115:     
+   INFO - Serving response 2 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+
+2014/08/28 11:15:23.708418 proxy_context_cluster.go:115:     
+   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [GRADUAL] transition counter [4.00] 
+   percentage transition per request [1.00]
+   
+2014/08/28 11:15:24.563001 proxy_context_cluster.go:115:     
+   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [GRADUAL] transition counter [5.00] 
+   percentage transition per request [1.00]
+\end{lstlisting}
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 \noindent\\
 \textbf{CONCURRENT Update}

@@ -1,0 +1,203 @@
+##############################################
+Starting the proxy with following config
+###############################################
+// run the proxy with INFO
+./build_run_go.sh INFO
+
+###############################################
+// show proxy is running with the config and explain what the config is
+###############################################
+
+2014/08/28 11:05:30.745828 config_parse.go:53:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"hostname": "192.168.50.30", "port": 80}
+        ],
+        "version": "3.9.1"
+    }
+}
+
+as:
+Proxy{
+	Proxy Address:      0.0.0.0:1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 3.9.1 [192.168.50.30:80]
+}
+
+
+##############################################
+// send the
+###############################################
+curl -v http://127.0.0.1:1235
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+
+##############################################
+// proxy's response to curl request (you can see default is INSTANT)
+
+2014/08/28 11:06:01.661061 proxy_context_cluster.go:115:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
+
+##############################################
+// received response format 
+
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=d7bf97fc-2e9a-11e4-8d7c-600308a8245e;
+Date: Thu, 28 Aug 2014 10:06:10 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+ 
+<!DOCTYPE html> ... </html>
+
+##############################################
+// send the curl for "INSTANT "update
+curl -v http://127.0.0.1:9090/configuration/cluster -X PUT --data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "GRADUAL", "percentageTransitionPerRequest": 1 }}}'
+
+PUT /configuration/cluster HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:9090
+Accept: */*
+Content-Length: 167
+Content-Type: application/x-www-form-urlencoded
+
+##############################################
+// proxy response to upgrade
+2014/08/28 11:11:57.781817 config_service.go:66:     INFO - Received new cluster configuration:
+{
+    "cluster": {
+        "servers": [
+            {
+                "hostname": "192.168.50.40", 
+                "port": 80
+            }
+        ], 
+        "version": "3.9.2", 
+        "upgradeTransition": {
+            "mode": "GRADUAL", 
+            "percentageTransitionPerRequest": 1
+        }
+    }
+}
+
+##############################################
+\\received response format (returns cluster id)
+ 
+PUT /configuration/cluster HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:9090
+Accept: */*
+Content-Length: 167
+Content-Type: application/x-www-form-urlencoded
+ 
+HTTP/1.1 202 Accepted
+Date: Thu, 28 Aug 2014 10:11:57 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+ 
+be709f8f-2e9b-11e4-8d7c-600308a8245e
+
+##############################################
+// send curl after upgrade 
+
+curl -v 'http://127.0.0.1:1235/' -H 'Cookie:   transition=952c8557-2088-11e4-87e3-600308a8245e;'
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+Cookie:   transition=952c8557-2088-11e4-87e3-600308a8245e;
+
+
+##############################################
+##############################################
+// proxy response to curl after first request
+
+2014/08/28 11:15:21.019897 proxy_context_cluster.go:115:     INFO - Serving response 0 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
+2014/08/28 11:15:22.190838 proxy_context_cluster.go:115:     INFO - Serving response 1 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
+2014/08/28 11:15:22.988277 proxy_context_cluster.go:115:     INFO - Serving response 2 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
+2014/08/28 11:15:23.708418 proxy_context_cluster.go:115:     INFO - Serving response 0 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [GRADUAL] transition counter [4.00] percentage transition per request [1.00]
+2014/08/28 11:15:24.563001 proxy_context_cluster.go:115:     INFO - Serving response 1 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [GRADUAL] transition counter [5.00] percentage transition per request [1.00]
+
+##############################################
+// response received after first upgrade
+ 
+HTTP/1.1 200 OK
+Set-Cookie: transition=952c8557-2088-11e4-87e3-600308a8245e;
+Set-Cookie: dynsoftup=02c2c877-2e9c-11e4-ae02-600308a8245e;
+Date: Thu, 28 Aug 2014 10:15:33 GMT
+Server: Apache/2.2.22 (Debian)
+X-Powered-By: PHP/5.4.4-14+deb7u12
+X-Pingback: http://192.168.50.40/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+ 
+<!DOCTYPE html> ... </html>
+
+##############################################
+##############################################
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// the WorldPress latest version dies
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+##############################################
+##############################################
+// the normal curl request is sent again to the proxy
+curl -v 'http://127.0.0.1:1235/' -H 'Cookie:   transition=952c8557-2088-11e4-87e3-600308a8245e;'
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+Cookie:   transition=952c8557-2088-11e4-87e3-600308a8245e;
+
+##############################################
+proxy
+// the proxy does the following and the output is shown
+1- attempt to talk first
+2- fails to connect
+3- removes the failed cluster
+4- goes to previous version adn get the answer
+##############################################
+
+2014/08/28 11:20:48.105660 proxy_context_cluster.go:115:     INFO - Serving response 4 from ip: [192.168.50.40] port: [80] version: [3.9.2] mode: [GRADUAL] transition counter [8.00] percentage transition per request [1.00]
+2014/08/28 11:20:48.106281 stage_route.go:28:    ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused
+
+2014/08/28 11:20:48.106299 stage_route.go:29:  WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]
+
+2014/08/28 11:20:48.106319 proxy_context_cluster.go:115:     INFO - Serving response 3 from ip: [192.168.50.30] port: [80] version: [3.9.1] mode: [INSTANT]
+
+
+##############################################
+response (note cookie the same as the very fist version... each version has only one cookie associated to it so if
+I hit the same cluster 10 times i still get the same cookie for INSTANT with no expiry)
+##############################################
+
+ 
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=ffa87add-2e9b-11e4-ae02-600308a8245e;
+Date: Thu, 28 Aug 2014 10:20:56 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+ 
+<!DOCTYPE html> ... </html>
+
+
+
+
