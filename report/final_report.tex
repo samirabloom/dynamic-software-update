@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt,twoside]{article}
+\documentclass[a4paper,11pt,twoside]{report}
 \usepackage[left=2.5cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 
 \usepackage[nodayofweek]{datetime}
@@ -40,6 +40,7 @@
 \definecolor{background}{HTML}{EEEEEE}
 \definecolor{delim}{RGB}{20,105,176}
 \colorlet{numb}{magenta!60!black}
+\bibliographystyle{plain}
 
 \lstdefinelanguage{json}{
     basicstyle=\ttfamily\small,
@@ -155,7 +156,8 @@ This is where the abstract will be
 \listoffigures
 \clearpage
 
-\section{Introduction}
+\chapter{Introduction}
+\section{Motivation}
 Reliable software is important in many sectors such as E-commerce, healthcare, banking, air traffic control and nuclear control.
 
 In safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In E-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
@@ -165,8 +167,18 @@ All companies and organizations use software applications to run their business,
 {\color{red}This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.}\\  
 \colorbox{yellow}{This paragraph will be updated when the report is finished}
 
+\section{Objectives}
+xxx
+
+\section{Contributions}
+xxx
+
+\section{Outline of the Report}
+xx
+
 \clearpage
-\section{Overview}
+
+\chapter{Related Work}
 Software reliability is compromised of the following main activities:
 
   \begin{list}{-}{}
@@ -182,13 +194,12 @@ Software reliability is compromised of the following main activities:
 The Institute of Electrical and Electronics Engineers (IEEE) defines reliability as "the ability of a system or component to perform its required functions under stated conditions for a specified period of time". 
 This section of the report will describe different approaches and technologies used to achieve and maintain software reliability, specifically to support the activities mentioned above. 
 
-\subsection{Software High Availability }\label{subsec:rules}
+\section{Software High Availability }\label{subsec:rules}
 System availability is the percentage of time the system is available to users. A highly available application is fault tolerant and reliable. A reliable system ensures that failure of a single component in the system does not cause failure of the entire application. In a reliable system data updates are not lost and the most recent data is available within acceptable tolerances. 
 
 
-\subsection{Software Update} 
-
-Once faults, such as bugs and security vulnerabilities, have been detected software must be updated to remove these faults. Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP) \footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.
+\section{Software Update} 
+Once faults, such as bugs and security vulnerabilities, have been detected software must be updated to remove these faults. Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP)\footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.
 
 Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, updating or patching software is not risk free as stated by Fred Brooks in The Mythical Man-Month.\bigskip
 
@@ -203,90 +214,78 @@ In both cases performing the code update requires the system to be restarted res
 Dynamic software update also known as live software update is the process of updating parts of a program without having to interrupt its execution. Dynamic system updates can be performed at either a hardware level or a software level. Hardware based dynamic updating are based on hardware redundancy. Systems such as Tandem Nonstop \cite{Tandem} used in the healthcare and banking industries support dynamic hardware updating and resilience to hardware failure. Detailed techniques and approaches that support dynamic software update are described in section \ref{DSU}. 
 
 
-\subsection{Reliable Software Architectures} \label{Architectures}
+\section{Reliable Software Architectures} \label{Architectures}
 There are multiple architectures that increase high availability and support dynamic software update. These include application clustering, active-passive architectures, data replication and clustered databases.
 
-\subsubsection{Application Clustering}
-A common practice to increase availability and fault tolerance is using a cluster of multiple application (or component) instances \cite{Clustring}. Most commonly a load balancer is used to distribute the load between nodes in the cluster by pushing requests to each node \cite{balancer}. For example, a load balancer can receive requests for a web application and distribute the requests between different web services so that the load is distributed across all web services. Alternatively, the nodes within the cluster can pull requests as each node becomes available. For instance, a request queue on a Message Oriented Middleware (MOM) or a message broker such as ActiveMQ \footnote{ \url{http://activemq.apache.org/}} or RabbitMQ \footnote{ \url{http://www.rabbitmq.com/}} can be used to allow nodes to pull requests (Section \ref{MOM}).
+\subsection{Application Clustering}
+A common practice to increase availability and fault tolerance is using a cluster of multiple application (or component) instances \cite{Clustring}. Most commonly a load balancer is used to distribute the load between nodes in the cluster by pushing requests to each node \cite{balancer}. For example, a load balancer can receive requests for a web application and distribute the requests between different web services so that the load is distributed across all web services. Alternatively, the nodes within the cluster can pull requests as each node becomes available. For instance, a request queue on a Message Oriented Middleware (MOM) or a message broker such as ActiveMQ\footnote{\url{http://activemq.apache.org/}} or RabbitMQ\footnote{ \url{http://www.rabbitmq.com/}} can be used to allow nodes to pull requests (Section \ref{MOM}).
 
 When application requests are balancing across multiple nodes, if a single application (or component) instance fails, other nodes in the cluster will still be available to process requests. This clustering approach therefore improves overall application availability. In addition, a clustering approach provides an increased ability to handle spikes in load. Spikes in load are spread across multiple nodes reducing their impacts on any given server. Moreover, an application that is deployed as a cluster is typically easy to scale horizontally by adding additional nodes because it has been designed to run as a cluster \cite{Clustring}.
 
-One common approach widely used in industry to support dynamic software update is a content switching load balancer (\textit{e.g.} F5 \footnote{\url{https://f5.com/}}, Citrix  NetScaler \footnote{\url{http://www.citrix.com/products/netscaler-application-delivery-controller/overview.html}}) in front of an application cluster \cite{balancer}. To perform such an upgrade the cluster is typically split into two halves called A and B. First all load is drained from A by preventing any new requests (\textit{e.g.} business transactions) from being processed. Once A has completed processing all existing requests, it is upgraded and restarted. Now A can start to accept new requests and B is drained and subsequently upgraded. However, this approach is slow and not free from risk as it requires manual interaction with the load balancer to split the cluster and re-route traffic between each step.
+One common approach widely used in industry to support dynamic software update is a content switching load balancer (\textit{e.g.} F5\footnote{\url{https://f5.com/}}, Citrix  NetScaler\footnote{\url{http://www.citrix.com/products/netscaler-application-delivery-controller/overview.html}}) in front of an application cluster \cite{balancer}. To perform such an upgrade the cluster is typically split into two halves called A and B. First all load is drained from A by preventing any new requests (\textit{e.g.} business transactions) from being processed. Once A has completed processing all existing requests, it is upgraded and restarted. Now A can start to accept new requests and B is drained and subsequently upgraded. However, this approach is slow and not free from risk as it requires manual interaction with the load balancer to split the cluster and re-route traffic between each step.
 
-\subsubsection{Active-Passive Architecture}
+\subsection{Active-Passive Architecture}
 In addition to clustering another common approach to increase software reliability is to have an active-passive architecture where there are two application instances  (or two application clusters). One of the application instances (or application clusters) is actively receiving requests while the other is passive and it is not processing any load \cite{active_passive}. This arrangement improves reliability because if the active instance starts to behave incorrectly or crashes, all requests can be immediately routed to the passive instance, resulting in the passive instance becoming active. A content switching router can be used to automate the routing of requests to the passive instance as soon as it detects the active instance is no longer correctly processing requests. This architecture can also be used to support reliable dynamic software updates. The passive instance can be updated first and requests can slowly start to be routed to the passive instance. During this period if the software update applied to the passive instance fails or causes it to crash, all requests can be immediately routed back to the active instance. However, this approach is wasteful since a complete backup application instance or backup application cluster is required. In addition, this approach is slow and it is not free from risk as it requires manual interaction with the load balancer to re-route traffic.
 
-\subsubsection{Data Replication}
+\subsection{Data Replication}
 Data replication can also be used to increase software reliability. Conventional SQL Relation Database Management Systems (RDBMS) typically do not operate in a cluster \cite{Replication}. This is because managing ACID transactions and locking across multiple nodes in a cluster requires commit and rollback to be coordinated across multiple nodes. In addition, consistencies, such as foreign key relationships, must be managed across multiple nodes where the parent and child of the foreign key relationship may be on separate nodes. Although clustered RDBMS do exist, it is expensive, complex and can be error prone. Alternatively, to improve software reliability data can be replicated to a backup database. This works in a similar way to the active-passive architecture where one database is used to process active requests and a second database is only receiving replicated changes and not directly responding to requests. If the active database fails or crashes the passive database can immediately start processing requests and becomes the new active database  \cite{Replication}.
 
 To support dynamic updating of databases, data replication can be used where a backup database receives a replicated copy of the changes made to the primary database. This supports dynamic update in a similar way to the active-passive architecture where software updates can be initially applied to the replicated database; once this is completed, the passive database can replace the active database (and the replication direction is reversed). If the software update fails or causes the database to crash, the non-updated database is still available and can immediately start processing requests again.
 
-\subsubsection{Clustered Databases}
-As the requirements for high availability and high scalability have increased, there has been a shift from using conventional SQL RDBMS to clustered NoSQL databases. In addition, shared database integration is no longer a common technique as it is now widely recognized to break encapsulation and introduce high-coupling. Hence, it is no longer as important for databases to provide strong data integrity. NoSQL databases are designed with clustering and high availability as a priority over strong data integrity and locking \cite{NoSQL}. Therefore, NoSQL databases run in large clusters and replicate data between multiple nodes making them very resilient to failure of one or more nodes. In addition, they are also able to handle rapid increases in load by spreading the load across multiple nodes in the cluster. As NoSQL databases do not provide strong data integrity, it is typically much simpler to dynamically apply updates. For example a document database may store documents in the form of JavaScript Object Notation (JSON) \footnote{\url{http://www.json.org/}}. When the data model is updated by adding or removing fields, no changes to the database are required. Instead applications reading or writing documents are expected to handle different document formats in a flexible way. If such a change was required in a RDBMS, the table structure would need to be modified. The modification is a highly risky activity in a live database and would typically require application downtime and a full database backup.
+\subsection{Clustered Databases}
+As the requirements for high availability and high scalability have increased, there has been a shift from using conventional SQL RDBMS to clustered NoSQL databases. In addition, shared database integration is no longer a common technique as it is now widely recognized to break encapsulation and introduce high-coupling. Hence, it is no longer as important for databases to provide strong data integrity. NoSQL databases are designed with clustering and high availability as a priority over strong data integrity and locking \cite{NoSQL}. Therefore, NoSQL databases run in large clusters and replicate data between multiple nodes making them very resilient to failure of one or more nodes. In addition, they are also able to handle rapid increases in load by spreading the load across multiple nodes in the cluster. As NoSQL databases do not provide strong data integrity, it is typically much simpler to dynamically apply updates. For example a document database may store documents in the form of JavaScript Object Notation (JSON)\footnote{\url{http://www.json.org/}}. When the data model is updated by adding or removing fields, no changes to the database are required. Instead applications reading or writing documents are expected to handle different document formats in a flexible way. If such a change was required in a RDBMS, the table structure would need to be modified. The modification is a highly risky activity in a live database and would typically require application downtime and a full database backup.
 
-\subsection{Reliable Software Techniques}
+\section{Reliable Software Techniques}
 In addition to architectures that support software reliability, there are also techniques that are commonly used to increase reliability of applying software updates. These include automated deployment, configuration as code and continuous delivery.
 
-\subsubsection{Automated Deployment}
-Automated deployment is used to reduce the cost and the risk associated to installing or updating software. Such an approach is particularly important for cluster or active-passive architectures where the same application must be installed or updated repeatedly. Automated deployment involves using fully scripting application installation or update processes including any operating system (OS) installation, package installation, application installation and configuration \cite{Automated}. There are several tools that are commonly used for automated deployment such as Puppet \footnote{\url{https://puppetlabs.com/}}, Chef \footnote{\url{http://www.getchef.com/chef/}}, Ansible \footnote{\url{http://www.ansible.com/home}} and Salt \footnote{\url{http://www.saltstack.com/enterprise/}}.
+\subsection{Automated Deployment}
+Automated deployment is used to reduce the cost and the risk associated to installing or updating software. Such an approach is particularly important for cluster or active-passive architectures where the same application must be installed or updated repeatedly. Automated deployment involves using fully scripting application installation or update processes including any operating system (OS) installation, package installation, application installation and configuration \cite{Automated}. There are several tools that are commonly used for automated deployment such as Puppet\footnote{\url{https://puppetlabs.com/}}, Chef\footnote{\url{http://www.getchef.com/chef/}}, Ansible\footnote{\url{http://www.ansible.com/home}} and Salt\footnote{\url{http://www.saltstack.com/enterprise/}}.
 
-\subsubsection{Configuration As Code}
+\subsection{Configuration As Code}
 Configuration as code is a technique used to ensure all environment configuration and settings for an application installation or update are written as code often in the form of an automated deployment script. Such an approach ensures that applications are deployed with the correct environment configuration and that the development team and infrastructure team can easily agree the required configuration \cite{Continuous Delivery}. This approach reduces the risk of deployment by ensuring configuration settings can be tested and reapplied identically every time. In addition, such an approach allows configuration changes to be versioned and changed in-line with the application code or any software updates guaranteeing that the correct configuration for a given update is applied.
 
-\subsubsection{Continuous Delivery}
+\subsection{Continuous Delivery}
 Continuous delivery is a software development approach that ensures application updates can be deployed to production at any point throughout the development life cycle. To support continuous delivery a pipeline is typically used to promote application updates automatically through several stages from initial development through to production \cite{Continuous Delivery}. Continuous delivery supports reliable software update by ensuring that each update has been applied to multiple stages prior to reaching production. In addition, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
 
+\section{Dynamic Software Update Systems} \label{DSU}
+Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. In the past decades several systems have been developed to support highly reliable dynamic software upgrades. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
 
-\clearpage
-\section{Related Work}
-Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. This section summarizes different approaches that have been proposed over the past forty years for highly reliable dynamic software upgrade.
-
-\subsection{Dynamic Software Update Systems} \label{DSU}
-In the past decades several systems have been developed to support dynamic software updates. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
-
-\subsubsection{Code Update}
+\subsection{Code Update}
 Systems such as Ksplice \cite{Ksplice}, OPUS \cite{{opus}} , DynaMOS \cite{Dynamos}, and POLUS \cite{PLOUS}  replace the old code with a small piece of code, called trampoline. Trampoline executes the replaced instruction and then will jump to the function's new version. One of the main weaknesses of using this mechanism is that the trampoline requires a writable code segment, which makes the application vulnerable to code injection attack \cite{Ksplice}. 
 
 Ginseng \cite{Ginseng} and K42 \cite{K42} systems use indirection instead of trampolines. Ginseng uses binary rewriting to direct function calls into calls via function pointers, while K42's OS uses indirection through an object translation table. In the aforementioned systems updates occur by redirecting indirection targets to the new version. However, using this technique can add overhead to normal execution process. 
 
-Dynamic software update systems mentioned above affect code updates at the granularity of individual functions or objects. However, those systems are not capable of updating functions that contain event-handling loops or functions like \textit{main} that rarely end. Hence, systems such as Kitsune  \cite{Kitsune}, UpStare  \cite{UpStare}, Ekiden  \cite{Eiken}, which focus on updating the whole program rather than individual functions have been developed. UpStare uses a stack reconstitution update mechanism. In this mechanism the running application automatically unrolls the call stack when an update occurs, while saving all stack frames. It then modifies the call back by replacing old functions with their new version, and at the same time mapping data structures in the old frames to their new versions. In contrast, Kitsune and Ekiden both use a manual approach by relying on the programmer to migrate control to the correct equivalent point in the new version of the program.
+Dynamic software update systems mentioned above affect code updates at the granularity of individual functions or objects. However, those systems are not capable of updating functions that contain event-handling loops or functions like \textit{main} that rarely end. Hence, systems such as Kitsune  \cite{Kitsune}, UpStare  \cite{UpStare}, Ekiden  \cite{Eiken}, which focus on updating the whole program rather than individual functions have been developed. UpStare uses a stack reconstruction update mechanism. In this mechanism the running application automatically unrolls the call stack when an update occurs, while saving all stack frames. It then modifies the call back by replacing old functions with their new version, and at the same time mapping data structures in the old frames to their new versions. In contrast, Kitsune and Ekiden both use a manual approach by relying on the programmer to migrate control to the correct equivalent point in the new version of the program.
 
 
-\subsubsection{Data Update} 
-Most dynamic software update systems handle the data update by using object replacement. The system or the developer allocates replacement objects and initialize them using data from the old version. Ginseng uses type-wrapping approach. In this approach the programs are compiled so that \textit{struct}s have an added version field and extra “slop” space to allow for future extensions. Transformation of old objects will be initiated by inserting calls to mediator functions which access updated objects. Ksplice and DynaMOS do not change the old objects but allocate shadow data structures containing only the new fields. Shadow data structures have the advantage of changing fewer functions by an update. When a new field is added to a \textit{struct}, only the code using that field is affected but not all the code that uses the \textit{struct}. 
+\subsection{Data Update} 
+Most dynamic software update systems handle the data update by using object replacement. The system or the developer allocates replacement objects and initialize them using data from the old version. Ginseng uses type-wrapping approach. In this approach the programs are compiled so that \textit{struct}s have an added version field and extra "slop" space to allow for future extensions. Transformation of old objects will be initiated by inserting calls to mediator functions which access updated objects. Ksplice and DynaMOS do not change the old objects but allocate shadow data structures containing only the new fields. Shadow data structures have the advantage of changing fewer functions by an update. When a new field is added to a \textit{struct}, only the code using that field is affected but not all the code that uses the \textit{struct}. 
 
 
-\subsection{Dynamic Software Update Safety}
+\section{Dynamic Software Update Safety}
 Choosing when to safely apply updates has been one of the main concerns of the prior work on dynamic software updating. Some solutions rely on no updates to active code, \textit{i.e.} no thread is running that code, and no thread's stack refers to it, (\cite{Safety 32}, \cite{Ksplice}, \cite{K42}, \cite{Safety 43} ). This restriction reduces post-update errors but it does not eliminate them, and additionally imposes strong restrictions on the form of an update and how quickly it can be applied. Moreover, some researchers suggest that no updated code should access data generated prior to the update being applied (\cite{Safety 213}, \cite{Safety 214}, \cite{Safety 267}). This technique ensures that updates with type difference do not pose a threat to type safety. The final approach suggested by researchers is using transactions in a distributed or local context to enforce stronger timing constrains (\cite{Safety 173}, \cite{Safety 215}, \cite{Safety 279}). However, it is currently been shown that update timing may not be a main concern and a few programmer-designed update points are typically sufficient to determine safe and timely update states (\cite{Safety 213}, \cite{Kitsune}, \cite{Safety 131}, \cite{Safety 108}). 
 
-\subsection{Software Update Using Multi-Version Framework} \label{upgrade1} 
+\section{Software Update Using Multi-Version Framework} \label{upgrade1} 
 The idea of N-version programming, also known as multi-version programming, was originally introduced in 1970s. This method is defined as the independent generation of more than two functionally equivalent programs. Separate developers develop each version of the program all using the same initial specification. These versions will be run concurrently in the application environment. Each version will handle identical inputs and the output of all the versions will be collected and the voting scheme are used to decide which version(s) of the program behave correctly \cite{N-version programming}. N-version programming technique was originally proposed as a method of providing reliable and fault tolerance software. This methodology has inspired many researchers to propose new techniques for development of reliable software applications 
 
 In 1999 Cook \textit{et al.} introduced a multi-version framework called Hercules for the highly reliable upgrading of software components \cite{Cook}. In this framework instead of removing the old version of a component, multiple versions of the same component are kept running in parallel and the behavior of each version is utilized. This approach allows the system integrity to be maintained in the presence of bugs introduced due to the new version of the component. Therefore, Hercules ensures reliability by keeping existing versions of the component running and the old version is only fully removed when the new version has satisfied all its rules. Additionally, Berger and Zorn proposed a replica framework each with a different randomized layout of objects within the heap to provide probabilistic memory safety \cite{Berger}. Furthermore Veeraraghavan et al. suggested running multiple replicas with complementary thread schedules to avoid errors in multi-threaded programs \cite{Veeraraghavan}. 
 
 More recently, Hosek \textit{et al.} proposed a novel framework called Mx, which takes advantage of the idle resources made available by multi-core platforms, and allows applications to survive crash errors introduced by incorrect software updates (\cite{Cadar1}, \cite{Cadar2}). Similar to Hercules, Mx achieves reliability by running the old and new version of an application concurrently. The fundamental difference between the two frameworks is that Hercules requires the programmer to define the functionality of each component version, whilst Mx targets crash bugs and is fully automated. Additionally, in the latter system all versions are live at all times and when Mx detects that one of the versions is not behaving correctly or has crashed, the correctly behaving version is used to handle all software requests. This allows appropriate actions to be taken at a convenient moment; at this point, the incorrectly behaving version can be fixed or restarted. 
-
-
 \clearpage
-\section{Background}
-This section explains and justifies the technologies that will be used in the implementation of the dynamic software update system proposed in section \ref{Implementation}.
- 
-\subsection{Efficient Cluster Management} 
 
+\chapter{Background}
+This chapter explains and justifies the technologies that will be used in the implementation of the dynamic software update system proposed in chapter \ref{Implementation}.
+ 
+\section{Efficient Cluster Management} 
 As described in section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
 
-\subsubsection{Virtualization} 
+\subsection{Virtualization} 
+Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system\footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
 
-Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system \footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
+The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.
 
-The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.\bigskip
-
-
-\noindent
-\textbf{Hypervisor Virtualization}
-
-\noindent
-Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware \footnote{\url{http://www.vmware.com/}} or VirtualBox \footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\bigskip
+\subsubsection*{Hypervisor Virtualization}
+Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware\footnote{\url{http://www.vmware.com/}} or VirtualBox\footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\bigskip
 
 
 %\vspace{-8pt}
@@ -298,11 +297,8 @@ Operating system virtualization that is called hypervisor virtualization allows 
 \end{figure}
 %\vspace{-15pt}
 
-\noindent
-\textbf{Container Virtualization} 
-
-\noindent
-Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2) \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \bigskip
+\subsubsection*{Container Virtualization} 
+Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2)\footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \bigskip
 
 
 %\vspace{-8pt}
@@ -320,7 +316,7 @@ Container virtualization is a lightweight operating system virtualization techni
 \\\textbf{\textit{Linux Containers}}
 
 \noindent
-Container virtualization has been developed independently for different operating systems such as Linux OpenVZ \footnote{\url{http://openvz.org/Main_Page}}, Solaris Containers \footnote{\url{http://www.oracle.com/technetwork/server-storage/solaris/containers-169727.html}}, FreeBSD Jails \footnote{\url{http://www.freebsd.org/cgi/man.cgi?jail}}. A popular example is Linux Containers (LXC) \footnote{\label{LCX} \url{https://linuxcontainers.org/}} that allows a complete copy of the Linux OS to run in a container without the overhead of running a type-2 hypervisor. LXC uses kernel namespaces, AppArmor \footnote{\url{https://wiki.ubuntu.com/AppArmor}}, SELinux \footnote{\url{http://selinuxproject.org/page/Main_Page}}, chroots, and Control groups to provide container virtualization. 
+Container virtualization has been developed independently for different operating systems such as Linux OpenVZ\footnote{\url{http://openvz.org/Main_Page}}, Solaris Containers\footnote{\url{http://www.oracle.com/technetwork/server-storage/solaris/containers-169727.html}}, FreeBSD Jails\footnote{\url{http://www.freebsd.org/cgi/man.cgi?jail}}. A popular example is Linux Containers (LXC)\footnote{\label{LCX} \url{https://linuxcontainers.org/}} that allows a complete copy of the Linux OS to run in a container without the overhead of running a type-2 hypervisor. LXC uses kernel namespaces, AppArmor\footnote{\url{https://wiki.ubuntu.com/AppArmor}}, SELinux\footnote{\url{http://selinuxproject.org/page/Main_Page}}, chroots, and Control groups to provide container virtualization. 
 
 \noindent
 Kernel namespaces is used for virtualization of:
@@ -349,7 +345,7 @@ Chroots, also know as "chroot jails", are used to change the apparent root direc
 
 AppArmor and SELinux are used to improve security and ensure that applications cannot break out of the LXC \cite{security}.
 
-LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system \footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \bigskip
+LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system\footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \bigskip
 
 %\textsuperscript{\ref{LCX}}
 
@@ -357,15 +353,15 @@ LXC provides user environments whose resources can be tightly controlled, withou
 \textbf{\textit{Docker}}
 
 \noindent
-Docker is an open source application (or framework) that extend and simplifies LXC to provide Linux Containers. Docker allows easy creation of lightweight, portable, self-sufficient containers. Docker extends LXC by providing many features that make it is easier to develop, deploy, automate and share containers \footnote{\label{dockerB} \url{https://www.docker.io/the_whole_story/}}. Docker simplifies containerization supporting techniques such as Continuous Delivery by allowing a Docker container built and tested on a developer's laptop to be run anywhere. Docker containers can run on bare metal servers, virtual machines, OpenStack \footnote{\url{https://www.openstack.org/}} clusters or on a service provider's infrastructure such as Digital Ocean \footnote{\url{https://www.digitalocean.com/}}. 
+Docker is an open source application (or framework) that extend and simplifies LXC to provide Linux Containers. Docker allows easy creation of lightweight, portable, self-sufficient containers. Docker extends LXC by providing many features that make it is easier to develop, deploy, automate and share containers\footnote{\label{dockerB} \url{https://www.docker.io/the_whole_story/}}. Docker simplifies containerization supporting techniques such as Continuous Delivery by allowing a Docker container built and tested on a developer's laptop to be run anywhere. Docker containers can run on bare metal servers, virtual machines, OpenStack\footnote{\url{https://www.openstack.org/}} clusters or on a service provider's infrastructure such as Digital Ocean\footnote{\url{https://www.digitalocean.com/}}. 
 
-Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems. A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git \footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another (Figure \ref{docker}). 
+Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems. A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git\footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another (Figure \ref{docker}). 
 
 In addition,  Docker provides a scripting language for creating containers and images based on other images. The script, called a Dockerfile, defines the differences between the new image and the previous base image. Dockerfiles allow the execution of shell commands, the configuration of processes to run when the container is started and control over the public interface of the container including exposed ports and directories. 
 
 Docker also provides a registry of containers called the Docker Index. It allows containers to be publicly shared. The index contains images created by committing a filesystem layer and images created by the Docker Index build system using a Dockerfile \cite{docker2}.
    
-With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately \footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \bigskip
+With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately\footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \bigskip
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -379,26 +375,26 @@ With Docker, a new application on a host only needs its binaries or libraries bu
 %\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
 
 \noindent
-\subsection{Messaging Systems} \label{MOM}
-Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ) \footnote{\label{ZeroMQ_1} \url{http://zeromq.org/}} are the most common messaging standards. 
+\section{Messaging Systems} \label{MOM}
+Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ)\footnote{\label{ZeroMQ_1} \url{http://zeromq.org/}} are the most common messaging standards. 
 
-\subsubsection{Broker-Based Messaging Systems} 
+\subsection{Broker-Based Messaging Systems} 
 AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
 
-\subsubsection{Zero Broker Messaging Systems} 
+\subsection{Zero Broker Messaging Systems} 
 In a broker-less messaging system each application directly talks to other applications without any middleware, hence, there are no bottlenecks associated with these systems. The application can manage and maintain its own messaging infrastructure and so encapsulation and separation of concerns are increased.
 
-ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications \footnote{\label{ZeroMQ_2} \url{http://zeromq.org/}}. 
+ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications\footnote{\label{ZeroMQ_2} \url{http://zeromq.org/}}. 
 
 ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
 
-More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ \footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist. 
+More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ\footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist. 
 
 
-\subsection{Hypertext Transfer Protocol} \label{HTTP}
+\section{Hypertext Transfer Protocol} \label{HTTP}
 The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed hypertext and hypermedia information systems supporting the interlinking of text and multimedia.  Hypertext, a term coined by Ted Nelson \cite{hypertext}, is text which is not constrained to be linear and contains links to other texts.  Hypermedia is an extension to hypertext adding support for multimedia, such as images, video and sound.
 
-HTTP is the foundation protocol of the World Wide Web and it is widely used between different systems that need to exchange text and multimedia.  The most common HTTP relationships are client - server and server - server.  The most common client - server relationship is when a web browser (or user agent) browses a web site on a web server.  A server - server relationship is when a web service requires information from another web service, a common example is OAuth \footnote{\label{OAuth} \url{http://oauth.net/}} where a web service can act on behalf of a user by interacting with an OAuth web service provider.  An important feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred. This is often referred to REpresentational State Transfer (REST).
+HTTP is the foundation protocol of the World Wide Web and it is widely used between different systems that need to exchange text and multimedia.  The most common HTTP relationships are client - server and server - server.  The most common client - server relationship is when a web browser (or user agent) browses a web site on a web server.  A server - server relationship is when a web service requires information from another web service, a common example is OAuth\footnote{\label{OAuth} \url{http://oauth.net/}} where a web service can act on behalf of a user by interacting with an OAuth web service provider.  An important feature of HTTP is the typing and negotiation of data representation, allowing systems to be built independently of the data being transferred. This is often referred to REpresentational State Transfer (REST).
 
 \subsection{HTTP Requests} \label{Requests}
 An HTTP request has the following format:\bigskip
@@ -493,14 +489,14 @@ Content-Type: text/html; charset=UTF-8
 
 <!DOCTYPE html> ... </html>
 \end{lstlisting} 
-
 \clearpage
-\section{Design} \label{Design}
-To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2 \footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
+
+\chapter{Design}\label{Design}
+To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2\footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
 
 In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
 
-\subsection{Dynamic Software Update System}\label{modes} 
+\section{Dynamic Software Update System}\label{modes} 
 To support reliable dynamic software updates a simple lightweight system has been developed suitable for continuous delivery into production. The system runs the updated version concurrently with previous stable versions. The updated version is monitored automatically and if the updated version behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
 
 Four mechanisms are supported to enable different reliable update strategies depending on the specific software requirements.
@@ -525,25 +521,25 @@ In all four mechanisms the behavior of the updated software is automatically mon
 %\vspace{-18pt}
 
 
-\subsection{Technology Stack} 
+\section{Technology Stack} 
 The following technology stack has been chosen for the dynamic software update system:
 
 \begin{list}{-}{}
   \itemsep0em
-  \item Go \footnote{\url{http://golang.org/}} programming language for building the proxy \textit{i.e.} the content switching load balancer. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C\textsuperscript{++} and Java was considered. However, C\textsuperscript{++} was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go, does not give the programmer control over the memory management and is therefore not likely to be as efficient as Go.
+  \item Go\footnote{\url{http://golang.org/}} programming language for building the proxy \textit{i.e.} the content switching load balancer. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C++ and Java were considered. However, C++ was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go, does not give the programmer control over the memory management and is therefore not likely to be as efficient as Go.
     
   \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
   
   \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
 
     \end{list}
-
 \clearpage
-\section{Implementation} \label{Implementation}
+
+\chapter{Implementation} \label{Implementation}
 To produce an efficient and reliable dynamic software update system several versions of a dynamic software update proxy was implemented using Go programming language as described in this section. 
 
-\subsection{Message Based Proxy Using ZeroMQ}
-The first proxy developed to support dynamic software update was an HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty \footnote{\url{http://netty.io/}}. The proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
+\section{Message Based Proxy Using ZeroMQ}
+The first proxy developed to support dynamic software update was an HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty\footnote{\url{http://netty.io/}}. The proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
  
 \begin{list}{-}{}
   \itemsep0em
@@ -562,16 +558,16 @@ The first proxy developed to support dynamic software update was an HTTP reverse
   \label{prototype}
 \end{figure}
 
-\subsubsection{Performance Evaluation}
+\subsection{Performance Evaluation}
 Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chunked HTTP requests and a simpler approach would be to use raw Go sockets directly. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems such as nanomsg were not explored for developing a content switching load balancer. 
 
 In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update instead an alternative approach using raw sockets was developed. 
 
-\subsection{Socket Based Proxies}
+\section{Socket Based Proxies}
 As it was explained in the previous section using a messaging system was not the correct choice to develop a dynamic software update proxy. This section describes two different approaches using raw Go sockets.   
 
-\subsubsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in figure \ref{content_counting_proxy}. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections. 
+\subsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
+The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections. 
 
 When a new connection is received, a TCP connection between the client and the proxy is created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component creates another connection between the proxy and the server.  The HTTP request is then written to the server inside a \textit{Write} loop.
 
@@ -585,24 +581,23 @@ An identical but opposite set of \textit{Read} and \textit{Write} loops are crea
   \label{content_counting_proxy}
 \end{figure}
 
-\noindent\\
-\textbf{Content Counting}\\
-The content counting proxy uses the HTTP format to detect the end of each request and response \ref{HTTP}. Detecting the end of requests/responses is used to close connection sockets when the complete message has been transmitted.   For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the \textit{Read} loop ends after the first read containing all the headers. However, for other HTTP functions such as POST or PUT and for HTTP responses, the Transfer-Encoding and Content-Length headers were used (Section \ref{HTTP}). 
+\subsubsection*{Content Counting}
+The content counting proxy uses the HTTP format to detect the end of each request and response (Section \ref{HTTP}). Detecting the end of requests/responses is used to close connection sockets when the complete message has been transmitted.   For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the \textit{Read} loop ends after the first read containing all the headers. However, for other HTTP functions such as POST or PUT and for HTTP responses, the Transfer-Encoding and Content-Length headers were used (Section \ref{HTTP}). 
 
 \noindent\\
-\textbf{Content-Length}
+\underline{Content-Length}\medskip
 
+\noindent
 When Content-Length header is provided, the size of message body is known upfront.  The proxy then counts the number of bytes in each chunk.  The first chunk can contain both headers and part of the the message body so the CRLF CRLF is used to detect where the message body starts (Section \ref{HTTP}). For each subsequent chunk the content length is counted. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates.
 
 \noindent\\
-\textbf{Transfer-Encoding: "chunked"}
+\underline{Transfer-Encoding: "chunked"}\medskip
 
+\noindent
 However, when no Content-Length header is provided, the size of the message body is not known upfront. Instead the Transfer-Encoding header with a value of "chunked" indicates the message body is chunked and a zero chunk will mark the end of the message body.  At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n', therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the content counting proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
 
-
-\noindent\\
-\textbf{Performance Evaluation}\\
-To evaluate the performance of the aforementioned proxy an HTTP benchmarking tool called \textit{wrk} \footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. \textit{wrk} is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll \footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue \footnote{\label{kqueue} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}.
+\subsubsection*{Performance Evaluation}
+To evaluate the performance of the aforementioned proxy an HTTP benchmarking tool called \textit{wrk}\footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. \textit{wrk} is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll\footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue\footnote{\label{kqueue} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}.
 
 
 
@@ -653,18 +648,18 @@ The above results show that significant socket errors such as read and write err
 
 In conclusion, the significant overhead and socket errors associated with the implemented proxy lead to the conclusion that a proxy with content counting is not suitable for supporting reliable and efficient dynamic software updates. Therefore, another version of the socket based proxy was developed as described in the next section.
 
-\subsubsection{Socket Based Staged Proxy With End Of File Signal}\label{staged}
-The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in figure \ref{proxy}. The SBD approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
+\subsection{Socket Based Staged Proxy With End Of File Signal}\label{staged}
+The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in Figure \ref{proxy}. The SBD approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
 
 \begin{list}{-}{}
   \itemsep0em
   \item\textbf{Encapsulation And Separation Of Concerns} - resulted in separating logic for each functional area into a single component. This creates a simple and isolated code that focuses on one topic, making it clear and easier to understand. Additionally, encapsulation and separation of concerns simplified testing by allowing each test to be focused on one specific area. For example, multiple tests could be writing focusing on reading from a socket and dealing with different errors and situations that can occur.  This approach increase overall reliability in comparison to the \ref{Content-Counting} proxy. 
 
-  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP dynamic update proxy shown in figure \ref{proxy} the \textit{Read} and \textit{write} stages were first developed. That was followed by development of the  \textit{Complete} and \textit{Route} stages respectively and then the rest of proxy was implemented. Furthermore, This approach also simplified testing of the proxy by allowing the code-under-test to be isolated by mocking all dependencies and permitting the mocking of different error situations that would be impossible to test without mocking dependencies  
+  \item\textbf{Inversion-Of-Control And Dependency Injection} - allowed incremental development of the proxy where new components were plugged-in and configured one by one while existing components all worked together. For the HTTP dynamic update proxy shown in Figure \ref{proxy} the \textit{Read} and \textit{Write} stages were first developed. That was followed by development of the  \textit{Complete} and \textit{Route} stages respectively and then the rest of proxy was implemented. Furthermore, This approach also simplified testing of the proxy by allowing the code-under-test to be isolated by mocking all dependencies and permitting the mocking of different error situations that would be impossible to test without mocking dependencies  
 \end{list}
 
 \noindent
-To prevent the socket errors that occurred in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in figure \ref{proxy} and their functionality is explained below.\bigskip
+To prevent the socket errors that occurred in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in Figure \ref{proxy} and their functionality is explained below.\bigskip
 
 \begin{figure}[!ht]
   \centering
@@ -674,16 +669,10 @@ To prevent the socket errors that occurred in the content counting proxy \ref{Co
 \end{figure}
 % \vspace{-18pt}
 
-\noindent
-\textbf{Accept Loop} 
-
-\noindent
+\subsubsection*{Accept Loop} 
 \textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.\bigskip 
 
-\noindent
-\textbf{Forward Pipe} 
-
-\noindent
+\subsubsection*{Forward Pipe} 
 \textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \bigskip  
 
 \begin{lstlisting}[language=terminal, xleftmargin= .5in, xrightmargin= 1.75in]
@@ -701,16 +690,10 @@ type ChunkContext struct {
 }
 \end{lstlisting} 
 
-\noindent\\
-\textbf{Read Stage} 
-
-\noindent
+\subsubsection*{Read Stage} 
 \textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests / responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.  In addition, the socket based proxy handles socket interaction efficiently by only closing sockets when the other end of the connection closes its socket.  This avoids overhead associated with creating new TCP connections such as the TCP 3-way handshake and TCP slow start.\bigskip
 
-\noindent
-\textbf{Route Stage} 
-
-\noindent
+\subsubsection*{Route Stage} 
 \textit{Route} stage has different functionality in the \textit{Forward Pipe}, for processing requests and \textit{Back pipe}, for processing responses. \bigskip  
 
 \noindent
@@ -733,25 +716,16 @@ If the latest cluster version is deleted using the REST API or an error occurs w
 \noindent\\
 \underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses by adding the appropriate cookie headers.  In INSTANT mode a cluster uuid cookie is added with no expiry time.  In SESSION mode a cluster uuid cookie is added with the configured expiry time.  In GRADUAL mode two cookies with no expiry time are added for the cluster uuid and the randomly assigned transition value.  Finally, if the mode is defined as CONCURRENT, the response status code is checked. If the response from the latest version is in the 5xx range, that response will be dropped and the response from the previous version will be returned.  Also in CONCURRENT mode a cluster uuid cookie is added with no expiry time.\bigskip
 
-\noindent
-\textbf{Write Stage} 
-
-\noindent
+\subsubsection*{Write Stage} 
 \textit{Write} stage writes requests / responses to output stream for the appropriate socket. The writing process stops if any errors such as \textit{ErrShortWrite} are encountered while writing to the socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client. \bigskip
 
-\noindent
-\textbf{Complete Stage}
-
-\noindent 
+\subsubsection*{Complete Stage}
 \textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended.\bigskip 
 
-\noindent
-\textbf{Back Pipe}
-
-\noindent
+\subsubsection*{Back Pipe}
 \textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for responses and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
-\subsection{Proxy Installation}
+\section{Proxy Installation}
 The proxy can be installed in two simple steps as follows:
 \begin{list}{-}{}
   \itemsep0em
@@ -762,7 +736,7 @@ The proxy can be installed in two simple steps as follows:
 \noindent
 The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
 
-\subsection{Command Line Interface}
+\section{Command Line Interface}
 The proxy runs from the command line with the following options:\bigskip
 
 \begin{lstlisting}[language=terminal]
@@ -799,7 +773,7 @@ For example the following command will run the proxy in the "INFO" log level and
 proxy -logLevel=INFO -configFile= "config/config_script.json" 
 \end{lstlisting}
  
-\subsection{REST API}
+\section{REST API}
 The proxy provides a simple REST API (Figure \ref{proxy}) to support dynamically updating the cluster configuration as follows:
 
 \begin{list}{-}{}
@@ -828,7 +802,7 @@ The REST API supports the following HTTP response codes:
   
 \end{list}
 
-\subsubsection{PUT /configuration/cluster}\label{PUT}
+\subsection{PUT /configuration/cluster}\label{PUT}
 The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:\bigskip
 
 \begin{lstlisting}[language=json]
@@ -876,7 +850,7 @@ The JSON fields are used for the following reasons:
 \noindent
 When the user send a PUT request and successfully adds a new cluster, the proxy responds by returning a cluster id representing the new cluster entity that has been added. Appendix \ref{Appendix  I} demonstrates detailed examples of the PUT requests and responses supported by proxy and the type of values that can be used in each field of the message body.
 
-\subsubsection{GET - /configuration/cluster/\{clusterId\}} 
+\subsection{GET - /configuration/cluster/\{clusterId\}} 
 GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single cluster configuration. If no cluster id is specified and the GET request is sent to \textit{/configuration/cluster/}, a list of all the cluster configurations added to the proxy will be returned. The format of the response body for getting a cluster configuration with a specific cluster entity is shown below and detailed examples of GET requests and responses are demonstrated in Appendix \ref{Appendix  I}.\bigskip
 
 \begin{lstlisting}[language=json]
@@ -900,40 +874,40 @@ GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single clus
 
 \end{lstlisting}
 
-\subsubsection{DELETE - /configuration/cluster/\{clusterId\}}
+\subsection{DELETE - /configuration/cluster/\{clusterId\}}
 DELETE requests to \textit{/configuration/cluster/\{clusterId\}} deletes a single cluster configuration. No request body and response body is defined for the DELETE request. Appendix \ref{Appendix I} shows an example of a DELETE request and the response received from the proxy.
 
 
-\subsection{Dockerising the proxy}
-\noindent{
+\section{Dockerising the proxy}
 xxxxxx
 Talk about how I dockerised the proxy \bigskip
 xxxxxx
 why didn't use fleet system and coreOS? \bigskip
-xxxx}
+xxxx
 
-\subsection{Testing}
+\section{Testing}
 As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\bigskip
 
 XXXXXXXX ADD TEST LEVELS DIAGRAM  XXXXXXXXXXXXXXXXXXX\bigskip
 
-\subsubsection{Unit Testing}
+\subsection{Unit Testing}
 These tests focus on low level checking of the functionality of each proxy component or function. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component or function and therefore supported mocking of all dependencies. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.\bigskip    
 
 XXXXXXXX ADD COVERAGE REPORT XXXXXXXXXXXXXXXXXXX\bigskip
 
-\subsubsection{Integration Testing}
+\subsection{Integration Testing}
 These tests focus on the integration between different components of the REST API and the proxy. To ensure each component of the REST API integrates correctly, tests were designed to send simultaneous PUT, GET and DELETE requests to the REST server and the responses were asserted. In addition, integration of different stages of the proxy was tested using different scenarios such as testing the behavior of when the proxy is configured for SESSION or CONCURRENT upgrade modes or when a cluster configuration is deleted from the proxy.
 
-\subsubsection{System Testing}
+\subsection{System Testing}
 The aim of these tests is to check that all components of the dynamic software update system including proxy and the REST API work together. System tests were written to cover complete user scenarios. The tests were executed by starting the proxy with an initial cluster configuration. The cluster configuration was then extended using the REST API.  HTTP requests were then sent to the proxy to confirm that the proxy routed the requests to the correct clusters.  Other scenarios also included deleting cluster configuration using the REST API and confirming the routing continued to behave as expected.
 
 \clearpage
-\section{Evaluation}
+
+\chapter{Evaluation}
 This section summarizes the qualitative and quantitative evaluation performed on the implemented dynamic software update system.
 
-\subsection{Quantitative Analysis xxxxxxxxxxx}\label{Quantitative_Analysis}
-xxxx talk about couchbase and worldpress and why we chose those two...\bigskip
+\section{Quantitative Analysis xxxxxxxxxxx}\label{Quantitative_Analysis}
+xxxx talk about couchbase and WordPress and why we chose those two...\bigskip
 xxxxxxxxx WordPress, a content management system that currently runs approximately 20\% of all Web sites.
 xxxx   http://venturebeat.com/2013/07/27/19-percent-of-the-web-runs-on-wordpress\bigskip  
 
@@ -941,7 +915,7 @@ xxxx   http://venturebeat.com/2013/07/27/19-percent-of-the-web-runs-on-wordpress
 xxxxxx (Couchbase) These applications must service many concurrent users; creating, storing, retrieving, aggregating, manipulating and presenting data. In support of these kinds of application needs, Couchbase is designed to provide easy-to-scale key-value or document access with low latency and high sustained throughput. It is designed to be clustered from a single machine to very large scale deployments. http://www.couchbase.com/couchbase-server/architecture (especially server architecture section) \bigskip
 
 
-\subsubsection{Load Test}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
+\subsection{Load Test}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
 
 \noindent\\
 \textbf{xxx do i need to also show synatc for running mysql xxxx}
@@ -967,11 +941,11 @@ docker run --name some-wordpress --link some-mysql:mysql
 \noindent
 \underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. \bigskip
 
-\subsection{Qualitative Analysis}
-\subsubsection{Load Balancing Feature}
+\section{Qualitative Analysis}
+\subsection{Load Balancing Feature}
 To test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster with each node running in a separate Docker container.  As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase was chosen for the load balancing evaluation since it forms a cluster, which all share data, therefore each server returns an identical response to a given request. 
 
-Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each Docker container for each Couchbase node used a different internal ip address on the 172.16.0.0 - 172.31.255.255 private range as reserved by IANA \footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However as the port has been mapped from each Docker container to the virtual machine each node can be address on a different port of the virtual machine. The following section summarizes the steps executed for load balancing evaluation. \bigskip
+Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each Docker container for each Couchbase node used a different internal ip address on the 172.16.0.0 - 172.31.255.255 private range as reserved by IANA\footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However as the port has been mapped from each Docker container to the virtual machine each node can be address on a different port of the virtual machine. The following section summarizes the steps executed for load balancing evaluation. \bigskip
 
 \begin{lstlisting}[language=terminal]
 <@\textcolor{blue}{\# run first node}@>
@@ -1000,8 +974,8 @@ docker run --name node_three -i -t -d -p 10091:8091 \
   \label{couchbase_cluster}
 \end{figure}
 
-\noindent\\
-\textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) using round-robin loading balancing.   The proxy echos back the start-up configuration as shown in the following terminal output.\bigskip
+\subsubsection*{Proxy Configuration} 
+The proxy was configured to forward HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) using round-robin loading balancing.   The proxy echos back the start-up configuration as shown in the following terminal output.\bigskip
 \begin{lstlisting}[language=terminal]
 2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
 {
@@ -1029,15 +1003,17 @@ Proxy{
 		[192.168.50.10:8091, 192.168.50.10:9091, 192.168.50.10:10091]
 }
 \end{lstlisting}
-\noindent\\
-\textit{HTTP Requests} - simultaneous HTTP requests were sent to the running proxy using cURL \footnote{\label{curl_link} \url{http://curl.haxx.se/}}. \smallskip
+
+\subsubsection*{HTTP Requests} 
+Simultaneous HTTP requests were sent to the running proxy using cURL\footnote{\label{curl_link} \url{http://curl.haxx.se/}}. \smallskip
 \begin{lstlisting}[language=terminal]
 curl -v \ 
 http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
 \end{lstlisting}
 
-\noindent\\
-\textit{Load balancing proxy} - when the proxy is configured to run with INFO level logging it prints log entries to the terminal that demonstrate the HTTP requests are being distributed between each node in the cluster using round-robin order.\smallskip
+
+\subsubsection*{Load balancing proxy} 
+When the proxy is configured to run with INFO level logging it prints log entries to the terminal that demonstrate the HTTP requests are being distributed between each node in the cluster using round-robin order.\smallskip
 
 %2014/08/26 21:53:44.763483 proxy_context_cluster.go:115:     
 %   INFO - Serving response 0 from ip: [127.0.0.1] port: [1036] 
@@ -1070,8 +1046,8 @@ http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
    version: [2.5] mode: [INSTANT]
 \end{lstlisting}
 
-\noindent\\
-\textit{HTTP Requests \& Responses} - the following shows an HTTP request and the associated HTTP response received via the proxy from a node in the Couchbase cluster.  Note the time zone used inside the Docker container was set to UTC (Coordinated Universal Time) where as the time zone on the computer running the proxy was set to BST (British Summer Time) therefore terminal log output was 1 hour ahead of the Date header in the responses from Couchbase.
+\subsubsection*{HTTP Requests \& Responses} 
+The following shows an HTTP request and the associated HTTP response received via the proxy from a node in the Couchbase cluster.  Note the time zone used inside the Docker container was set to UTC (Coordinated Universal Time) where as the time zone on the computer running the proxy was set to BST (British Summer Time) therefore terminal log output was 1 hour ahead of the Date header in the responses from Couchbase.
 
 \noindent\\
 \textit{Request}
@@ -1099,17 +1075,14 @@ Cache-Control: no-cache
 {"name":"beer-sample","bucketType":"membase", ... }
 \end{lstlisting}
 
-\subsubsection{Automated Software Update} 
-To prove the proxy is capable of coping with dynamic software updates and it is suitable for contentious delivery, INSTANT, SESSION, GRADUAL and CONCURRENT updates were performed while the proxy was running.  As it was mentioned in section \ref{Quantitative_Analysis} WorldPress currently runs approximately 20\% of all Web sites, therefore it was chosen for evaluating the dynamic software update feature of the proxy. Different update scenarios were tested on version 3.9.1 and 3.9.2 of WorlPress. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}. 
+\subsection{Automated Software Update} 
+To prove the proxy is capable of coping with dynamic software updates and it is suitable for contentious delivery, INSTANT, SESSION, GRADUAL and CONCURRENT updates were performed while the proxy was running.  As it was mentioned in section \ref{Quantitative_Analysis} WordPress currently runs approximately 20\% of all Web sites, therefore it was chosen for evaluating the dynamic software update feature of the proxy. Different update scenarios were tested on version 3.9.1 and 3.9.2 of WorlPress. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}. 
 
-\noindent\\
-\textbf{INSTANT Update}
-
-\noindent
+\subsubsection*{INSTANT Update}
 The following steps were followed for evaluation of the proxy using INSTANT mode (Section \ref{modes}).\medskip
 
 \noindent
-\textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the cluster running version 3.9.1 of the WorldPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:22:24.922144 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1142,7 +1115,7 @@ curl -v http://127.0.0.1:1235
 \end{lstlisting} 
 
 \noindent\\
-When the proxy was run in the INFO level logging, its output to the terminal demonstrated that the HTTP requests were forwarded to the version 3.9.1 of the WorldPress.\smallskip
+When the proxy was run in the INFO level logging, its output to the terminal demonstrated that the HTTP requests were forwarded to the version 3.9.1 of the WordPress.\smallskip
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 20:22:56.415432 proxy_context_cluster.go:114:     
@@ -1151,7 +1124,7 @@ When the proxy was run in the INFO level logging, its output to the terminal dem
 \end{lstlisting} 
 
 \noindent\\
-This was further confirmed by the response received from the WorldPress application via proxy. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.1 of WorldPress application respectively. Note that cookie associated with a cluster with INSTANT upgrade mode does not have an expiry date. \smallskip  
+This was further confirmed by the response received from the WordPress application via proxy. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.1 of WordPress application respectively. Note that cookie associated with a cluster with INSTANT upgrade mode does not have an expiry date. \smallskip  
 
 \begin{lstlisting}[language=terminal] 
 HTTP/1.1 200 OK
@@ -1168,7 +1141,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{PUT Request For INSTANT Upgrade} - To upgrade the WorldPress application from version 3.9.1. to version 3.9.2 instantly, a cluster containing new version was added to the proxy using the following PUT request: \smallskip 
+\textit{PUT Request For INSTANT Upgrade} - To upgrade the WordPress application from version 3.9.1. to version 3.9.2 instantly, a cluster containing new version was added to the proxy using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 curl -v \
@@ -1224,7 +1197,7 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}  
 
 \noindent\\
-\textit{INSTANT Upgrade} - Since the new version was added to the proxy with INSTANT upgrade transition mode, the proxy output and the responses received from the WorldPress via proxy showed that the new version is processing the requests. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.2 of WorldPress application respectively. \smallskip 
+\textit{INSTANT Upgrade} - Since the new version was added to the proxy with INSTANT upgrade transition mode, the proxy output and the responses received from the WordPress via proxy showed that the new version is processing the requests. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.2 of WordPress application respectively. \smallskip 
 
 
 \noindent
@@ -1258,7 +1231,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - to assure that the proxy can handle updates that cause incorrect behavior, the cluster running version 3.9.2 of WorldPress was stopped and the behavior of the proxy was evaluated after sending new HTTP requests to the proxy. The proxy's terminal output showed that proxy first tried to send the request to the cluster with the highest version and when it detects that the cluster is not behaving correctly in thsi case it can not communicate to the cluster, it removes the updated version of the cluster from the list of configured clusters and forwards the request to the previous cluster version. The proxy terminal output and the response received from version 3.9.1 of WorldPress when the new version is not available is shown below. \smallskip 
+\textit{Handling Incorrect Behavior} - to assure that the proxy can handle updates that cause incorrect behavior, the cluster running version 3.9.2 of WordPress was stopped and the behavior of the proxy was evaluated after sending new HTTP requests to the proxy. The proxy's terminal output showed that proxy first tried to send the request to the cluster with the highest version and when it detects that the cluster is not behaving correctly in thsi case it can not communicate to the cluster, it removes the updated version of the cluster from the list of configured clusters and forwards the request to the previous cluster version. The proxy terminal output and the response received from version 3.9.1 of WordPress when the new version is not available is shown below. \smallskip 
 
 \noindent\\
 \textit{Proxy's output}
@@ -1294,14 +1267,11 @@ Content-Type: text/html; charset=UTF-8
 <!DOCTYPE html> ... </html>  
 \end{lstlisting}
    
-\noindent\\
-\textbf{SESSION Update}
-
-\noindent
+\subsubsection*{SESSION Update}
 The following steps were followed for evaluation of the proxy using SESSION mode (Section \ref{modes}).\medskip
 
 \noindent
-\textit{Proxy Configuration} - The proxy was configured with a cluster running version 3.9.1 of the WorldPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy Configuration} - The proxy was configured with a cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:10:46.064526 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1328,13 +1298,13 @@ Proxy{
 \end{lstlisting}
 
 \noindent \\
-\textit{HTTP Requests \& Responses} - HTTP requests were sent to the WorldPress cluster via proxy suing the following cURL syntax:\smallskip  
+\textit{HTTP Requests \& Responses} - HTTP requests were sent to the WordPress cluster via proxy suing the following cURL syntax:\smallskip  
 
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
 \end{lstlisting} 
 
-\noindent\\Since no upgrade transition was defined for the initial configuration, INSTANT mode was assigned to the cluster with version 3.9.1 as shown in the following terminal output echoed by proxy. In addition, The output shows that the proxy is forwarding responses from WorldPress with version 3.9.1. \smallskip
+\noindent\\Since no upgrade transition was defined for the initial configuration, INSTANT mode was assigned to the cluster with version 3.9.1 as shown in the following terminal output echoed by proxy. In addition, The output shows that the proxy is forwarding responses from WordPress with version 3.9.1. \smallskip
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 21:11:18.216192 proxy_context_cluster.go:114:     
@@ -1343,7 +1313,7 @@ curl -v http://127.0.0.1:1235
 \end{lstlisting} 
 
 \noindent\\
-The "X-Powered-By" and "X-Pingback" headers received by the client also confirmed that the response has been sent by WorldPress version 3.9.1.  Note that the Set-Cookie header in the response is set and it has no expiry date. \smallskip 
+The "X-Powered-By" and "X-Pingback" headers received by the client also confirmed that the response has been sent by WordPress version 3.9.1.  Note that the Set-Cookie header in the response is set and it has no expiry date. \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 HTTP/1.1 200 OK
@@ -1360,7 +1330,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{PUT Request For SESSION Upgrade} - A cluster running the version 3.9.2 of the WorldPress was added to the proxy with SESSION upgrade transition mode and 60 seconds session time out using the following PUT request: \smallskip 
+\textit{PUT Request For SESSION Upgrade} - A cluster running the version 3.9.2 of the WordPress was added to the proxy with SESSION upgrade transition mode and 60 seconds session time out using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 curl -v http://127.0.0.1:9090/configuration/cluster -X PUT \
@@ -1483,7 +1453,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - To insure the proxy can handle any errors occur by the updated cluster, the Docker container running the WorldPress version 3.9.2 was stopped. HTTP requests subsequently were sent to the proxy and its behavior was screened. The proxy terminal output demonstrated that when the proxy fails to send requests to the most updated cluster, it removes that cluster and forwards the requests to the previous cluster version.  \smallskip
+\textit{Handling Incorrect Behavior} - To insure the proxy can handle any errors occur by the updated cluster, the Docker container running the WordPress version 3.9.2 was stopped. HTTP requests subsequently were sent to the proxy and its behavior was screened. The proxy terminal output demonstrated that when the proxy fails to send requests to the most updated cluster, it removes that cluster and forwards the requests to the previous cluster version.  \smallskip
 
 \noindent\\
 \textit{Proxy's output}
@@ -1505,7 +1475,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
  
 \noindent\\
-The response received via proxy from the WorldPress application after the oldest version failed is shown here. Note that the "X-Pingback" header shows the network address of old version of the WorldPress application. In addition, Since the cluster with SESSION upgrade mode has been deleted by proxy the uuid cookie in the "Set-Cookie" header does not have an expiry date.\smallskip 
+The response received via proxy from the WordPress application after the oldest version failed is shown here. Note that the "X-Pingback" header shows the network address of old version of the WordPress application. In addition, Since the cluster with SESSION upgrade mode has been deleted by proxy the uuid cookie in the "Set-Cookie" header does not have an expiry date.\smallskip 
 
 \noindent\\
 \textit{Response}
@@ -1523,14 +1493,11 @@ Content-Type: text/html; charset=UTF-8
 <!DOCTYPE html> ... </html>
 \end{lstlisting}
 
-\noindent\\
-\textbf{GRADUAL Update}
+\subsubsection*{GRADUAL Update}
+This section summarizes the performance evaluation of the proxy when a GRADUAL upgrade of the WordPress from version 3.9.1 to 3.9.2 was applied using proxy. \medskip
 
 \noindent
-This section summarizes the performance evaluation of the proxy when a GRADUAL upgrade of the WorldPress from version 3.9.1 to 3.9.2 was applied using proxy. \medskip
-
-\noindent
-\textit{Proxy Configuration} - the initial configuration of the proxy is shown in the following terminal output echoed by proxy when it was started. Note that the proxy was configured with version 3.9.1 of WorldPress application.\smallskip
+\textit{Proxy Configuration} - the initial configuration of the proxy is shown in the following terminal output echoed by proxy when it was started. Note that the proxy was configured with version 3.9.1 of WordPress application.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:05:30.745828 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1558,14 +1525,14 @@ Proxy{
 \end{lstlisting}
 
 \noindent\\
-\textit{HTTP Requests \& Responses} - HTTP requests were sent to WorldPress application via proxy using the following the cURL syntax:\smallskip
+\textit{HTTP Requests \& Responses} - HTTP requests were sent to WordPress application via proxy using the following the cURL syntax:\smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
 \end{lstlisting}
 
 \noindent\\
-The following proxy output confirms that the HTTP requests were forwarded to the WorldPress application version 3.9.1. Since no upgrade mode was chosen for the cluster, the default mode \textit{i.e.} INSTANT mode was chosen by proxy. \smallskip
+The following proxy output confirms that the HTTP requests were forwarded to the WordPress application version 3.9.1. Since no upgrade mode was chosen for the cluster, the default mode \textit{i.e.} INSTANT mode was chosen by proxy. \smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:06:01.661061 proxy_context_cluster.go:115:     
@@ -1574,7 +1541,7 @@ The following proxy output confirms that the HTTP requests were forwarded to the
 \end{lstlisting}
 
 \noindent\\
-"X-Pingback" header of the response received from the proxy further confirmed that proxy is receiving responses from WorldPress application version 3.9.1.\smallskip 
+"X-Pingback" header of the response received from the proxy further confirmed that proxy is receiving responses from WordPress application version 3.9.1.\smallskip 
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -1591,7 +1558,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy for upgrading WorldPress application from version 3.9.1 to version 3.9.2.
+\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy for upgrading WordPress application from version 3.9.1 to version 3.9.2.
 
 \begin{lstlisting}[language=terminal]
 curl -v \
@@ -1674,43 +1641,21 @@ The proxy used the transition cookie to randomly generate a number which determi
    percentage transition per request [1.00]
 \end{lstlisting}
 
- 
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \noindent\\
-\textbf{CONCURRENT Update}
+\textit{Handling Incorrect Behavior} - To insure the proxy can go back to the older version of the application if the new version behaved incorrectly, the Docker container running the new version (\textit{i.e.} version 3.9.2) of the WordPress application was stopped. The behavior of the proxy was screened when new HTTP requests with transition cookie were sent to it.  
+
+
+\subsubsection*{CONCURRENT Update}
    
 
    
 
 
-\subsubsection{Handling Incorrect Behavior} 
+\subsection{Handling Incorrect Behavior} 
 To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
 \clearpage
 
-
-\section{Conclusions \& Future Plans}
+\chapter{Conclusions \& Future Plans}
 xxxxxxxxx\bigskip
 
 xxxxxxxxx\bigskip
@@ -1719,9 +1664,10 @@ xxxxxxxxx\bigskip
 
 
 \clearpage
-\section{Appendices}
 
-\subsection{Appendix I: Proxy REST API}\label{Appendix I}
+\chapter{Appendices}
+
+\section*{Appendix I: Proxy REST API}\label{Appendix I}
 The proxy provides a simple REST API to support dynamically updating the cluster configuration as follows:
 
 \begin{list}{-}{}
@@ -1773,7 +1719,7 @@ To add a new cluster make a PUT request to \textit{/configuration/cluster}.\bigs
 \noindent\\
 \textbf{cluster.servers}
 
-\noindent
+	\noindent
 Type: 'Array'  Default value: '[]'\smallskip
 
 \noindent
@@ -2235,11 +2181,12 @@ Content-Type: text/plain; charset=utf-8
 
 
 \clearpage
+
 \begin{thebibliography}{1}
 
  \bibitem {Java} Alessandro Orso, Anup Rao, and Mary J. Harrold. {\em A Technique for Dynamic Updating of Java Software.}, CSM Proceedings of the International Conference on Software, 2002.
  
-  \bibitem {fly} M. E. Segal and O. Frieder. {\em On-the-ﬂy program modification: Systems for dynamic updating.} IEEE Software, 1993.
+  \bibitem {fly} M. E. Segal and O. Frieder. \textit{On-the-fly program modification: Systems for dynamic updating.} IEEE Software, 1993.
 
    \bibitem {Tandem}  A. Thakur. {\em Analysis of failures in the Tandem NonStop-UX Operating System.}, Proceedings., Sixth International Symposium on Software Reliability Engineering, 1995. 
    
@@ -2274,7 +2221,7 @@ Content-Type: text/plain; charset=utf-8
 
  \bibitem {Eiken} C. M. Hayden, E. K. Smith, M. Hicks, and J. S. Foster. {\em State transfer for clear and efficient runtime upgrades.}, HotSWUp, 2011.
  
-  \bibitem {Kitsune} C. M. Hayden, E. K. Smith, M. Denchev, M. Hicks, and J. S. Foster, {\em “Kitsune: Efficient, general-purpose dynamic software updating for C,”}, OOPSLA, 2012.
+  \bibitem {Kitsune} C. M. Hayden, E. K. Smith, M. Denchev, M. Hicks, and J. S. Foster, {\em "Kitsune: Efficient, general-purpose dynamic software updating for C"}, OOPSLA, 2012.
   
   \bibitem {Safety 32} Gautam Altekar, Ilya Bagrak, Paul Burstein, and Andrew Schultz. {\em OPUS: Online patches and updates for security.}, USENIX Security Symp, 2005. 
 
@@ -2286,7 +2233,7 @@ Content-Type: text/plain; charset=utf-8
 
   \bibitem {Safety 267} Gareth Stoyle, Michael Hicks, Gavin Bierman, Peter Sewell, and Iulian Neamtiu. Mutatis mutandis: {\em Safe and predictable dynamic software updating.}, ACM Trans. Program. Lang. Syst., 29(4), 2007.
   
-  \bibitem {Safety 131} ] C. M Hayden, E. K Smith, M. Hicks, and J. S Foster. {\em State transfer for clear and efficient runtime updates.}, In Proc. of the Third Int’l Workshop on Hot Topics in Software Upgrades, pages 179 - 184, 2011.
+  \bibitem {Safety 131} ] C. M Hayden, E. K Smith, M. Hicks, and J. S Foster. {\em State transfer for clear and efficient runtime updates.}, In Proc. of the Third Int'l Workshop on Hot Topics in Software Upgrades, pages 179 - 184, 2011.
 
   \bibitem {Safety 108} Cristiano Giuffrida, Anton Kuijsten, and Andrew S. Tanenbaum. {\em Enhanced operating system security through efficient and fine-grained address space randomization.}, USENIX Security Symp., 2012.
 
@@ -2294,19 +2241,19 @@ Content-Type: text/plain; charset=utf-8
 
   \bibitem {Safety 173} Jeff Kramer and Jeff Magee. {\em The evolving philosophers problem: Dynamic change management.}, IEEE Trans. Softw. Eng., 1990. 
 
- \bibitem {Safety 279} Yves Vandewoude, Peter Ebraert, Yolande Berbers, and Theo D’Hondt. {\em Tranquility: A low disruptive alternative to quiescence for ensuring safe dynamic updates.}, IEEE Trans. Softw. Eng., 2007.
+ \bibitem {Safety 279} Yves Vandewoude, Peter Ebraert, Yolande Berbers, and Theo D'Hondt. {\em Tranquility: A low disruptive alternative to quiescence for ensuring safe dynamic updates.}, IEEE Trans. Softw. Eng., 2007.
 
- \bibitem {Cook} Jonathan E. Cook and	Jeffrey A. Dage. {\em “Highly reliable upgrading of components”}, ICSE Conf. on Proceedings of the 21st international conference on Software engineering, 1999.
+ \bibitem {Cook} Jonathan E. Cook and	Jeffrey A. Dage. {\em "Highly reliable upgrading of components"}, ICSE Conf. on Proceedings of the 21st international conference on Software engineering, 1999.
 
  \bibitem {Berger} Emery D Berger and Benjamin Zorn. {\em DieHard: probabilistic memory safety for unsafe languages.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
  
  \bibitem {Veeraraghavan} Kaushik Veeraraghavan, Peter M. Chen, Jason Flinn, and Satish Narayanasamy. {\em detecting and surviving data races using complementary schedules}, SOSP, 2011. 
  
- \bibitem {Cadar1} Petr Hosek and Cristian Cadar. {\em Safe software updates via multi-version ex- ecution.}, Int’l Conf. on Software Eng., pages 612-621, 2013.
+ \bibitem {Cadar1} Petr Hosek and Cristian Cadar. {\em Safe software updates via multi-version execution.}, Int'l Conf. on Software Eng., pages 612-621, 2013.
  
- \bibitem {Cadar2} Cristian Cadar and Petr Hosek. {\em Multi-version software updates.}, In Proc. of the Fourth Int’l Workshop on Hot Topics in Software Upgrades, 2012.
+ \bibitem {Cadar2} Cristian Cadar and Petr Hosek. {\em Multi-version software updates.}, In Proc. of the Fourth Int'l Workshop on Hot Topics in Software Upgrades, 2012.
 
- 	\bibitem{N-version programming} Liming. Chen and Algirdas Avizienis. {\em  “N-version programming: A fault-tolerance approach to reliability of software operation”}, in FTCS, 1978. 
+ 	\bibitem{N-version programming} Liming. Chen and Algirdas Avizienis. {\em  "N-version programming: A fault-tolerance approach to reliability of software operation"}, in FTCS, 1978. 
    
 	\bibitem{virtualization} N.M. Mosharaf Kabir Chowdhurya,1, Raouf Boutaba b. {\em A survey of network virtualization}, Computer Networks, 2010.
    

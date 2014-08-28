@@ -15,7 +15,6 @@ Running 600m test @ http://Administrator:password@127.0.0.1:1235/pools/default/b
      90%    5.35s 
      99%    6.02s 
   15612858 requests in 600.01m, 143.44GB read
-  Socket errors: connect 0, read 0, write 0, timeout 64222
 Requests/sec:    433.69
 Transfer/sec:      4.08MB
 samiras-mbp:wrk samirarabbanian$ 

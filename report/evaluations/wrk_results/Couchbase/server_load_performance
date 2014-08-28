@@ -16,7 +16,6 @@ Running 600m test @ http://Administrator:password@192.168.50.50:8091/pools/defau
      90%    5.59s 
      99%    7.44s 
   11636718 requests in 600.01m, 106.88GB read
-  Socket errors: connect 0, read 0, write 0, timeout 77438
 Requests/sec:    323.24
 Transfer/sec:      3.04MB
 

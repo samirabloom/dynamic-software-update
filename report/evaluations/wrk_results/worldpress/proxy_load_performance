@@ -4,6 +4,21 @@ proxy 10 hr
 ###############################################
 ###############################################
 
+samiras-mbp:wrk samirarabbanian$ ./wrk -t10 -c10 -d10h --latency http://127.0.0.1:1235
+Running 600m test @ http://127.0.0.1:1235
+  10 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    78.80ms   82.53ms   1.11s    94.52%
+    Req/Sec    14.55      4.43    31.00     82.43%
+  Latency Distribution
+     50%   64.37ms
+     75%   75.94ms
+     90%   91.85ms
+     99%  277.33ms
+  5376375 requests in 600.01m, 1.69GB read
+Requests/sec:    149.34
+Transfer/sec:     49.31KB
+samiras-mbp:wrk samirarabbanian$ 
 
 ##############################################
 ##############################################
@@ -66,6 +81,7 @@ Requests/sec:    147.36
 Transfer/sec:     48.71KB
 
 
+
 ##############################################
 ##############################################
 proxy 10 sec
@@ -88,3 +104,17 @@ Requests/sec:    165.76
 Transfer/sec:     57.36KB
 samiras-mbp:wrk samirarabbanian$
 
+samiras-mbp:wrk samirarabbanian$ ./wrk -t10 -c10 -d10s --latency http://127.0.0.1:1235
+Running 10s test @ http://127.0.0.1:1235
+  10 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    60.96ms   24.20ms 274.68ms   92.44%
+    Req/Sec    16.72      3.83    28.00     80.00%
+  Latency Distribution
+     50%   58.83ms
+     75%   66.60ms
+     90%   76.52ms
+     99%  222.34ms
+  1705 requests in 10.00s, 585.84KB read
+Requests/sec:    170.43
+Transfer/sec:     58.56KB
