@@ -121,3 +121,19 @@ Running 10s test @ http://192.168.50.30/
 Requests/sec:     84.16
 Transfer/sec:    638.41KB
 samiras-mbp:wrk samirarabbanian$ 
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t10 -c10 -d10s --latency http://192.168.50.30/
+Running 10s test @ http://192.168.50.30/
+  10 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   124.36ms   26.09ms 224.38ms   68.79%
+    Req/Sec     7.84      1.94    13.00     76.59%
+  Latency Distribution
+     50%  123.99ms
+     75%  140.46ms
+     90%  157.80ms
+     99%  190.40ms
+  822 requests in 10.00s, 6.09MB read
+Requests/sec:     82.17
+Transfer/sec:    623.34KB
+samiras-mbp:wrk samirarabbanian$ 
