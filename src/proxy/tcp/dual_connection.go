@@ -148,6 +148,8 @@ func (dualTCPConnection *DualTCPConnection) Write(writeBuffer []byte) (int, erro
 				errorsList += ", "
 			}
 			errorsList += fmt.Sprintf("connections[%d]: %s -> %s - error: %s", index, connection.LocalAddr(), connection.RemoteAddr(), err)
+		} else if len(writeBuffer) != count {
+			return count, io.ErrShortWrite
 		}
 		if count > maxCount {
 			maxCount = count
@@ -173,7 +175,7 @@ func (dualTCPConnection *DualTCPConnection) String() string {
 func (dualTCPConnection *DualTCPConnection) Close() error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.Close()
 		})
 		if err != nil {
@@ -186,7 +188,7 @@ func (dualTCPConnection *DualTCPConnection) Close() error {
 func (dualTCPConnection *DualTCPConnection) LocalAddr() net.Addr {
 	addresses := make([]net.Addr, len(dualTCPConnection.Connections))
 	for index, connection := range dualTCPConnection.Connections {
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			addresses[index] = connection.LocalAddr()
 		})
 	}
@@ -196,7 +198,7 @@ func (dualTCPConnection *DualTCPConnection) LocalAddr() net.Addr {
 func (dualTCPConnection *DualTCPConnection) RemoteAddr() net.Addr {
 	addresses := make([]net.Addr, len(dualTCPConnection.Connections))
 	for index, connection := range dualTCPConnection.Connections {
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			addresses[index] = connection.RemoteAddr()
 		})
 	}
@@ -206,7 +208,7 @@ func (dualTCPConnection *DualTCPConnection) RemoteAddr() net.Addr {
 func (dualTCPConnection *DualTCPConnection) SetDeadline(time time.Time) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetDeadline(time)
 		})
 		if err != nil {
@@ -219,7 +221,7 @@ func (dualTCPConnection *DualTCPConnection) SetDeadline(time time.Time) error {
 func (dualTCPConnection *DualTCPConnection) SetReadDeadline(time time.Time) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetReadDeadline(time)
 		})
 		if err != nil {
@@ -232,7 +234,7 @@ func (dualTCPConnection *DualTCPConnection) SetReadDeadline(time time.Time) erro
 func (dualTCPConnection *DualTCPConnection) SetWriteDeadline(time time.Time) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetWriteDeadline(time)
 		})
 		if err != nil {
@@ -250,7 +252,7 @@ func (dualTCPConnection *DualTCPConnection) ReadFrom(reader io.Reader) (int64, e
 func (dualTCPConnection *DualTCPConnection) CloseRead() error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.CloseRead()
 		})
 		if err != nil {
@@ -263,7 +265,7 @@ func (dualTCPConnection *DualTCPConnection) CloseRead() error {
 func (dualTCPConnection *DualTCPConnection) CloseWrite() error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.CloseWrite()
 		})
 		if err != nil {
@@ -276,7 +278,7 @@ func (dualTCPConnection *DualTCPConnection) CloseWrite() error {
 func (dualTCPConnection *DualTCPConnection) SetLinger(seconds int) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetLinger(seconds)
 		})
 		if err != nil {
@@ -289,7 +291,7 @@ func (dualTCPConnection *DualTCPConnection) SetLinger(seconds int) error {
 func (dualTCPConnection *DualTCPConnection) SetKeepAlive(keepAlive bool) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetKeepAlive(keepAlive)
 		})
 		if err != nil {
@@ -302,7 +304,7 @@ func (dualTCPConnection *DualTCPConnection) SetKeepAlive(keepAlive bool) error {
 func (dualTCPConnection *DualTCPConnection) SetKeepAlivePeriod(duration time.Duration) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetKeepAlivePeriod(duration)
 		})
 		if err != nil {
@@ -315,7 +317,7 @@ func (dualTCPConnection *DualTCPConnection) SetKeepAlivePeriod(duration time.Dur
 func (dualTCPConnection *DualTCPConnection) SetNoDelay(noDelay bool) error {
 	for _, connection := range dualTCPConnection.Connections {
 		var err error
-		AllowForNilConnection(connection, func(connection TCPConnection){
+		AllowForNilConnection(connection, func(connection TCPConnection) {
 			err = connection.SetNoDelay(noDelay)
 		})
 		if err != nil {

@@ -3,7 +3,7 @@ package docker_client
 import (
 	"proxy/log"
 	"io"
-	"github.com/fsouza/go-dockerclient/docker"
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 type DockerClient struct {

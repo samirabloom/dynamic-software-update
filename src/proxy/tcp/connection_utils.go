@@ -26,3 +26,8 @@ func AllowForNilConnection(connection TCPConnection, operation func (TCPConnecti
 		}
 	}
 }
+
+func IsDualConnection(connection TCPConnection) bool {
+	_, isDualConnection := connection.(*DualTCPConnection)
+	return isDualConnection
+}

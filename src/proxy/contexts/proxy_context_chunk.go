@@ -17,7 +17,7 @@ const (
 
 var DirectionToDescription = map[Direction]string {
 	ClientToServer: "client -> server",
-	ServerToClient: "client <- server",
+	ServerToClient: "server -> client",
 }
 
 type RoutingContext struct {
@@ -60,8 +60,13 @@ func (context *ChunkContext) String() string {
 	tcp.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
 		output += fmt.Sprintf("\t to: %s -> %s\n", connection.LocalAddr(), connection.RemoteAddr())
 	});
+	output += fmt.Sprintf("\t err: %s\n", context.Err)
 	output += fmt.Sprintf("\t totalReadSize: %d\n", context.TotalReadSize)
 	output += fmt.Sprintf("\t totalWriteSize: %d\n", context.TotalWriteSize)
+	if context.RoutingContext != nil {
+		output += fmt.Sprintf("\t headers: %#v\n", context.RoutingContext.Headers)
+	}
+	output += fmt.Sprintf("\t firstChunk: %t\n", context.FirstChunk)
 	output += "}\n"
 	return output
 }

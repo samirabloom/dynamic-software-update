@@ -29,7 +29,7 @@ func read(next func(*contexts.ChunkContext), complete func(*contexts.ChunkContex
 			}
 
 			if context.Err != nil {
-				log.LoggerFactory().Debug("Error routing connection %s - %s", context.Err, context)
+				log.LoggerFactory().Debug("Error reading connection %s - %s", context.Err, context)
 				break
 			}
 

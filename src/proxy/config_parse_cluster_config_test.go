@@ -200,7 +200,7 @@ func Test_Parse_Cluster_Config_When_Servers_List_Missing(testCtx *testing.T) {
 	// given
 	var (
 		jsonConfig                          = map[string]interface{}{"cluster": map[string]interface{}{"upgradeTransition": map[string]interface{}{"mode": "INSTANT"}, "version": "1.0"}}
-		expectedError    error              = errors.New("Invalid cluster configuration - \"servers\" list missing from \"cluster\" config")
+		expectedError    error              = errors.New("Invalid cluster configuration - \"cluster\" must contain \"servers\" or \"containers\" list")
 		expectedClusters *contexts.Clusters = nil
 	)
 

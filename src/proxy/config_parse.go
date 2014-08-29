@@ -9,6 +9,7 @@ import (
 	"net"
 	"proxy/contexts"
 	"proxy/log"
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 // ==== PARSE CONFIG - START
@@ -135,7 +136,6 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 	return func(clusterConfiguration map[string]interface{}) (*contexts.Cluster, error) {
 		var (
 			err                            error
-			connection 					   *net.TCPAddr
 			backendAddresses               []*contexts.BackendAddress
 			version                        string
 			sessionTimeout                 int64
@@ -145,101 +145,345 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 		)
 
 		serversConfiguration := clusterConfiguration["servers"]
+		containersConfiguration := clusterConfiguration["containers"]
 		if serversConfiguration != nil {
-			servers, converted := serversConfiguration.([]interface{})
-			if converted && len(servers) > 0 {
-				backendAddresses = make([]*contexts.BackendAddress, len(servers))
-				for index := range servers {
-					var server map[string]interface{} = servers[index].(map[string]interface{})
-					connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["hostname"], server["port"]))
-					if err != nil {
-						errorMessage := "Invalid server address [" + fmt.Sprintf("%s:%v", server["hostname"], server["port"]) + "] - " + err.Error()
-						err = errors.New(errorMessage)
-					} else {
-						backendAddresses[index] = &contexts.BackendAddress{Address: connection, Host: fmt.Sprintf("%s", server["hostname"]), Port: fmt.Sprintf("%v", server["port"])}
-					}
-				}
-				uuidConfig := clusterConfiguration["uuid"]
-				if uuidConfig != nil {
-					uuidValue = uuid.Parse(uuidConfig.(string))
-				} else {
-					uuidValue = uuidGenerator()
-				}
-
-				versionConfig := clusterConfiguration["version"]
-				if versionConfig != nil {
-					floatVersion, isFloat := versionConfig.(float64)
-					if isFloat {
-						version = fmt.Sprintf("%.2f", floatVersion)
-					} else {
-						version = fmt.Sprintf("%s", versionConfig)
-					}
-				} else {
-					version = "0.0"
-				}
-
-				upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]
-				if upgradeTransitionConfig != nil {
-					if initialCluster {
-						errorMessage := "Invalid cluster configuration - \"upgradeTransition\" can not be specified for the intial cluster"
-						err = errors.New(errorMessage)
-					} else {
-						upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
-
-						modeConfig := upgradeTransition["mode"]
-						if modeConfig != nil {
-							mode = contexts.ModesCodeToMode[modeConfig.(string)]
-						} else {
-							mode = contexts.SessionMode
-						}
-
-						if mode != 0 {
-							sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
-							if mode == contexts.SessionMode {
-								if sessionTimeoutConfig != nil {
-									sessionTimeout = int64(sessionTimeoutConfig.(float64))
-								} else {
-									errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
-									err = errors.New(errorMessage)
-								}
-							} else if sessionTimeoutConfig != nil {
-								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
-								err = errors.New(errorMessage)
-							}
-
-							percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
-							if mode == contexts.GradualMode {
-								if percentageTransitionPerRequestConfig != nil {
-									percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
-								} else {
-									errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
-									err = errors.New(errorMessage)
-								}
-							} else if percentageTransitionPerRequestConfig != nil {
-								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
-								err = errors.New(errorMessage)
-							}
-						} else {
-							errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\", \"SESSION\", \"GRADUAL\" or \"CONCURRENT\""
-							err = errors.New(errorMessage)
-						}
-					}
-				} else {
-					sessionTimeout = 0
-					percentageTransitionPerRequest = 0
-					mode = contexts.InstantMode
-				}
-			} else {
-				errorMessage := "Invalid cluster configuration - \"servers\" list must contain at least one entry"
-				err = errors.New(errorMessage)
-			}
+			backendAddresses, err = parseServers(serversConfiguration)
+		} else if containersConfiguration != nil {
+			backendAddresses, err = parseContainers(containersConfiguration)
 		} else {
-			errorMessage := "Invalid cluster configuration - \"servers\" list missing from \"cluster\" config"
+			errorMessage := "Invalid cluster configuration - \"cluster\" must contain \"servers\" or \"containers\" list"
 			err = errors.New(errorMessage)
 		}
 
-		return &contexts.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, PercentageTransitionPerRequest: percentageTransitionPerRequest, Mode: mode, Version: version}, err
+		if err == nil {
+			uuidConfig := clusterConfiguration["uuid"]
+			if uuidConfig != nil {
+				uuidValue = uuid.Parse(uuidConfig.(string))
+			} else {
+				uuidValue = uuidGenerator()
+			}
+
+			versionConfig := clusterConfiguration["version"]
+			if versionConfig != nil {
+				floatVersion, isFloat := versionConfig.(float64)
+				if isFloat {
+					version = fmt.Sprintf("%.2f", floatVersion)
+				} else {
+					version = fmt.Sprintf("%s", versionConfig)
+				}
+			} else {
+				version = "0.0"
+			}
+
+			upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]
+			if upgradeTransitionConfig != nil {
+				if initialCluster {
+					errorMessage := "Invalid cluster configuration - \"upgradeTransition\" can not be specified for the intial cluster"
+					err = errors.New(errorMessage)
+				} else {
+					upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
+
+					modeConfig := upgradeTransition["mode"]
+					if modeConfig != nil {
+						mode = contexts.ModesCodeToMode[modeConfig.(string)]
+					} else {
+						mode = contexts.SessionMode
+					}
+
+					if mode != 0 {
+						sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
+						if mode == contexts.SessionMode {
+							if sessionTimeoutConfig != nil {
+								sessionTimeout = int64(sessionTimeoutConfig.(float64))
+							} else {
+								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
+								err = errors.New(errorMessage)
+							}
+						} else if sessionTimeoutConfig != nil {
+							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
+							err = errors.New(errorMessage)
+						}
+
+						percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
+						if mode == contexts.GradualMode {
+							if percentageTransitionPerRequestConfig != nil {
+								percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
+							} else {
+								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
+								err = errors.New(errorMessage)
+							}
+						} else if percentageTransitionPerRequestConfig != nil {
+							errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
+							err = errors.New(errorMessage)
+						}
+					} else {
+						errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\", \"SESSION\", \"GRADUAL\" or \"CONCURRENT\""
+						err = errors.New(errorMessage)
+					}
+				}
+			} else {
+				sessionTimeout = 0
+				percentageTransitionPerRequest = 0
+				mode = contexts.InstantMode
+			}
+			return &contexts.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, PercentageTransitionPerRequest: percentageTransitionPerRequest, Mode: mode, Version: version}, err
+		} else {
+			return nil, err
+		}
 	}
+}
+
+func parseServers(serversConfiguration interface{}) ([]*contexts.BackendAddress, error) {
+	var (
+		err                            error
+		connection                     *net.TCPAddr
+		backendAddresses               []*contexts.BackendAddress
+	)
+
+	servers, converted := serversConfiguration.([]interface{})
+	if converted && len(servers) > 0 {
+		backendAddresses = make([]*contexts.BackendAddress, len(servers))
+		for index := range servers {
+			var server map[string]interface{} = servers[index].(map[string]interface{})
+			connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", server["hostname"], server["port"]))
+			if err != nil {
+				errorMessage := "Invalid server address [" + fmt.Sprintf("%s:%v", server["hostname"], server["port"]) + "] - " + err.Error()
+				err = errors.New(errorMessage)
+			} else {
+				backendAddresses[index] = &contexts.BackendAddress{Address: connection, Host: fmt.Sprintf("%s", server["hostname"]), Port: fmt.Sprintf("%v", server["port"])}
+			}
+		}
+	} else {
+		errorMessage := "Invalid cluster configuration - \"servers\" list must contain at least one entry"
+		err = errors.New(errorMessage)
+	}
+
+	return backendAddresses, err
+}
+
+type DockerConfig struct {
+	Image           string
+	WorkingDir      string
+	Entrypoint      string
+	Env             string
+	Cmd             []string
+	Hostname        string
+	Volumes         []string
+	VolumesFrom     []string
+	ExposedPorts    map[docker.Port]struct{}
+	PublishAllPorts bool
+	PortBindings    map[docker.Port][]docker.PortBinding
+	PortToProxy     int64
+	Links           []string
+	User            string
+	Memory          int64
+	CpuShares       int64
+	LxcConf         []docker.KeyValuePair
+	Privileged      bool
+}
+
+/*
+{
+*	"image":"",                         // Image for container
+*   "portToProxy":
+	"version":
+
+	"workingDir":"",  					// Working directory inside the container
+	"entrypoint":"",  					// Overwrite the default ENTRYPOINT of the image
+	"env":null,       					// Set environment variables
+	"cmd":[                             // Set command executed when the container runs
+		 ""
+	],
+
+	"hostname":"",   					// Container host name
+	"volumes":{       					// Bind mount a volume (e.g., from the host: -v /host:/container, from Docker: -v /container)
+		 "/tmp": {}
+	},
+	"volumesFrom":[                 	// Mount volumes from the specified container(s)
+		 "parent",
+		 "other:ro"
+	],
+	"exposedPorts":{  					// Expose a port from the container without publishing it to your host
+		 "22/tcp": {}
+	},
+	"publishAllPorts":false,            // Publish all exposed ports to the host interfaces
+*	"portBindings":{ "22/tcp": [{ "HostPort": "11022" }] },
+	"links":["redis3:redis"],       	// Add link to another container in the form of name:alias
+
+	"user":"",       					// Username or UID
+	"memory":0,      					// Memory limit (format: <number><optional unit>, where unit = b, k, m or g)
+	"cpuShares":0                   	// CPU shares (relative weight)
+	"lxcConf":{"lxc.utsname":"docker"}  // (lxc exec-driver only) Add custom lxc options --lxc-conf="lxc.cgroup.cpuset.cpus = 0,1"
+	"privileged":false                  // Give extended privileges to this container
+}
+ */
+
+
+func parseContainers(containersConfiguration interface{}) ([]*contexts.BackendAddress, error) {
+	var (
+		err                 error
+		connection          *net.TCPAddr
+		backendAddresses    []*contexts.BackendAddress
+		image               string                               = ""
+		portToProxy         int64                                = 0
+		workingDir          string                               = ""
+		entrypoint          string                               = ""
+		env                 string                               = ""
+		cmd                 []string                             = nil
+		hostname            string                               = ""
+		volumes             []string                             = nil
+		volumesFrom         []string                             = nil
+		exposedPorts        map[docker.Port]struct{}             = nil
+		publishAllPorts     bool                                 = false
+		portBindings        map[docker.Port][]docker.PortBinding = nil
+		links               []string                             = nil
+		user                string                               = ""
+		memory              int64                                = 0
+		cpuShares           int64                                = 0
+		lxcConf             []docker.KeyValuePair                = nil
+		privileged          bool                                 = false
+	)
+
+	containers, converted := containersConfiguration.([]interface{})
+	if converted && len(containers) > 0 {
+		backendAddresses = make([]*contexts.BackendAddress, len(containers))
+		for index := range containers {
+			var container map[string]interface{} = containers[index].(map[string]interface{})
+
+			imageConfig := container["image"]
+			if imageConfig != nil {
+				image = imageConfig.(string)
+			}
+
+			portToProxyConfig := container["portToProxy"]
+			if portToProxyConfig != nil {
+				portToProxy = int64(portToProxyConfig.(float64))
+			}
+
+			workingDirConfig := container["workingDir"]
+			if workingDirConfig != nil {
+				workingDir = workingDirConfig.(string)
+			}
+
+			entrypointConfig := container["entrypoint"]
+			if entrypointConfig != nil {
+				entrypoint = entrypointConfig.(string)
+			}
+
+			envConfig := container["env"]
+			if envConfig != nil {
+				env = envConfig.(string)
+			}
+
+			cmdConfig := container["cmd"]
+			if cmdConfig != nil {
+				cmd = cmdConfig.([]string)
+			}
+
+			hostnameConfig := container["hostname"]
+			if hostnameConfig != nil {
+				hostname = hostnameConfig.(string)
+			}
+
+			volumesConfig := container["volumes"]
+			if volumesConfig != nil {
+				volumes = volumesConfig.([]string)
+			}
+
+			volumesFromConfig := container["volumesFrom"]
+			if volumesFromConfig != nil {
+				volumesFrom = volumesFromConfig.([]string)
+			}
+
+			exposedPortsConfig := container["exposedPorts"]
+			if exposedPortsConfig != nil {
+				exposedPorts = exposedPortsConfig.(map[docker.Port]struct {})
+			}
+
+			publishAllPortsConfig := container["publishAllPorts"]
+			if publishAllPortsConfig != nil {
+				publishAllPorts = publishAllPortsConfig.(bool)
+			}
+
+			portBindingsConfig := container["portBindings"]
+			if portBindingsConfig != nil {
+				portBindings = portBindingsConfig.(map[docker.Port][]docker.PortBinding)
+			}
+
+			linksConfig := container["links"]
+			if linksConfig != nil {
+				links = linksConfig.([]string)
+			}
+
+			userConfig := container["user"]
+			if userConfig != nil {
+				user = userConfig.(string)
+			}
+
+			memoryConfig := container["memory"]
+			if memoryConfig != nil {
+				memory = int64(memoryConfig.(float64))
+			}
+
+			cpuSharesConfig := container["cpuShares"]
+			if cpuSharesConfig != nil {
+				cpuShares = int64(cpuSharesConfig.(float64))
+			}
+
+			lxcConfConfig := container["lxcConf"]
+			if lxcConfConfig != nil {
+				lxcConf = lxcConfConfig.([]docker.KeyValuePair)
+			}
+
+			privilegedConfig := container["privileged"]
+			if privilegedConfig != nil {
+				privileged = privilegedConfig.(bool)
+			}
+
+			dockerConfig := &DockerConfig{
+				Image: image,
+				PortToProxy: portToProxy,
+				WorkingDir: workingDir,
+				Entrypoint: entrypoint,
+				Env: env,
+				Cmd: cmd,
+				Hostname: hostname,
+				Volumes: volumes,
+				VolumesFrom: volumesFrom,
+				ExposedPorts: exposedPorts,
+				PublishAllPorts: publishAllPorts,
+				PortBindings: portBindings,
+				Links: links,
+				User: user,
+				Memory: memory,
+				CpuShares: cpuShares,
+				LxcConf: lxcConf,
+				Privileged: privileged,
+			}
+
+			fmt.Printf("dockerConfig: %#v\n", dockerConfig)
+
+			// todo
+			// 1. pull images
+			// 2. create containers
+			// 3. start containers
+			// 4. query ip address of container
+			// 5. add portToProxy & ip address of container as backendAddresses
+
+			connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", container["hostname"], container["port"]))
+			if err != nil {
+				errorMessage := "Invalid container address [" + fmt.Sprintf("%s:%v", container["hostname"], container["port"]) + "] - " + err.Error()
+				err = errors.New(errorMessage)
+			} else {
+				backendAddresses[index] = &contexts.BackendAddress{Address: connection, Host: fmt.Sprintf("%s", container["hostname"]), Port: fmt.Sprintf("%v", container["port"])}
+			}
+		}
+	} else {
+		errorMessage := "Invalid cluster configuration - \"containers\" list must contain at least one entry"
+		err = errors.New(errorMessage)
+	}
+
+	return backendAddresses, err
 }
 
 func serialiseCluster(cluster *contexts.Cluster) map[string]interface{} {

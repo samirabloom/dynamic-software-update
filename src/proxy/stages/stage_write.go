@@ -5,6 +5,7 @@ import (
 	"time"
 	"proxy/log"
 	"proxy/contexts"
+	"proxy/tcp"
 )
 
 // ==== WRITE - START
@@ -20,7 +21,8 @@ func write(context *contexts.ChunkContext) {
 		}
 		if writeError != nil {
 			context.Err = writeError
-		} else if amountToWrite != writeSize {
+		} else if /* allow for header size update in dual connection */ !tcp.IsDualConnection(context.To) && amountToWrite != writeSize {
+			log.LoggerFactory().Debug("Write Stage ErrShortWrite - amountToWrite: %d writeSize: %d %s", amountToWrite, writeSize, context)
 			context.Err = io.ErrShortWrite
 		}
 	}
