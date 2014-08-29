@@ -1,11 +1,18 @@
 \documentclass[a4paper,11pt,twoside]{report}
 \usepackage[left=2.5cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 
+% for adding space between paragraphs
+%\usepackage{parskip}
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0.5em}
+
+
 \usepackage[nodayofweek]{datetime}
 \longdate
 \setcounter{tocdepth}{4}
 \setcounter{secnumdepth}{4}
-\setlength{\headheight}{14pt} 
+\setlength{\headheight}{14pt}
+ 
 
 % for having a balnk page
 \usepackage{afterpage}
@@ -14,13 +21,6 @@
 \thispagestyle{empty}%
 \addtocounter{page}{-1}%
 \newpage}
-% end of blank page
-%\smallskip, \medskip or \bigskip
-
-% abstarct configutz
-%\usepackage{abstract}
-%\renewcommand{\abstractnamefont}{\normalfont\Large\bfseries}
-%\renewcommand{\abstracttextfont}{\normalfont\Huge}
 
 \usepackage{enumitem}
 \usepackage{hyperref}
@@ -72,6 +72,7 @@
 
 % end of jason config
 
+% for terminal formating
 \lstset{escapeinside={<@}{@>}}
 \lstdefinelanguage{terminal}{
     basicstyle=\ttfamily\small,
@@ -83,6 +84,8 @@
     rulecolor=\color{background},
     backgroundcolor=\color{background},
 }
+
+% end of terminal formatting
 
 \usepackage{caption}
 \usepackage{subcaption}
@@ -142,9 +145,6 @@
 \afterpage{\blankpage}
 \clearpage
 
-%\begin{abstract}
-%Your text here
-%\end{abstract}
 \section*{Abstract}
 This is where the abstract will be 
 \clearpage
@@ -176,7 +176,7 @@ xxx
 \section{Outline of the Report}
 xx
 
-\clearpage
+
 
 \chapter{Related Work}
 Software reliability is compromised of the following main activities:
@@ -260,7 +260,6 @@ Dynamic software update systems mentioned above affect code updates at the granu
 
 \subsection{Data Update} 
 Most dynamic software update systems handle the data update by using object replacement. The system or the developer allocates replacement objects and initialize them using data from the old version. Ginseng uses type-wrapping approach. In this approach the programs are compiled so that \textit{struct}s have an added version field and extra "slop" space to allow for future extensions. Transformation of old objects will be initiated by inserting calls to mediator functions which access updated objects. Ksplice and DynaMOS do not change the old objects but allocate shadow data structures containing only the new fields. Shadow data structures have the advantage of changing fewer functions by an update. When a new field is added to a \textit{struct}, only the code using that field is affected but not all the code that uses the \textit{struct}. 
-
 
 \section{Dynamic Software Update Safety}
 Choosing when to safely apply updates has been one of the main concerns of the prior work on dynamic software updating. Some solutions rely on no updates to active code, \textit{i.e.} no thread is running that code, and no thread's stack refers to it, (\cite{Safety 32}, \cite{Ksplice}, \cite{K42}, \cite{Safety 43} ). This restriction reduces post-update errors but it does not eliminate them, and additionally imposes strong restrictions on the form of an update and how quickly it can be applied. Moreover, some researchers suggest that no updated code should access data generated prior to the update being applied (\cite{Safety 213}, \cite{Safety 214}, \cite{Safety 267}). This technique ensures that updates with type difference do not pose a threat to type safety. The final approach suggested by researchers is using transactions in a distributed or local context to enforce stronger timing constrains (\cite{Safety 173}, \cite{Safety 215}, \cite{Safety 279}). However, it is currently been shown that update timing may not be a main concern and a few programmer-designed update points are typically sufficient to determine safe and timely update states (\cite{Safety 213}, \cite{Kitsune}, \cite{Safety 131}, \cite{Safety 108}). 
@@ -379,7 +378,9 @@ With Docker, a new application on a host only needs its binaries or libraries bu
 Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ)\footnote{\label{ZeroMQ_1} \url{http://zeromq.org/}} are the most common messaging standards. 
 
 \subsection{Broker-Based Messaging Systems} 
-AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
+AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. 
+
+In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
 
 \subsection{Zero Broker Messaging Systems} 
 In a broker-less messaging system each application directly talks to other applications without any middleware, hence, there are no bottlenecks associated with these systems. The application can manage and maintain its own messaging infrastructure and so encapsulation and separation of concerns are increased.
@@ -582,15 +583,15 @@ An identical but opposite set of \textit{Read} and \textit{Write} loops are crea
 \end{figure}
 
 \subsubsection*{Content Counting}
-The content counting proxy uses the HTTP format to detect the end of each request and response (Section \ref{HTTP}). Detecting the end of requests/responses is used to close connection sockets when the complete message has been transmitted.   For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the \textit{Read} loop ends after the first read containing all the headers. However, for other HTTP functions such as POST or PUT and for HTTP responses, the Transfer-Encoding and Content-Length headers were used (Section \ref{HTTP}). 
+The content counting proxy uses the HTTP format to detect the end of each request and response (Section \ref{HTTP}). Detecting the end of requests/responses is used to close connection sockets when the complete message has been transmitted.   For HTTP requests, the method token in the Request-Line is used to detect what type of HTTP function is expected (Section \ref{Requests}). If the method is defined as GET, no message body in the request is expected and the \textit{Read} loop ends after the first read containing all the headers. However, for other HTTP functions such as POST or PUT and for HTTP responses, the Transfer-Encoding and Content-Length headers were used (Section \ref{HTTP}).\medskip 
 
-\noindent\\
+\noindent
 \underline{Content-Length}\medskip
 
 \noindent
-When Content-Length header is provided, the size of message body is known upfront.  The proxy then counts the number of bytes in each chunk.  The first chunk can contain both headers and part of the the message body so the CRLF CRLF is used to detect where the message body starts (Section \ref{HTTP}). For each subsequent chunk the content length is counted. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates.
+When Content-Length header is provided, the size of message body is known upfront.  The proxy then counts the number of bytes in each chunk.  The first chunk can contain both headers and part of the the message body so the CRLF CRLF is used to detect where the message body starts (Section \ref{HTTP}). For each subsequent chunk the content length is counted. When the length of read data is the same as the size defined in Content-Length header, the \textit{Read} loop terminates.\medskip 
 
-\noindent\\
+\noindent
 \underline{Transfer-Encoding: "chunked"}\medskip
 
 \noindent
@@ -670,7 +671,7 @@ To prevent the socket errors that occurred in the content counting proxy \ref{Co
 % \vspace{-18pt}
 
 \subsubsection*{Accept Loop} 
-\textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.\bigskip 
+\textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.
 
 \subsubsection*{Forward Pipe} 
 \textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \bigskip  
@@ -691,8 +692,7 @@ type ChunkContext struct {
 \end{lstlisting} 
 
 \subsubsection*{Read Stage} 
-\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests / responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.  In addition, the socket based proxy handles socket interaction efficiently by only closing sockets when the other end of the connection closes its socket.  This avoids overhead associated with creating new TCP connections such as the TCP 3-way handshake and TCP slow start.\bigskip
-
+\textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests / responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.  In addition, the socket based proxy handles socket interaction efficiently by only closing sockets when the other end of the connection closes its socket.  This avoids overhead associated with creating new TCP connections such as the TCP 3-way handshake and TCP slow start.
 \subsubsection*{Route Stage} 
 \textit{Route} stage has different functionality in the \textit{Forward Pipe}, for processing requests and \textit{Back pipe}, for processing responses. \bigskip  
 
@@ -717,10 +717,10 @@ If the latest cluster version is deleted using the REST API or an error occurs w
 \underline{Routing in \textit{Back pipe}} - The \textit{Route} stage processes responses by adding the appropriate cookie headers.  In INSTANT mode a cluster uuid cookie is added with no expiry time.  In SESSION mode a cluster uuid cookie is added with the configured expiry time.  In GRADUAL mode two cookies with no expiry time are added for the cluster uuid and the randomly assigned transition value.  Finally, if the mode is defined as CONCURRENT, the response status code is checked. If the response from the latest version is in the 5xx range, that response will be dropped and the response from the previous version will be returned.  Also in CONCURRENT mode a cluster uuid cookie is added with no expiry time.\bigskip
 
 \subsubsection*{Write Stage} 
-\textit{Write} stage writes requests / responses to output stream for the appropriate socket. The writing process stops if any errors such as \textit{ErrShortWrite} are encountered while writing to the socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client. \bigskip
+\textit{Write} stage writes requests / responses to output stream for the appropriate socket. The writing process stops if any errors such as \textit{ErrShortWrite} are encountered while writing to the socket. The \textit{Write} stage in \textit{Forward pipe} writes data to the server, while the \textit{Write} stage in \textit{Back pipe} writes data to the client. 
 
 \subsubsection*{Complete Stage}
-\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended.\bigskip 
+\textit{Complete} stage is responsible for shutting down the writing and reading sides of the TCP connection when the \textit{Read} and \textit{Write} stages terminate. This is done to insure that a TCP connection is reliably closed when the client/server communication is ended. 
 
 \subsubsection*{Back Pipe}
 \textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for responses and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
@@ -1455,8 +1455,6 @@ Content-Type: text/html; charset=UTF-8
 \noindent\\
 \textit{Handling Incorrect Behavior} - To insure the proxy can handle any errors occur by the updated cluster, the Docker container running the WordPress version 3.9.2 was stopped. HTTP requests subsequently were sent to the proxy and its behavior was screened. The proxy terminal output demonstrated that when the proxy fails to send requests to the most updated cluster, it removes that cluster and forwards the requests to the previous cluster version.  \smallskip
 
-\noindent\\
-\textit{Proxy's output}
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:35:10.120521 proxy_context_cluster.go:114:     
    INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
@@ -1477,8 +1475,6 @@ Content-Type: text/html; charset=UTF-8
 \noindent\\
 The response received via proxy from the WordPress application after the oldest version failed is shown here. Note that the "X-Pingback" header shows the network address of old version of the WordPress application. In addition, Since the cluster with SESSION upgrade mode has been deleted by proxy the uuid cookie in the "Set-Cookie" header does not have an expiry date.\smallskip 
 
-\noindent\\
-\textit{Response}
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
 Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;
@@ -1642,10 +1638,49 @@ The proxy used the transition cookie to randomly generate a number which determi
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - To insure the proxy can go back to the older version of the application if the new version behaved incorrectly, the Docker container running the new version (\textit{i.e.} version 3.9.2) of the WordPress application was stopped. The behavior of the proxy was screened when new HTTP requests with transition cookie were sent to it.  
+\textit{Handling Incorrect Behavior} - To insure the proxy can go back to the older version of the application if the new version behaved incorrectly, the Docker container running version 3.9.2 of the WordPress application was stopped. The behavior of the proxy was screened when new HTTP requests with transition cookie were sent to it. The following terminal output shows that when the proxy fails connecting to the new version of the application, it removes the cluster from the configuration and forwards requests to the previous cluster version. \smallskip
 
+\begin{lstlisting}[language=terminal]
+2014/08/28 11:20:48.105660 proxy_context_cluster.go:115:     
+   INFO - Serving response 4 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [GRADUAL] transition counter [8.00] 
+   percentage transition per request [1.00]
+   
+2014/08/28 11:20:48.106281 stage_route.go:28:    
+   <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused}@>
+
+2014/08/28 11:20:48.106299 stage_route.go:29:  
+   <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]}@>
+
+2014/08/28 11:20:48.106319 proxy_context_cluster.go:115:     
+   INFO - Serving response 3 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+\end{lstlisting}   
+
+\noindent\\
+The following response received after the failure of the cluster with version 3.9.2 showed that version 3.9.1 with IP address "192.168.50.30" is processing the requests.\smallskip
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=ffa87add-2e9b-11e4-ae02-600308a8245e;
+Date: Thu, 28 Aug 2014 10:20:56 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+X-Pingback: http://192.168.50.30/xmlrpc.php
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+ 
+<!DOCTYPE html> ... </html>
+\end{lstlisting}     
 
 \subsubsection*{CONCURRENT Update}
+To evaluate that the CONCURRENT mode works reliably with proxy, WordPress version 3.9.1 was upgraded to version 3.9.2 via proxy. The upgrade process and the proxy's reaction to the upgrade and requests / responses associated with the proxy is summarized in this section.
+
+\noindent
+\textit{Proxy Configuration}
+
+  
    
 
    
@@ -2183,8 +2218,7 @@ Content-Type: text/plain; charset=utf-8
 \clearpage
 
 \begin{thebibliography}{1}
-
- \bibitem {Java} Alessandro Orso, Anup Rao, and Mary J. Harrold. {\em A Technique for Dynamic Updating of Java Software.}, CSM Proceedings of the International Conference on Software, 2002.
+\bibitem {Java} Alessandro Orso, Anup Rao, and Mary J. Harrold. {\em A Technique for Dynamic Updating of Java Software.}, CSM Proceedings of the International Conference on Software, 2002.
  
   \bibitem {fly} M. E. Segal and O. Frieder. \textit{On-the-fly program modification: Systems for dynamic updating.} IEEE Software, 1993.
 
@@ -2274,11 +2308,6 @@ Content-Type: text/plain; charset=utf-8
 \bibitem{broker} Aneesh Raj, P. Sreenivasa Kumar, {\em "Branch Sequencing Based XML Message Broker Architecture,"}, IEEE 23rd International Conference on Data Engineering, 2007.  
 
 \bibitem{hypertext} A File Structure for the Complex, the Changing, and the Indeterminate. 20th National Conference, New York, Association for Computing Machinery, 1965
-  
-  \end{thebibliography}
-
-
-
-
+\end{thebibliography} 
 \end{document}
 
