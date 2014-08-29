@@ -1,10 +1,15 @@
 \documentclass[a4paper,11pt,twoside]{report}
 \usepackage[left=2.5cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 
+% for using customised colours
+\usepackage[usenames,dvipsnames]{color}
+
+
+
 % for adding space between paragraphs
 %\usepackage{parskip}
 \setlength{\parindent}{1.5em}
-\setlength{\parskip}{0.5em}
+\setlength{\parskip}{0.52em}
 
 
 \usepackage[nodayofweek]{datetime}
@@ -225,7 +230,9 @@ When application requests are balancing across multiple nodes, if a single appli
 One common approach widely used in industry to support dynamic software update is a content switching load balancer (\textit{e.g.} F5\footnote{\url{https://f5.com/}}, Citrix  NetScaler\footnote{\url{http://www.citrix.com/products/netscaler-application-delivery-controller/overview.html}}) in front of an application cluster \cite{balancer}. To perform such an upgrade the cluster is typically split into two halves called A and B. First all load is drained from A by preventing any new requests (\textit{e.g.} business transactions) from being processed. Once A has completed processing all existing requests, it is upgraded and restarted. Now A can start to accept new requests and B is drained and subsequently upgraded. However, this approach is slow and not free from risk as it requires manual interaction with the load balancer to split the cluster and re-route traffic between each step.
 
 \subsection{Active-Passive Architecture}
-In addition to clustering another common approach to increase software reliability is to have an active-passive architecture where there are two application instances  (or two application clusters). One of the application instances (or application clusters) is actively receiving requests while the other is passive and it is not processing any load \cite{active_passive}. This arrangement improves reliability because if the active instance starts to behave incorrectly or crashes, all requests can be immediately routed to the passive instance, resulting in the passive instance becoming active. A content switching router can be used to automate the routing of requests to the passive instance as soon as it detects the active instance is no longer correctly processing requests. This architecture can also be used to support reliable dynamic software updates. The passive instance can be updated first and requests can slowly start to be routed to the passive instance. During this period if the software update applied to the passive instance fails or causes it to crash, all requests can be immediately routed back to the active instance. However, this approach is wasteful since a complete backup application instance or backup application cluster is required. In addition, this approach is slow and it is not free from risk as it requires manual interaction with the load balancer to re-route traffic.
+In addition to clustering another common approach to increase software reliability is to have an active-passive architecture where there are two application instances  (or two application clusters). One of the application instances (or application clusters) is actively receiving requests while the other is passive and it is not processing any load \cite{active_passive}. This arrangement improves reliability because if the active instance starts to behave incorrectly or crashes, all requests can be immediately routed to the passive instance, resulting in the passive instance becoming active. 
+
+A content switching router can be used to automate the routing of requests to the passive instance as soon as it detects the active instance is no longer correctly processing requests. This architecture can also be used to support reliable dynamic software updates. The passive instance can be updated first and requests can slowly start to be routed to the passive instance. During this period if the software update applied to the passive instance fails or causes it to crash, all requests can be immediately routed back to the active instance. However, this approach is wasteful since a complete backup application instance or backup application cluster is required. In addition, this approach is slow and it is not free from risk as it requires manual interaction with the load balancer to re-route traffic.
 
 \subsection{Data Replication}
 Data replication can also be used to increase software reliability. Conventional SQL Relation Database Management Systems (RDBMS) typically do not operate in a cluster \cite{Replication}. This is because managing ACID transactions and locking across multiple nodes in a cluster requires commit and rollback to be coordinated across multiple nodes. In addition, consistencies, such as foreign key relationships, must be managed across multiple nodes where the parent and child of the foreign key relationship may be on separate nodes. Although clustered RDBMS do exist, it is expensive, complex and can be error prone. Alternatively, to improve software reliability data can be replicated to a backup database. This works in a similar way to the active-passive architecture where one database is used to process active requests and a second database is only receiving replicated changes and not directly responding to requests. If the active database fails or crashes the passive database can immediately start processing requests and becomes the new active database  \cite{Replication}.
@@ -233,7 +240,9 @@ Data replication can also be used to increase software reliability. Conventional
 To support dynamic updating of databases, data replication can be used where a backup database receives a replicated copy of the changes made to the primary database. This supports dynamic update in a similar way to the active-passive architecture where software updates can be initially applied to the replicated database; once this is completed, the passive database can replace the active database (and the replication direction is reversed). If the software update fails or causes the database to crash, the non-updated database is still available and can immediately start processing requests again.
 
 \subsection{Clustered Databases}
-As the requirements for high availability and high scalability have increased, there has been a shift from using conventional SQL RDBMS to clustered NoSQL databases. In addition, shared database integration is no longer a common technique as it is now widely recognized to break encapsulation and introduce high-coupling. Hence, it is no longer as important for databases to provide strong data integrity. NoSQL databases are designed with clustering and high availability as a priority over strong data integrity and locking \cite{NoSQL}. Therefore, NoSQL databases run in large clusters and replicate data between multiple nodes making them very resilient to failure of one or more nodes. In addition, they are also able to handle rapid increases in load by spreading the load across multiple nodes in the cluster. As NoSQL databases do not provide strong data integrity, it is typically much simpler to dynamically apply updates. For example a document database may store documents in the form of JavaScript Object Notation (JSON)\footnote{\url{http://www.json.org/}}. When the data model is updated by adding or removing fields, no changes to the database are required. Instead applications reading or writing documents are expected to handle different document formats in a flexible way. If such a change was required in a RDBMS, the table structure would need to be modified. The modification is a highly risky activity in a live database and would typically require application downtime and a full database backup.
+As the requirements for high availability and high scalability have increased, there has been a shift from using conventional SQL RDBMS to clustered NoSQL databases. In addition, shared database integration is no longer a common technique as it is now widely recognized to break encapsulation and introduce high-coupling. Hence, it is no longer as important for databases to provide strong data integrity. NoSQL databases are designed with clustering and high availability as a priority over strong data integrity and locking \cite{NoSQL}. Therefore, NoSQL databases run in large clusters and replicate data between multiple nodes making them very resilient to failure of one or more nodes. In addition, they are also able to handle rapid increases in load by spreading the load across multiple nodes in the cluster. 
+
+Since NoSQL databases do not provide strong data integrity, it is typically much simpler to dynamically apply updates. For example a document database may store documents in the form of JavaScript Object Notation (JSON)\footnote{\url{http://www.json.org/}}. When the data model is updated by adding or removing fields, no changes to the database are required. Instead applications reading or writing documents are expected to handle different document formats in a flexible way. If such a change was required in a RDBMS, the table structure would need to be modified. The modification is a highly risky activity in a live database and would typically require application downtime and a full database backup.
 
 \section{Reliable Software Techniques}
 In addition to architectures that support software reliability, there are also techniques that are commonly used to increase reliability of applying software updates. These include automated deployment, configuration as code and continuous delivery.
@@ -245,7 +254,9 @@ Automated deployment is used to reduce the cost and the risk associated to insta
 Configuration as code is a technique used to ensure all environment configuration and settings for an application installation or update are written as code often in the form of an automated deployment script. Such an approach ensures that applications are deployed with the correct environment configuration and that the development team and infrastructure team can easily agree the required configuration \cite{Continuous Delivery}. This approach reduces the risk of deployment by ensuring configuration settings can be tested and reapplied identically every time. In addition, such an approach allows configuration changes to be versioned and changed in-line with the application code or any software updates guaranteeing that the correct configuration for a given update is applied.
 
 \subsection{Continuous Delivery}
-Continuous delivery is a software development approach that ensures application updates can be deployed to production at any point throughout the development life cycle. To support continuous delivery a pipeline is typically used to promote application updates automatically through several stages from initial development through to production \cite{Continuous Delivery}. Continuous delivery supports reliable software update by ensuring that each update has been applied to multiple stages prior to reaching production. In addition, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
+Continuous delivery is a software development approach that ensures application updates can be deployed to production at any point throughout the development life cycle. To support continuous delivery a pipeline is typically used to promote application updates automatically through several stages from initial development through to production \cite{Continuous Delivery}. Continuous delivery supports reliable software update by ensuring that each update has been applied to multiple stages prior to reaching production. 
+
+Furthermore, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
 
 \section{Dynamic Software Update Systems} \label{DSU}
 Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. In the past decades several systems have been developed to support highly reliable dynamic software upgrades. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
@@ -502,15 +513,31 @@ To support reliable dynamic software updates a simple lightweight system has bee
 
 Four mechanisms are supported to enable different reliable update strategies depending on the specific software requirements.
 
-\underline{Instant Update} -  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+\noindent\\
+\underline{Instant Update} 
 
-\underline{Session Update} - This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Instant Update, the non-updated version however remains running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
+\noindent
+In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
 
-\underline{Gradual Update} - This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version incrementally receives a greater percentage of requests.
+\noindent\\
+\underline{Session Update}
 
-\underline{Concurrent Update} - In this mechanism the updated and non-updated versions run concurrently and process identical requests.  In this strategy, both the old and the new versions handle all requests and the characteristics of each response is compared to ensure the update is behaving correctly.
+\noindent
+This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Instant Update, the non-updated version however remains running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
 
-In all four mechanisms the behavior of the updated software is automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system. The focus for the dynamic software update system is on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.\bigskip
+\noindent\\
+\underline{Gradual Update}
+
+\noindent
+This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version incrementally receives a greater percentage of requests.
+
+\noindent\\
+\underline{Concurrent Update}
+
+\noindent
+In this mechanism the updated and non-updated versions run concurrently and process identical requests.  In this strategy, both the old and the new versions handle all requests and the characteristics of each response is compared to ensure the update is behaving correctly.
+
+In all four mechanisms the behavior of the updated software is automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system. The focus for the dynamic software update system is on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -693,7 +720,7 @@ type ChunkContext struct {
 
 \subsubsection*{Read Stage} 
 \textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests / responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.  In addition, the socket based proxy handles socket interaction efficiently by only closing sockets when the other end of the connection closes its socket.  This avoids overhead associated with creating new TCP connections such as the TCP 3-way handshake and TCP slow start.
-\subsubsection*{Route Stage} 
+\subsubsection*{Route Stage} \label{route-stage} 
 \textit{Route} stage has different functionality in the \textit{Forward Pipe}, for processing requests and \textit{Back pipe}, for processing responses. \bigskip  
 
 \noindent
@@ -906,6 +933,8 @@ The aim of these tests is to check that all components of the dynamic software u
 \chapter{Evaluation}
 This section summarizes the qualitative and quantitative evaluation performed on the implemented dynamic software update system.
 
+- talk about real example tests
+
 \section{Quantitative Analysis xxxxxxxxxxx}\label{Quantitative_Analysis}
 xxxx talk about couchbase and WordPress and why we chose those two...\bigskip
 xxxxxxxxx WordPress, a content management system that currently runs approximately 20\% of all Web sites.
@@ -939,13 +968,31 @@ docker run --name some-wordpress --link some-mysql:mysql
 \underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
 
 \noindent
-\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. \bigskip
-
+\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. 
+ 
 \section{Qualitative Analysis}
-\subsection{Load Balancing Feature}
-To test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster with each node running in a separate Docker container.  As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase was chosen for the load balancing evaluation since it forms a cluster, which all share data, therefore each server returns an identical response to a given request. 
+The following qualitative analysis were performed on the dynamic software update proxy (Chapter \ref{Implementation}) using real applications to insure that different features of the proxy such as load balancing and dynamic software update functionality behave correctly:
 
-Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each Docker container for each Couchbase node used a different internal ip address on the 172.16.0.0 - 172.31.255.255 private range as reserved by IANA\footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However as the port has been mapped from each Docker container to the virtual machine each node can be address on a different port of the virtual machine. The following section summarizes the steps executed for load balancing evaluation. \bigskip
+\begin{list}{-}{}
+  \itemsep0em
+  \item{Load Balancing Analysis} - To ensure that the proxy acts as a reverse proxy and distributes incoming traffics across a number of servers within a cluster. 
+
+  \item{Real Software Upgrades} - To prove the ability of the proxy to handle different upgrade strategies (\textit{i.e.} INSTANT, SESSION, GRADUAL and CONCURRENT) described in Section \ref{modes} in real applications. 
+  
+   \item{Handling Incorrect Behavior} - To ensure that the proxy is able to handle updates that cause incorrect behavior and allows systems to survive bugs using real examples. 
+\end{list} 
+
+\subsection{Load Balancing Analysis}
+The dynamic software update proxy is designed to behave as a load balancer and distribute  HTTP requests across multiple servers. Therefore, to test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster with each node running in a separate Docker container. As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase servers were chosen for the load balancing evaluation since they form a cluster with shared data. Therefore each server returns an identical response to a given request.
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.40]{couchbase_cluster}
+  \caption{Couchbase Cluster With Three Servers}
+  \label{couchbase_cluster}
+\end{figure} 
+
+Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each Docker container for each Couchbase node used a different internal IP address on the 172.16.0.0 - 172.31.255.255 private range reserved by IANA\footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However, as the port has been mapped from each Docker container to the virtual machine, each node can be addressed on a different port of the virtual machine. The following section summarizes the steps executed for load balancing evaluation. \bigskip
 
 \begin{lstlisting}[language=terminal]
 <@\textcolor{blue}{\# run first node}@>
@@ -967,15 +1014,9 @@ docker run --name node_three -i -t -d -p 10091:8091 \
 		-e CLUSTER_INIT_PASSWORD=password couchbase
 \end{lstlisting}
 
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=0.40]{couchbase_cluster}
-  \caption{Couchbase Cluster With Three Servers}
-  \label{couchbase_cluster}
-\end{figure}
 
 \subsubsection*{Proxy Configuration} 
-The proxy was configured to forward HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) using round-robin loading balancing.   The proxy echos back the start-up configuration as shown in the following terminal output.\bigskip
+The proxy was configured to forward HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) using round-robin load balancing. The start-up configuration was echoed back by the proxy as shown in the following terminal output.\bigskip
 \begin{lstlisting}[language=terminal]
 2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
 {
@@ -1013,7 +1054,7 @@ http://Administrator:password@127.0.0.1:1235/pools/default/buckets/beer-sample
 
 
 \subsubsection*{Load balancing proxy} 
-When the proxy is configured to run with INFO level logging it prints log entries to the terminal that demonstrate the HTTP requests are being distributed between each node in the cluster using round-robin order.\smallskip
+When the proxy is configured to run with INFO level logging, it prints log entries to the terminal. The following log entries created by the proxy demonstrate that the HTTP requests were distributed between each node in the cluster using round-robin order.\smallskip
 
 %2014/08/26 21:53:44.763483 proxy_context_cluster.go:115:     
 %   INFO - Serving response 0 from ip: [127.0.0.1] port: [1036] 
@@ -1022,32 +1063,32 @@ When the proxy is configured to run with INFO level logging it prints log entrie
 
 \begin{lstlisting}[language=terminal]
 2014/08/24 19:50:06.560279 proxy_context_cluster.go:104:     
-   INFO - Serving response 0 from ip: [192.168.50.10] port: [8091] 
+   INFO - Serving response 0 from ip: [192.168.50.10] <@\textcolor{magenta}{port: [8091]}@> 
    version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:52:34.576970 proxy_context_cluster.go:104:     
-   INFO - Serving response 1 from ip: [192.168.50.10] port: [9091] 
+   INFO - Serving response 1 from ip: [192.168.50.10] <@\textcolor{magenta}{port: [9091]}@> 
    version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:00.452493 proxy_context_cluster.go:104:     
-   INFO - Serving response 2 from ip: [192.168.50.10] port: [10091] 
+   INFO - Serving response 2 from ip: [192.168.50.10] <@\textcolor{magenta}{port: [10091]}@> 
    version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:07.619419 proxy_context_cluster.go:104:     
-   INFO - Serving response 3 from ip: [192.168.50.10] port: [8091] 
+   INFO - Serving response 3 from ip: [192.168.50.10] <@\textcolor{magenta}{port: [8091]}@> 
    version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:09.137194 proxy_context_cluster.go:104:     
-   INFO - Serving response 4 from ip: [192.168.50.10] port: [9091] 
+   INFO - Serving response 4 from ip: [192.168.50.10] <@\textcolor{magenta}{port: [9091]}@> 
    version: [2.5] mode: [INSTANT]
 
 2014/08/24 19:56:19.655983 proxy_context_cluster.go:104:     
-   INFO - Serving response 5 from ip: [192.168.50.10] port: [10091] 
+   INFO - Serving response 5 from ip: [192.168.50.10] <@\textcolor{magenta}{port: [10091]}@> 
    version: [2.5] mode: [INSTANT]
 \end{lstlisting}
 
 \subsubsection*{HTTP Requests \& Responses} 
-The following shows an HTTP request and the associated HTTP response received via the proxy from a node in the Couchbase cluster.  Note the time zone used inside the Docker container was set to UTC (Coordinated Universal Time) where as the time zone on the computer running the proxy was set to BST (British Summer Time) therefore terminal log output was 1 hour ahead of the Date header in the responses from Couchbase.
+The following shows an HTTP request and the associated HTTP response received via the proxy from a node in the Couchbase cluster.  Note the time zone used inside the Docker container was set to UTC (Coordinated Universal Time) whereas the time zone on the computer running the proxy was set to BST (British Summer Time). Therefore, terminal log output was 1 hour ahead of the "Date" header in the responses from Couchbase.
 
 \noindent\\
 \textit{Request}
@@ -1075,14 +1116,29 @@ Cache-Control: no-cache
 {"name":"beer-sample","bucketType":"membase", ... }
 \end{lstlisting}
 
-\subsection{Automated Software Update} 
-To prove the proxy is capable of coping with dynamic software updates and it is suitable for contentious delivery, INSTANT, SESSION, GRADUAL and CONCURRENT updates were performed while the proxy was running.  As it was mentioned in section \ref{Quantitative_Analysis} WordPress currently runs approximately 20\% of all Web sites, therefore it was chosen for evaluating the dynamic software update feature of the proxy. Different update scenarios were tested on version 3.9.1 and 3.9.2 of WorlPress. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}. 
+\subsection{Real Software Upgrades}
+The main feature of the implemented proxy described in Chapter \ref{Implementation} is its ability to support dynamic software update for continues delivery into production. The proxy is able to dynamically update an application to a new version. It then runs different versions of an application concurrently and it automatically monitors the behavior of the most updated version. If the updated version behaves incorrectly, the proxy seamlessly removes that version of the application and routes all requests to the previous stable version with no downtime. This section evaluates the aforementioned functionality of the proxy in details using real applications.
 
-\subsubsection*{INSTANT Update}
-The following steps were followed for evaluation of the proxy using INSTANT mode (Section \ref{modes}).\medskip
+Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application which currently runs approximately 20\% of Web sites. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}.
+
+For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the following actions were executed sequentially:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item Proxy was initially configured with WordPress application version 3.9.1. 
+  \item HTTP requests were sent to the proxy.
+  \item Proxy's behavior and the responses received from the proxy  were evaluated. 
+  \item An upgrade from WordPress version 3.9.1 to version 3.9.2 was applied by sending PUT HTTP requests to the proxy's configuration service
+  \item Proxy's response to the upgrade was evaluated.
+  \item HTTP requests were sent to the proxy and the responses were evaluated for the upgrade from WordPress version 3.9.1 to version 3.9.2.
+  \item Crash bugs were introduced to the new version of WordPress and proxy's response to the crash was evaluated.
+\end{list} 
+
+\subsubsection*{INSTANT Upgrade}
+In an INSTANT upgrade the proxy  forwards requests to the most updated version of the application. However, if the most updated version does not behave correctly, the proxy removes that version and forwards requests to the previous version of the application (Section \ref{modes}). This section explains the process executed to evaluate the INSTANT upgrade mode of the proxy.\medskip
 
 \noindent
-\textit{Proxy Configuration} - the proxy was configured to forward HTTP requests to the cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy's Initial Configuration} - The proxy was configured to forward HTTP requests to a cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:22:24.922144 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1115,7 +1171,7 @@ curl -v http://127.0.0.1:1235
 \end{lstlisting} 
 
 \noindent\\
-When the proxy was run in the INFO level logging, its output to the terminal demonstrated that the HTTP requests were forwarded to the version 3.9.1 of the WordPress.\smallskip
+When the proxy was run in the INFO level logging, its output to the terminal demonstrated that the HTTP requests were forwarded to the version 3.9.1 of the WordPress. The IP address and the version of the sever that proxy is serving responses from refers to WordPress version 3.9.1 demonstrated in the initial configuration.\smallskip
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 20:22:56.415432 proxy_context_cluster.go:114:     
@@ -1124,7 +1180,7 @@ When the proxy was run in the INFO level logging, its output to the terminal dem
 \end{lstlisting} 
 
 \noindent\\
-This was further confirmed by the response received from the WordPress application via proxy. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.1 of WordPress application respectively. Note that cookie associated with a cluster with INSTANT upgrade mode does not have an expiry date. \smallskip  
+This was further confirmed by the response received from WordPress application via proxy. The "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the IP address of WordPress version 3.9.1, respectively. Note that when a cluster has an INSTANT upgrade mode, the cookie in "Set-Cookie" header of the response associated with that cluster does not have an expiry date. \smallskip  
 
 \begin{lstlisting}[language=terminal] 
 HTTP/1.1 200 OK
@@ -1141,7 +1197,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{PUT Request For INSTANT Upgrade} - To upgrade the WordPress application from version 3.9.1. to version 3.9.2 instantly, a cluster containing new version was added to the proxy using the following PUT request: \smallskip 
+\textit{PUT Request For INSTANT Upgrade} - For an instant upgrade of the WordPress application from version 3.9.1. to version 3.9.2, a cluster containing new version was added to the proxy using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 curl -v \
@@ -1150,7 +1206,7 @@ http://127.0.0.1:9090/configuration/cluster -X PUT \
 \end{lstlisting}
 
 \noindent\\
-The proxy acknowledges addition of the new cluster by outputting the following message in terminal when it runs in the INFO logging level: \smallskip 
+The proxy acknowledged addition of the new cluster by outputting the following message in the terminal: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 20:25:16.080385 config_service.go:66:     
@@ -1171,7 +1227,7 @@ The proxy acknowledges addition of the new cluster by outputting the following m
 \end{lstlisting}   
 
 \noindent\\
-The following shows the PUT request and the associated HTTP response with a cluster id received from the proxy.\smallskip 
+The PUT request and its associated HTTP response is shown below. The response received from the proxy contained the id of the newly added cluster.\smallskip 
 
 \noindent
 \textit{Request}
@@ -1197,17 +1253,18 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}  
 
 \noindent\\
-\textit{INSTANT Upgrade} - Since the new version was added to the proxy with INSTANT upgrade transition mode, the proxy output and the responses received from the WordPress via proxy showed that the new version is processing the requests. Note that the "X-Powered-By" and "X-Pingback" headers refer to the PHP version and the netwrok address of version 3.9.2 of WordPress application respectively. \smallskip 
+\textit{Evaluation of the INSTANT Upgrade} - To check that the proxy applies the upgrade immediately and process the requests with the most updated version, HTTP requests were sent to the proxy and responses received from the proxy were analyzed.
 
+The proxy's output to the terminal showed that the proxy is serving responses from version 3.9.2 of the WordPress application. In addition, the "X-Powered-By" and "X-Pingback" headers in the response recieved from proxy after the upgrade refered to the PHP version and the IP address of version 3.9.2 of WordPress application, respectively. \smallskip 
 
 \noindent
-\textit{HTTP Request Using cURL}
+\textit{HTTP Request After INSTANT Upgrade}
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
 \end{lstlisting}
 
 \noindent\\
-\textit{Proxy's output}
+\textit{Proxy's Output After INSTANT Upgrade}
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:28:20.400747 proxy_context_cluster.go:114:     
    INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
@@ -1215,7 +1272,7 @@ curl -v http://127.0.0.1:1235
 \end{lstlisting}
 
 \noindent\\
-\textit{Response}
+\textit{Response from WordPress Version 3.9.2 }
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
 Set-Cookie: dynsoftup=8aedb902-2c8d-11e4-a649-28cfe9158b63;
@@ -1231,10 +1288,11 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - to assure that the proxy can handle updates that cause incorrect behavior, the cluster running version 3.9.2 of WordPress was stopped and the behavior of the proxy was evaluated after sending new HTTP requests to the proxy. The proxy's terminal output showed that proxy first tried to send the request to the cluster with the highest version and when it detects that the cluster is not behaving correctly in thsi case it can not communicate to the cluster, it removes the updated version of the cluster from the list of configured clusters and forwards the request to the previous cluster version. The proxy terminal output and the response received from version 3.9.1 of WordPress when the new version is not available is shown below. \smallskip 
+\textit{Handling Incorrect Behavior} - To assure that the proxy can seamlessly handle updates that cause incorrect behavior, the cluster running version 3.9.2 of WordPress was stopped and the behavior of the proxy was evaluated after sending new HTTP requests to the proxy. The following terminal output demonstrates that the proxy first tried to send requests to the cluster with the highest version. When proxy detected that the cluster is not behaving correctly, in this case it could not communicate with the cluster, the proxy removed the updated version of the cluster from the list of configured clusters and forwarded requests to the previous cluster version. 
+%The time shown in the proxy's terminal output demonstrates that the time it takes for the proxy to %switch back to the older version is less than 650 us.
 
 \noindent\\
-\textit{Proxy's output}
+\textit{Proxy's Output After WordPress Version 3.9.2 crashed}
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:32:59.897032 proxy_context_cluster.go:114:     
    INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
@@ -1252,7 +1310,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{Response}
+\textit{Response After WordPress Version 3.9.2 crashed}
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
 Set-Cookie: dynsoftup=24e90b08-2c8d-11e4-a649-28cfe9158b63;
@@ -1267,11 +1325,11 @@ Content-Type: text/html; charset=UTF-8
 <!DOCTYPE html> ... </html>  
 \end{lstlisting}
    
-\subsubsection*{SESSION Update}
-The following steps were followed for evaluation of the proxy using SESSION mode (Section \ref{modes}).\medskip
+\subsubsection*{SESSION Upgrade}
+In the SESSION upgrade the proxy generates cookies with a configured expiry time for requests forwarded to that cluster. An HTTP client returns the cookie as long as it is not expired. This insures that the client stays on the same cluster until it has not interacted with the proxy for the duration of the cookie. As with INSTANT update, if the cluster with SESSION upgrade does not behave correctly, it will be removed and requests will be forwarded to the previous version of the application (Section \ref{modes}). This section explains the process executed to evaluate the proxy for SESSION upgrade.\medskip
 
 \noindent
-\textit{Proxy Configuration} - The proxy was configured with a cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy's Initial Configuration} - The proxy was configured with a cluster running version 3.9.1 of WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:10:46.064526 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1298,7 +1356,7 @@ Proxy{
 \end{lstlisting}
 
 \noindent \\
-\textit{HTTP Requests \& Responses} - HTTP requests were sent to the WordPress cluster via proxy suing the following cURL syntax:\smallskip  
+\textit{HTTP Requests \& Responses} - HTTP requests were sent to the WordPress cluster via proxy using the following cURL syntax:\smallskip  
 
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
@@ -1330,7 +1388,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{PUT Request For SESSION Upgrade} - A cluster running the version 3.9.2 of the WordPress was added to the proxy with SESSION upgrade transition mode and 60 seconds session time out using the following PUT request: \smallskip 
+\textit{PUT Request For SESSION Upgrade} - A cluster running version 3.9.2 of WordPress application was added to the proxy with SESSION upgrade transition mode and 60 seconds session time out using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 curl -v http://127.0.0.1:9090/configuration/cluster -X PUT \
@@ -1338,7 +1396,7 @@ curl -v http://127.0.0.1:9090/configuration/cluster -X PUT \
 \end{lstlisting}
 
 \noindent\\
-The proxy acknowledged addition of the new cluster by outputting the following message in terminal when it runs in the INFO logging level: \smallskip 
+The proxy acknowledged addition of the new cluster by outputting the following message in terminal when it ran in the INFO logging level: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 21:14:10.079590 config_service.go:66:     
@@ -1361,7 +1419,7 @@ The proxy acknowledged addition of the new cluster by outputting the following m
 \end{lstlisting}   
 
 \noindent\\
-The following shows the PUT request and the associated HTTP response containing the cluster id received from the proxy.\smallskip 
+The PUT request and its associated HTTP response is shown below. The response contains cluster id of the newly added cluster.\smallskip 
 
 \noindent
 \textit{Request}
@@ -1387,7 +1445,7 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}  
 
 \noindent\\
-\textit{HTTP Requests Without Cookie} - To check the proxy behaves correctly with a SESSION upgrade, a HTTP request with no cookie was sent to the proxy. The proxy forwarded the HTTP request to the new cluster as shown in the following terminal output: \smallskip   
+\textit{HTTP Requests Without Cookie} - To check the proxy behaves correctly with SESSION upgrade, an HTTP request with no cookie was sent to the proxy. The proxy forwarded the HTTP request to the new cluster as shown in the following terminal output: \smallskip   
 
 %2014/08/26 21:53:44.763483 proxy_context_cluster.go:115:     
 %   INFO - Serving response 0 from ip: [127.0.0.1] port: [1036] 
@@ -1402,7 +1460,7 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}
 
 \noindent\\
-Analyzing the headers in the response (\textit{i.e.} "X-Powered-By" and "X-Pingback") also confirmed that the responses are coming from the new cluster with version 3.9.2. Note that the Set-Cookie header in the response from a cluster with SESSION upgrade mode has an expiry date. \smallskip
+Analyzing headers in the response (\textit{i.e.} "X-Powered-By" and "X-Pingback") also confirmed that responses were coming from the new cluster running version 3.9.2 of WordPress application. Note that the Set-Cookie header in the response from a cluster with SESSION upgrade mode has an expiry date. \smallskip 
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -1419,10 +1477,10 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{HTTP Requests With Cookie} - After the SESSION upgrade when the HTTP requests were sent to the proxy with a uuid cookie associated with a cluster with older version, the proxy forwarded the request to the old cluster rather than the new version as it is shown in the following proxy output printed in the terminal and the response received by the client. \medskip 
+\textit{HTTP Requests With Cookie} - When HTTP requests were sent to the proxy with cookies  associated to an older cluster, the proxy forwarded those requests to the old cluster rather than the new one. This is demonstrated with the following terminal output echoed by proxy and the response received by the client. \medskip 
 
 \noindent
-\textit{HTTP request with cookie Using cURL}
+\textit{HTTP request with cookie}
 \begin{lstlisting}[language=terminal]
 curl -v 'http://127.0.0.1:1235/' \
 -H 'Cookie:   dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;'
@@ -1453,7 +1511,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - To insure the proxy can handle any errors occur by the updated cluster, the Docker container running the WordPress version 3.9.2 was stopped. HTTP requests subsequently were sent to the proxy and its behavior was screened. The proxy terminal output demonstrated that when the proxy fails to send requests to the most updated cluster, it removes that cluster and forwards the requests to the previous cluster version.  \smallskip
+\textit{Handling Incorrect Behavior} - To insure the proxy can handle any errors occurring by the updated cluster, the Docker container running WordPress version 3.9.2 was stopped. HTTP requests subsequently were sent to the proxy and its behavior was screened. The proxy terminal output demonstrated that when the proxy fails to send requests to the most updated cluster, it removes that cluster and forwards the requests to the previous cluster version.  \smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:35:10.120521 proxy_context_cluster.go:114:     
@@ -1473,7 +1531,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
  
 \noindent\\
-The response received via proxy from the WordPress application after the oldest version failed is shown here. Note that the "X-Pingback" header shows the network address of old version of the WordPress application. In addition, Since the cluster with SESSION upgrade mode has been deleted by proxy the uuid cookie in the "Set-Cookie" header does not have an expiry date.\smallskip 
+The response received from WordPress application via proxy after the oldest version failed is shown below. Note that the "X-Pingback" header shows the network address of old version of WordPress application. In addition, Since proxy deleted the cluster with SESSION upgrade mode, the uuid cookie in the "Set-Cookie" header does not have an expiry date.\smallskip 
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -1489,11 +1547,11 @@ Content-Type: text/html; charset=UTF-8
 <!DOCTYPE html> ... </html>
 \end{lstlisting}
 
-\subsubsection*{GRADUAL Update}
-This section summarizes the performance evaluation of the proxy when a GRADUAL upgrade of the WordPress from version 3.9.1 to 3.9.2 was applied using proxy. \medskip
+\subsubsection*{GRADUAL Upgrade}
+In the GRADUAL upgrade each client will be allocated a transition cookie. The transition cookie will be used to randomly create each client a number between 0 and 100. The random number will be used to define which client should be upgraded to the new version. If the randomly generated number is less than or equal to a defined threshold then that client will be moved to the latest cluster version (Section \ref{route-stage}). This section summarizes the performance evaluation of the proxy when a GRADUAL upgrade of WordPress from version 3.9.1 to 3.9.2 was applied. \medskip
 
 \noindent
-\textit{Proxy Configuration} - the initial configuration of the proxy is shown in the following terminal output echoed by proxy when it was started. Note that the proxy was configured with version 3.9.1 of WordPress application.\smallskip
+\textit{Proxy's Initial Configuration} - The initial configuration of the proxy is shown in the following terminal output echoed by proxy. Note that the proxy was initially configured with version 3.9.1 of WordPress application.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:05:30.745828 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1521,7 +1579,7 @@ Proxy{
 \end{lstlisting}
 
 \noindent\\
-\textit{HTTP Requests \& Responses} - HTTP requests were sent to WordPress application via proxy using the following the cURL syntax:\smallskip
+\textit{HTTP Requests \& Responses} - HTTP requests were sent to WordPress application via proxy using the following cURL syntax:\smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
@@ -1554,7 +1612,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy for upgrading WordPress application from version 3.9.1 to version 3.9.2.
+\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy for upgrading WordPress application from version 3.9.1 to version 3.9.2.\smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v \
@@ -1563,7 +1621,7 @@ http://127.0.0.1:9090/configuration/cluster -X PUT \
 \end{lstlisting}
  
 \noindent \\
-The following output echoed by the proxy showing successful addition of the new cluster with GRADUAL transition mode and version 3.9.2 to the proxy. \smallskip
+The following output echoed by the proxy showed successful addition of the new cluster with GRADUAL upgrade transition mode running WordPress version 3.9.2. \smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:11:57.781817 config_service.go:66:     
@@ -1586,7 +1644,7 @@ The following output echoed by the proxy showing successful addition of the new 
 \end{lstlisting}
 
 \noindent\\ 
-A cluster associated to the version 3.9.2 of the WolrdPress application was returned by proxy.\smallskip
+A cluster id associated to the new cluster was returned by proxy.\smallskip
 
 \begin{lstlisting}[language=terminal]
 PUT /configuration/cluster HTTP/1.1
@@ -1605,12 +1663,13 @@ be709f8f-2e9b-11e4-8d7c-600308a8245e
 \end{lstlisting}
 
 \noindent\\
-\textit{GRADUAL Upgrade} - HTTP requests with a transition cookie were sent to the proxy after the new cluster was added.\smallskip
+\textit{Evaluation of the GRADUAL Upgrade} - An HTTP request with transition cookie was sent to the proxy after the new cluster was added.\smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v 'http://127.0.0.1:1235/' -H 'Cookie: transition=952c8557-2088-11e4-87e3-600308a8245e;'
 \end{lstlisting}
 
+\noindent\\
 The proxy used the transition cookie to randomly generate a number which determines when the client will be upgraded to the new version. When multiple HTTP requests were sent to the proxy using the same transition cookie, It was noticed that the upgrade occurred after three requests as it is shown in the following terminal output: \smallskip
 
 \begin{lstlisting}[language=terminal]
@@ -1638,7 +1697,7 @@ The proxy used the transition cookie to randomly generate a number which determi
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - To insure the proxy can go back to the older version of the application if the new version behaved incorrectly, the Docker container running version 3.9.2 of the WordPress application was stopped. The behavior of the proxy was screened when new HTTP requests with transition cookie were sent to it. The following terminal output shows that when the proxy fails connecting to the new version of the application, it removes the cluster from the configuration and forwards requests to the previous cluster version. \smallskip
+\textit{Handling Incorrect Behavior} - To insure the proxy forwards requests to the older version of the application if the new version behaved incorrectly, the Docker container running version 3.9.2 of the WordPress application was stopped. The behavior of the proxy was screened when new HTTP requests with transition cookie were sent to the proxy. The following terminal output shows that when the proxy failed connecting to the new version of the application, it removed the cluster from the configuration and forwarded requests to the previous cluster version. \smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:20:48.105660 proxy_context_cluster.go:115:     
@@ -1658,7 +1717,7 @@ The proxy used the transition cookie to randomly generate a number which determi
 \end{lstlisting}   
 
 \noindent\\
-The following response received after the failure of the cluster with version 3.9.2 showed that version 3.9.1 with IP address "192.168.50.30" is processing the requests.\smallskip
+The following response received after the failure of the cluster running version 3.9.2 showed that version 3.9.1 with IP address "192.168.50.30" is processing the requests.\smallskip
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -1674,11 +1733,194 @@ Content-Type: text/html; charset=UTF-8
 <!DOCTYPE html> ... </html>
 \end{lstlisting}     
 
-\subsubsection*{CONCURRENT Update}
-To evaluate that the CONCURRENT mode works reliably with proxy, WordPress version 3.9.1 was upgraded to version 3.9.2 via proxy. The upgrade process and the proxy's reaction to the upgrade and requests / responses associated with the proxy is summarized in this section.
+\subsubsection*{CONCURRENT Upgrade}
+To evaluate that the CONCURRENT mode works reliably, WordPress version 3.9.1 was upgraded to version 3.9.2 via proxy. The upgrade process and the proxy's reaction to the upgrade and requests / responses associated with the proxy is summarized in this section.
 
 \noindent
-\textit{Proxy Configuration}
+\textit{Proxy Configuration} - the following terminal output shows the initial configuration of the proxy. Proxy is configured with version 3.9.1 of WordPress application.\smallskip
+\begin{lstlisting}[language=terminal]
+2014/08/29 12:39:55.615246 config_parse.go:56:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "servers":[
+            {"hostname": "192.168.50.30", "port": 80}
+        ],
+        "version": "3.9.1"
+    }
+}
+
+as:
+Proxy{
+    Proxy Address:      0.0.0.0:1235
+    ConfigService Port: 9090
+    Proxied Servers:    version: 3.9.1 [192.168.50.30:80]
+}
+\end{lstlisting}  
+
+\noindent
+\textit{HTTP Request \& Responses} - HTTP requests were sent to the WordPress application via proxy using cURL.
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}  
+
+\noindent\\
+As it is shown in the following terminal output echoed by proxy, requested were successfully forwarded to WordPress application version 3.9.1 by proxy. Upgrade transition mode INSTANT was given to the initial configuration since no upgrade mode was specified.
+
+\begin{lstlisting}[language=terminal]
+2014/08/29 12:40:00.005587 proxy_context_cluster.go:115:     
+   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+\end{lstlisting}  
+
+\noindent\\
+The X-Pingback header in the response received from proxy also confirmed that version 3.9.1 of the WordPress application with IP address "192.168.50.30" is processing the requests. \smallskip
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=32afd70b-2f71-11e4-b59e-600308a8245e;
+Date: Fri, 29 Aug 2014 11:40:00 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+<@\textcolor{magenta}{X-Pingback: http://192.168.50.30/xmlrpc.php}@>
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+ 
+<!DOCTYPE html> ... </html>
+\end{lstlisting} 
+
+\noindent\\
+\textit{PUT Request for CONCURRENT Upgrade} - to upgrade WordPress from version 3.9.1 to version 3.9.2, the following PUT request was sent to proxy's configuration service: \smallskip
+
+\begin{lstlisting}[language=terminal]
+curl -v \
+http://127.0.0.1:9090/configuration/cluster -X PUT \
+--data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "CONCURRENT"}}}'
+\end{lstlisting}  
+
+\noindent\\
+The following terminal output showed successful addition of a cluster running version 3.9.2 of WordPress application in CONCURRENT upgrade transition mode:\smallskip
+
+\begin{lstlisting}[language=terminal]
+2014/08/29 12:42:55.844840 config_service.go:66:     INFO - Received new cluster configuration:
+{
+    "cluster": {
+        "servers": [
+            {
+                "hostname": "192.168.50.40", 
+                "port": 80
+            }
+        ], 
+        "version": "3.9.2", 
+        "upgradeTransition": {
+            "mode": "CONCURRENT"
+        }
+    }
+} 
+\end{lstlisting} 
+
+\noindent
+The response body received from proxy contained a cluster id associated to the new cluster.
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 202 Accepted
+Date: Fri, 29 Aug 2014 11:42:55 GMT
+Content-Length: 36
+Content-Type: text/plain; charset=utf-8
+
+9e1cb1e4-2f71-11e4-b59e-600308a8245e
+\end{lstlisting} 
+
+\noindent\\
+\textit{GRADUAL Upgrade} - To evaluate the behavior of the proxy after the CONCURRENT upgrade, HTTP requests were sent to proxy. \smallskip
+
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}
+
+\noindent\\ 
+The following terminal output echoed by proxy showed that proxy sent requests to both versions of WordPress application (\textit{i.e.} version 3.9.1 and 3.9.2) concurrently. 
+
+\begin{lstlisting}[language=terminal]
+2014/08/29 12:45:00.892252 proxy_context_cluster.go:115:     
+   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [CONCURRENT]
+
+2014/08/29 12:45:00.892822 proxy_context_cluster.go:115:     
+   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+\end{lstlisting}
+
+\noindent\\
+However, the client only received a response from the most updated version as shown below. Note that the X-Pingback header contains the IP address of WordPress application version 3.9.2. \smallskip
+
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=9e1cb1e4-2f71-11e4-b59e-600308a8245e;
+Date: Fri, 29 Aug 2014 11:45:00 GMT
+Server: Apache/2.2.22 (Debian)
+X-Powered-By: PHP/5.4.4-14+deb7u12
+<@\textcolor{magenta}{X-Pingback: http://192.168.50.40/xmlrpc.php}@>
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
+\end{lstlisting}
+
+\noindent\\
+\textit{Handling Incorrect Behavior} - to insure that the proxy is capable of dropping responses arriving from the newest version of the application when it is not behaving correctly the following scenario was performed. docker container running version 3.9.2 of the WordPress application was stopped and then HTTP request were sent to the proxy using cURL.
+
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}
+
+\noindent\\
+The messages outputted by proxy showed that proxy concurrently forwards messages to both versions of the WorldPress application. However, since the latest version is not available the proxy forwards the respond recievd from version 3.9.1 to the client as shown below. Note the IP address demonstrated in the "X-Pingback" header referring to version 3.9.1 of WordPress application.    
+
+\noindent\\
+\textit{Proxy's Output}
+\begin{lstlisting}[language=terminal]
+2014/08/29 12:47:30.434366 proxy_context_cluster.go:115:     
+   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   version: [3.9.2] mode: [CONCURRENT]
+   
+2014/08/29 12:47:30.434794 proxy_context_cluster.go:115:     
+   INFO - Serving response 2 from ip: [192.168.50.30] port: [80] 
+   version: [3.9.1] mode: [INSTANT]
+\end{lstlisting}
+
+
+\noindent\\
+\textit{Response}
+\begin{lstlisting}[language=terminal] 
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=9e1cb1e4-2f71-11e4-b59e-600308a8245e;
+Date: Fri, 29 Aug 2014 11:47:30 GMT
+Server: Apache/2.4.9 (Debian)
+X-Powered-By: PHP/5.5.12-2
+<@\textcolor{magenta}{X-Pingback: http://192.168.50.30/xmlrpc.php}@>
+Vary: Accept-Encoding
+Content-Length: 7523
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html> ... </html>
+\end{lstlisting}
+ 
+
+
+
+
+
+
+
+   
 
   
    
@@ -1686,9 +1928,13 @@ To evaluate that the CONCURRENT mode works reliably with proxy, WordPress versio
    
 
 
+
+
 \subsection{Handling Incorrect Behavior} 
 To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
 \clearpage
+
+
 
 \chapter{Conclusions \& Future Plans}
 xxxxxxxxx\bigskip
