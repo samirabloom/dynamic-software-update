@@ -4,8 +4,10 @@ import (
 	"testing"
 	assertion "util/test/assertion"
 	"net"
+	"bytes"
 	"proxy/contexts"
 	"errors"
+	"io"
 )
 
 func mockParseProxy(tcpProxyLocalAddress *net.TCPAddr, proxyParseErr error) func(map[string]interface{}) (*net.TCPAddr, error) {
@@ -20,8 +22,8 @@ func mockParseConfigService(configServicePort int, parseConfigServiceErr error) 
 	}
 }
 
-func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}) (*contexts.Clusters, error) {
-	return func(map[string]interface{}) (*contexts.Clusters, error) {
+func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}, io.Writer) (*contexts.Clusters, error) {
+	return func(map[string]interface{}, io.Writer) (*contexts.Clusters, error) {
 		return clusters, clusterParseErr
 	}
 }
@@ -38,10 +40,11 @@ func Test_Parse_Config_File_With_No_Errors(testCtx *testing.T) {
 		jsonData                          = []byte("{}")
 		expectedProxy *Proxy              = &Proxy{frontendAddr: tcpProxyLocalAddress, configServicePort: configServicePort, clusters: clusters, stop: make(chan bool), }
 		expectedError error               = nil
+		outputStream bytes.Buffer
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr))
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
@@ -60,10 +63,11 @@ func Test_Parse_Config_File_With_Proxy_Parse_Error(testCtx *testing.T) {
 		jsonData                          = []byte("{}")
 		expectedProxy *Proxy              = nil
 		expectedError error               = proxyParseErr
+		outputStream bytes.Buffer
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr))
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
@@ -82,10 +86,11 @@ func Test_Parse_Config_File_With_Config_Service_Parse_Error(testCtx *testing.T) 
 		jsonData                          = []byte("{}")
 		expectedProxy *Proxy              = nil
 		expectedError error               = parseConfigServiceErr
+		outputStream bytes.Buffer
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr))
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
@@ -104,10 +109,11 @@ func Test_Parse_Config_File_With_Cluster_Parse_Error(testCtx *testing.T) {
 		jsonData                          = []byte("{}")
 		expectedProxy *Proxy              = nil
 		expectedError error               = clusterParseErr
+		outputStream bytes.Buffer
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr))
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)

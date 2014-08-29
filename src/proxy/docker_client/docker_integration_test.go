@@ -69,7 +69,7 @@ func Test_Docker_Client_Should_Pull_Container(testCtx *testing.T) {
 	// given
 	createVagrantDockerBox()
 	var (
-		endpoint = "http://192.168.50.5:2375"
+		endpoint   = "http://192.168.50.5:2375"
 		repository = "samirabloom/docker-go"
 		tag        = "latest"
 		actualBuffer bytes.Buffer
@@ -97,9 +97,10 @@ func Test_Docker_Client_Should_Create_Container(testCtx *testing.T) {
 	// given
 	createVagrantDockerBox()
 	var (
-		endpoint = "http://192.168.50.5:2375"
+		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"
 		containerName = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String()
+		outputStream bytes.Buffer
 	)
 
 	// when
@@ -108,7 +109,7 @@ func Test_Docker_Client_Should_Create_Container(testCtx *testing.T) {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
 
-	container, err := client.CreateContainer(imageName, containerName)
+	container, err := client.CreateContainer(imageName, containerName, &outputStream)
 
 	// then
 	if container.Image == imageName {
@@ -126,9 +127,10 @@ func Test_Docker_Client_Should_Inspect_Container(testCtx *testing.T) {
 	// given
 	createVagrantDockerBox()
 	var (
-		endpoint = "http://192.168.50.5:2375"
+		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"
 		containerName = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String()
+		outputStream bytes.Buffer
 	)
 
 	// when
@@ -137,12 +139,12 @@ func Test_Docker_Client_Should_Inspect_Container(testCtx *testing.T) {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
 
-	createdContainer, err := client.CreateContainer(imageName, containerName)
+	createdContainer, err := client.CreateContainer(imageName, containerName, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}
 
-	container, err := client.InspectContainer(createdContainer.ID)
+	container, err := client.InspectContainer(createdContainer.ID, &outputStream)
 
 	// then
 	if container.Image == imageName {
@@ -160,9 +162,10 @@ func Test_Docker_Client_Should_Start_Container(testCtx *testing.T) {
 	// given
 	createVagrantDockerBox()
 	var (
-		endpoint = "http://192.168.50.5:2375"
-		imageName                           = "samirabloom/docker-go"
-		containerName                       = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String()
+		endpoint      = "http://192.168.50.5:2375"
+		imageName     = "samirabloom/docker-go"
+		containerName = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String()
+		outputStream bytes.Buffer
 	)
 
 	// when
@@ -171,12 +174,12 @@ func Test_Docker_Client_Should_Start_Container(testCtx *testing.T) {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
 
-	createdContainer, err := client.CreateContainer(imageName, containerName)
+	createdContainer, err := client.CreateContainer(imageName, containerName, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}
 
-	container, err := client.StartContainer(createdContainer.ID)
+	container, err := client.StartContainer(createdContainer.ID, &outputStream)
 
 	// then
 	if container.Image == imageName {
@@ -194,9 +197,10 @@ func Test_Docker_Client_Should_Stop_Container(testCtx *testing.T) {
 	// given
 	createVagrantDockerBox()
 	var (
-		endpoint = "http://192.168.50.5:2375"
-		imageName                           = "samirabloom/docker-go"
-		containerName                       = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String()
+		endpoint      = "http://192.168.50.5:2375"
+		imageName     = "samirabloom/docker-go"
+		containerName = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String()
+		outputStream bytes.Buffer
 	)
 
 	// when
@@ -205,12 +209,12 @@ func Test_Docker_Client_Should_Stop_Container(testCtx *testing.T) {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
 
-	createdContainer, err := client.CreateContainer(imageName, containerName)
+	createdContainer, err := client.CreateContainer(imageName, containerName, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}
 
-	container, err := client.StopContainer(createdContainer.ID, uint(10))
+	container, err := client.StopContainer(createdContainer.ID, uint(10), &outputStream)
 
 	// then
 	if container.Image == imageName {

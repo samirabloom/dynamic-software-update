@@ -58,7 +58,7 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.Re
 		} else {
 			clusterConfiguration := jsonConfig["cluster"]
 			if clusterConfiguration != nil {
-				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}))
+				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}), writer)
 				if err != nil {
 					http.Error(writer, fmt.Sprintf("Error parsing cluster configuration - %s", err.Error()), http.StatusBadRequest)
 				} else {

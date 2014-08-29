@@ -4,6 +4,9 @@ import (
 	"proxy/log"
 	"io"
 	docker "github.com/fsouza/go-dockerclient"
+	"fmt"
+	"code.google.com/p/go-uuid/uuid"
+	"strings"
 )
 
 type DockerClient struct {
@@ -127,41 +130,163 @@ type HostConfig struct {
 }
  */
 
-func (dc *DockerClient) CreateContainer(imageName, containerName string) (container *docker.Container, err error) {
+func (dc *DockerClient) CreateContainer(imageName, containerName string, outputStream io.Writer) (container *docker.Container, err error) {
 	config := docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
 	opts := docker.CreateContainerOptions{Name: containerName, Config: &config}
 
 	container, err = dc.client.CreateContainer(opts)
 	if err != nil {
+		fmt.Fprintf(outputStream, "error creating container: %s\n", err)
 		log.LoggerFactory().Error("error creating container: %s\n", err)
+	} else {
+		fmt.Fprintf(outputStream, "Created container [%s] for image [%s]\n", containerName, imageName)
 	}
 	return container, err
 }
 
-func (dc *DockerClient) InspectContainer(id string) (container *docker.Container, err error) {
+func (dc *DockerClient) InspectContainer(id string, outputStream io.Writer) (container *docker.Container, err error) {
 	container, err = dc.client.InspectContainer(id)
 	if err != nil {
+		fmt.Fprintf(outputStream, "error inspecting container: %s\n", err)
 		log.LoggerFactory().Error("error inspecting cotainer: %s\n", err)
+	} else {
+		streamContainer(container, outputStream)
 	}
 	return container, err
 }
 
-func (dc *DockerClient) StartContainer(id string) (container *docker.Container, err error) {
+func streamContainer(container *docker.Container, outputStream io.Writer) {
+	fmt.Fprintf(outputStream, "======================================")
+	fmt.Fprintf(outputStream, "ID: %s\n", container.ID)
+	fmt.Fprintf(outputStream, "Created: %s\n", container.Created)
+	fmt.Fprintf(outputStream, "Path: %s\n", container.Path)
+	fmt.Fprintf(outputStream, "Args: %s\n", container.Args)
+	if container.Config != nil {
+		fmt.Printf("Config: -- \n\t Hostname: %v,\n\t " +
+					"Domainname: %v,\n\t " +
+					"User: %v,\n\t " +
+					"Memory: %v,\n\t " +
+					"MemorySwap: %v,\n\t " +
+					"CpuShares: %v,\n\t " +
+					"AttachStdin: %v,\n\t " +
+					"AttachStdout: %v,\n\t " +
+					"AttachStderr: %v,\n\t " +
+					"PortSpecs: %v,\n\t " +
+					"ExposedPorts: %v,\n\t " +
+					"Tty: %v,\n\t " +
+					"OpenStdin: %v,\n\t " +
+					"StdinOnce: %v,\n\t " +
+					"Env: %v,\n\t " +
+					"Cmd: %v,\n\t " +
+					"Dns: %v,\n\t " +
+					"Image: %v,\n\t " +
+					"Volumes: %v,\n\t " +
+					"VolumesFrom: %v,\n\t " +
+					"WorkingDir: %v,\n\t " +
+					"Entrypoint: %v,\n\t " +
+					"NetworkDisabled: %v\n",
+			container.Config.Hostname,
+			container.Config.Domainname,
+			container.Config.User,
+			container.Config.Memory,
+			container.Config.MemorySwap,
+			container.Config.CpuShares,
+			container.Config.AttachStdin,
+			container.Config.AttachStdout,
+			container.Config.AttachStderr,
+			container.Config.PortSpecs,
+			container.Config.ExposedPorts,
+			container.Config.Tty,
+			container.Config.OpenStdin,
+			container.Config.StdinOnce,
+			container.Config.Env,
+			container.Config.Cmd,
+			container.Config.Dns,
+			container.Config.Image,
+			container.Config.Volumes,
+			container.Config.VolumesFrom,
+			container.Config.WorkingDir,
+			container.Config.Entrypoint,
+			container.Config.NetworkDisabled)
+	}
+	fmt.Printf("State: -- \n\t Running: %t, \n\t " +
+				"Paused: %t, \n\t " +
+				"Pid: %d, \n\t " +
+				"ExitCode: %d, \n\t " +
+				"StartedAt: %v, \n\t " +
+				"FinishedAt: %v\n",
+		container.State.Running,
+		container.State.Paused,
+		container.State.Pid,
+		container.State.ExitCode,
+		container.State.StartedAt,
+		container.State.FinishedAt)
+	fmt.Fprintf(outputStream, "Image: %s\n", container.Image)
+	fmt.Fprintf(outputStream, "NetworkSettings: %s\n", container.NetworkSettings)
+	fmt.Fprintf(outputStream, "SysInitPath: %s\n", container.SysInitPath)
+	fmt.Fprintf(outputStream, "ResolvConfPath: %s\n", container.ResolvConfPath)
+	fmt.Fprintf(outputStream, "HostnamePath: %s\n", container.HostnamePath)
+	fmt.Fprintf(outputStream, "HostsPath: %s\n", container.HostsPath)
+	fmt.Fprintf(outputStream, "Name: %s\n", container.Name)
+	fmt.Fprintf(outputStream, "Driver: %s\n", container.Driver)
+	fmt.Fprintf(outputStream, "Volumes: %s\n", container.Volumes)
+	fmt.Fprintf(outputStream, "VolumesRW: %s\n", container.VolumesRW)
+	fmt.Fprintf(outputStream, "HostConfig: %s\n", container.HostConfig)
+	fmt.Fprintf(outputStream, "======================================\n")
+}
+
+func (dc *DockerClient) StartContainer(id string, outputStream io.Writer) (container *docker.Container, err error) {
 	err = dc.client.StartContainer(id, &docker.HostConfig{})
 	if err != nil {
+		fmt.Fprintf(outputStream, "error starting container: %s\n", err)
 		log.LoggerFactory().Error("error starting container: %s\n", err)
 	} else {
-		container, err = dc.InspectContainer(id)
+		container, err = dc.InspectContainer(id, outputStream)
 	}
 	return container, err
 }
 
-func (dc *DockerClient) StopContainer(id string, timeout uint) (container *docker.Container, err error) {
+func (dc *DockerClient) StopContainer(id string, timeout uint, outputStream io.Writer) (container *docker.Container, err error) {
 	err = dc.client.StopContainer(id, timeout)
 	if err != nil {
-		log.LoggerFactory().Error("error starting container: %s\n", err)
+		fmt.Fprintf(outputStream, "error stopping container: %s\n", err)
+		log.LoggerFactory().Error("error stopping container: %s\n", err)
 	} else {
-		container, err = dc.InspectContainer(id)
+		container, err = dc.InspectContainer(id, outputStream)
 	}
+	return container, err
+}
+
+type DockerConfig struct {
+	Image           string
+	Tag             string
+	WorkingDir      string
+	Entrypoint      string
+	Env             string
+	Cmd             []string
+	Hostname        string
+	Volumes         []string
+	VolumesFrom     []string
+	ExposedPorts    map[docker.Port]struct{}
+	PublishAllPorts bool
+	PortBindings    map[docker.Port][]docker.PortBinding
+	PortToProxy     int64
+	Links           []string
+	User            string
+	Memory          int64
+	CpuShares       int64
+	LxcConf         []docker.KeyValuePair
+	Privileged      bool
+}
+
+func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputStream io.Writer) (container *docker.Container, err error) {
+	err = dc.PullImage(config.Image, config.Tag, outputStream)
+	if err != nil {
+		container, err = dc.CreateContainer(fmt.Sprintf("%s:%s", config.Image, config.Tag), strings.Replace(config.Image, "/", "_", 2)+"_"+uuid.NewUUID().String(), outputStream)
+		if err != nil {
+			container, err = dc.StartContainer(container.ID, outputStream)
+		}
+	}
+
 	return container, err
 }
