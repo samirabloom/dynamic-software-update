@@ -317,7 +317,7 @@ func parseContainers(containersConfiguration interface{}, outputStream io.Writer
 		volumesFrom         []string                             = nil
 		exposedPorts        map[docker.Port]struct{}             = nil
 		publishAllPorts     bool                                 = false
-		portBindings        map[docker.Port][]docker.PortBinding = nil
+		portBindingMapings  map[docker.Port][]docker.PortBinding = nil
 		links               []string                             = nil
 		user                string                               = ""
 		memory              int64                                = 0
@@ -392,9 +392,22 @@ func parseContainers(containersConfiguration interface{}, outputStream io.Writer
 				publishAllPorts = publishAllPortsConfig.(bool)
 			}
 
-			portBindingsConfig := container["portBindings"]
-			if portBindingsConfig != nil {
-				portBindings = portBindingsConfig.(map[docker.Port][]docker.PortBinding)
+			portBindingsMappingConfig := container["portBindings"]
+			if portBindingsMappingConfig != nil {
+				portBindingsMappingList := portBindingsMappingConfig.(map[string]interface{})
+				portBindingMapings = make(map[docker.Port][]docker.PortBinding)
+				for index := range portBindingsMappingList {
+					portBindingsListConfig := portBindingsMappingList[index].([]interface{})
+					portBindings := make([]docker.PortBinding, len(portBindingsListConfig))
+					for index := range portBindingsListConfig {
+						portBindingConfig := portBindingsListConfig[index].(map[string]interface{})
+						portBindings[index] = docker.PortBinding{
+							fmt.Sprintf("%v", portBindingConfig["HostIp"]),
+							fmt.Sprintf("%v", portBindingConfig["HostPort"]),
+						}
+					}
+					portBindingMapings[docker.Port(index)] = portBindings
+				}
 			}
 
 			linksConfig := container["links"]
@@ -440,7 +453,7 @@ func parseContainers(containersConfiguration interface{}, outputStream io.Writer
 				VolumesFrom: volumesFrom,
 				ExposedPorts: exposedPorts,
 				PublishAllPorts: publishAllPorts,
-				PortBindings: portBindings,
+				PortBindings: portBindingMapings,
 				Links: links,
 				User: user,
 				Memory: memory,
@@ -452,8 +465,13 @@ func parseContainers(containersConfiguration interface{}, outputStream io.Writer
 			fmt.Printf("dockerConfig: %#v\n", dockerConfig)
 
 			dockerClient, err := docker_client.NewDockerClient("http://192.168.50.5:2375")
-			if err != nil {
-				dockerClient.CreateServerFromContainer(dockerConfig, outputStream)
+			if err == nil {
+				container, err := dockerClient.CreateServerFromContainer(dockerConfig, outputStream)
+				if err == nil {
+					fmt.Printf("container: %#v\n", container)
+				} else {
+					fmt.Printf("err: %#v\n", err)
+				}
 			}
 
 			fmt.Printf("dockerClient: %#v\n", dockerClient)

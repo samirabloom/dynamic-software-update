@@ -1,0 +1,44 @@
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "deis/helloworld",
+                "tag": "latest",
+                "portToProxy": 8080,
+                "portBindings": {
+                    "8080/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "49153"
+                        }
+                    ],
+                    "8090/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "49154"
+                        }
+                    ],
+                    "9080/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "49155"
+                        }
+                    ],
+                    "9090/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "49156"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "3.9.1"
+    }
+}
