@@ -2,7 +2,6 @@ package stages
 
 import (
 	"io"
-	"time"
 	"proxy/log"
 	"proxy/contexts"
 )
@@ -11,7 +10,6 @@ import (
 
 func read(next func(*contexts.ChunkContext), complete func(*contexts.ChunkContext)) func(*contexts.ChunkContext) {
 	return func(context *contexts.ChunkContext) {
-		defer log.Trace("read", time.Now())
 		log.LoggerFactory().Debug("Read Stage START - %s", context)
 		var loopCounter = 0
 		for {

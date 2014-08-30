@@ -5,7 +5,7 @@
                 "image": "mysql",
                 "tag": "latest",
                 "name": "some-mysql-four",
-                "env": [
+                "environment": [
                     "MYSQL_ROOT_PASSWORD=mysecretpassword"
                 ],
                 "volumes": [
@@ -20,9 +20,14 @@
                 "links": [
                     "some-mysql-four:mysql"
                 ],
-                "portSpecs": [
-                    "8081:80"
-                ]
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8081"
+                        }
+                    ]
+                }
             }
         ],
         "version": "3.9.2",

@@ -2,7 +2,6 @@ package stages
 
 import (
 	"bytes"
-	"time"
 	byteutil "util/byte"
 	"proxy/log"
 	"proxy/contexts"
@@ -14,7 +13,6 @@ import (
 
 func route(next func(*contexts.ChunkContext), clusters *contexts.Clusters, createBackPipe func(context *contexts.ChunkContext)) func(*contexts.ChunkContext) {
 	return func(context *contexts.ChunkContext) {
-		defer log.Trace("route", time.Now())
 		log.LoggerFactory().Debug("Route Stage START - %s", context)
 		if context.FirstChunk {
 

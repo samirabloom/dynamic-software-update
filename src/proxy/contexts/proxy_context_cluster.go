@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"proxy/log"
 	"proxy/tcp"
+	"errors"
+	"proxy/docker_client"
 )
 
 type Clusters  struct {
@@ -125,6 +127,7 @@ func compare(a, b []byte) bool {
 
 type Cluster struct {
 	BackendAddresses                []*BackendAddress
+	DockerConfigurations            []*docker_client.DockerConfig
 	RequestCounter                  int64
 	TransitionCounter               float64
 	PercentageTransitionPerRequest  float64
@@ -136,17 +139,21 @@ type Cluster struct {
 
 func (cluster *Cluster) NextServer() (*tcp.TCPConnAndName, error) {
 	cluster.RequestCounter++
-	server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
-	message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%s] mode: [%s]", cluster.RequestCounter, server.Address.IP, server.Address.Port, cluster.Version, ModesModeToCode[cluster.Mode])
-	if cluster.PercentageTransitionPerRequest > 0 {
-		message += fmt.Sprintf(" transition counter [%.2f] percentage transition per request [%.2f]", cluster.TransitionCounter, cluster.PercentageTransitionPerRequest)
+	if len(cluster.BackendAddresses) > 0 {
+		server := cluster.BackendAddresses[int(cluster.RequestCounter) % len(cluster.BackendAddresses)]
+		message := fmt.Sprintf("Serving response %d from ip: [%s] port: [%d] version: [%s] mode: [%s]", cluster.RequestCounter, server.Address.IP, server.Address.Port, cluster.Version, ModesModeToCode[cluster.Mode])
+		if cluster.PercentageTransitionPerRequest > 0 {
+			message += fmt.Sprintf(" transition counter [%.2f] percentage transition per request [%.2f]", cluster.TransitionCounter, cluster.PercentageTransitionPerRequest)
+		}
+		if cluster.SessionTimeout > 0 {
+			message += fmt.Sprintf(" session timeout [%d] uuid [%s]", cluster.SessionTimeout, cluster.Uuid)
+		}
+		log.LoggerFactory().Info(message)
+		connection, err := net.DialTCP("tcp", nil, server.Address)
+		return &tcp.TCPConnAndName{connection, server.Host, server.Port}, err
+	} else {
+		return nil, errors.New("Error no backend addresses found")
 	}
-	if cluster.SessionTimeout > 0 {
-		message += fmt.Sprintf(" session timeout [%d] uuid [%s]", cluster.SessionTimeout, cluster.Uuid)
-	}
-	log.LoggerFactory().Info(message)
-	connection, err := net.DialTCP("tcp", nil, server.Address)
-	return &tcp.TCPConnAndName{connection, server.Host, server.Port}, err
 }
 
 func (cluster *Cluster) String() string {

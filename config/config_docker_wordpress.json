@@ -15,7 +15,7 @@
                 "image": "mysql",
                 "tag": "latest",
                 "name": "some-mysql",
-                "env": [
+                "environment": [
                     "MYSQL_ROOT_PASSWORD=mysecretpassword"
                 ],
                 "volumes": [

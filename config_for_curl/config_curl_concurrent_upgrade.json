@@ -1,0 +1,14 @@
+{
+    "cluster": {
+        "servers": [
+            {
+                "hostname": "0.0.0.0",
+                "port": 1054
+            }
+        ],
+        "version": "3.9.2",
+        "upgradeTransition": {
+            "mode": "CONCURRENT"
+        }
+    }
+}

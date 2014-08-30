@@ -19,7 +19,6 @@ func CreatePipe(clusters *contexts.Clusters) func(*contexts.ChunkContext) {
 			complete,
 		)
 		stages(context)
-		log.EndPerformanceLogEntry()
 		log.LoggerFactory().Debug("Creating " + contexts.DirectionToDescription[context.Direction] + " END")
 	}
 }

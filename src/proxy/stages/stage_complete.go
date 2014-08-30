@@ -3,7 +3,6 @@ package stages
 import (
 	"net"
 	"syscall"
-	"time"
 	"proxy/log"
 	"proxy/contexts"
 	"proxy/tcp"
@@ -12,7 +11,6 @@ import (
 // ==== COMPLETE - START
 
 func complete(context *contexts.ChunkContext) {
-	defer log.Trace("complete", time.Now())
 	log.LoggerFactory().Debug("Complete Stage START - %s", context)
 	if context.Err != nil {
 		// If the socket we are writing to is shutdown with

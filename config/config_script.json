@@ -7,7 +7,7 @@
     },
     "cluster": {
         "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
+            {"hostname": "0.0.0.0", "port": 1034}
         ],
         "version": "3.9.1"
     }

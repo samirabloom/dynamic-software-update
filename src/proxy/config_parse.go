@@ -262,7 +262,7 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 			if serversConfiguration != nil {
 				backendAddresses, err = parseServers(serversConfiguration)
 			} else if containersConfiguration != nil {
-				dockerConfigurations, backendAddresses, err = parseContainers(containersConfiguration, dockerHost, outputStream)
+				dockerConfigurations, backendAddresses, err = parseContainers(containersConfiguration, dockerHost)
 			} else {
 				errorMessage := "Invalid cluster configuration - \"cluster\" must contain \"servers\" or \"containers\" list"
 				err = errors.New(errorMessage)
@@ -293,7 +293,7 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 		}
 
 		if err == nil {
-			return &contexts.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, PercentageTransitionPerRequest: percentageTransitionPerRequest, Mode: mode, Version: version}, err
+			return &contexts.Cluster{BackendAddresses: backendAddresses, DockerConfigurations: dockerConfigurations, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, PercentageTransitionPerRequest: percentageTransitionPerRequest, Mode: mode, Version: version}, err
 		} else {
 			return nil, err
 		}
@@ -328,44 +328,8 @@ func parseServers(serversConfiguration interface{}) ([]*contexts.BackendAddress,
 	return backendAddresses, err
 }
 
-/*
-{
-*	"image":"",                         // Image for container
-*   "portToProxy":
-	"version":
 
-	"workingDir":"",  					// Working directory inside the container
-	"entrypoint":"",  					// Overwrite the default ENTRYPOINT of the image
-	"env":null,       					// Set environment variables
-	"cmd":[                             // Set command executed when the container runs
-		 ""
-	],
-
-	"hostname":"",   					// Container host name
-	"volumes":{       					// Bind mount a volume (e.g., from the host: -v /host:/container, from Docker: -v /container)
-		 "/tmp": {}
-	},
-	"volumesFrom":[                 	// Mount volumes from the specified container(s)
-		 "parent",
-		 "other:ro"
-	],
-	"exposedPorts":{  					// Expose a port from the container without publishing it to your host
-		 "22/tcp": {}
-	},
-	"publishAllPorts":false,            // Publish all exposed ports to the host interfaces
-*	"portBindings":{ "22/tcp": [{ "HostPort": "11022" }] },
-	"links":["redis3:redis"],       	// Add link to another container in the form of name:alias
-
-	"user":"",       					// Username or UID
-	"memory":0,      					// Memory limit (format: <number><optional unit>, where unit = b, k, m or g)
-	"cpuShares":0                   	// CPU shares (relative weight)
-	"lxcConf":{"lxc.utsname":"docker"}  // (lxc exec-driver only) Add custom lxc options --lxc-conf="lxc.cgroup.cpuset.cpus = 0,1"
-	"privileged":false                  // Give extended privileges to this container
-}
- */
-
-
-func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost, outputStream io.Writer) ([]*docker_client.DockerConfig, []*contexts.BackendAddress, error) {
+func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost) ([]*docker_client.DockerConfig, []*contexts.BackendAddress, error) {
 
 	if dockerHost == nil {
 		errorMessage := "Invalid docker host configuration - \"dockerHost\" must be provided when \"containers\" are specified"
@@ -373,225 +337,53 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 	}
 
 	var (
-		err                 error
-		connection          *net.TCPAddr
-		backendAddresses    []*contexts.BackendAddress
-		backendAddressesIndex int                          = 0
-		image               string                         = ""
-		tag                 string                         = ""
-		name                string                         = ""
-		portToProxy         int64                          = 0
-		workingDir          string                         = ""
-		entrypoint          []string                       = nil
-		env                 []string                       = nil
-		cmd                 []string                       = nil
-		hostname            string                         = ""
-		volumes             []string                       = nil
-		volumesFrom         []string                       = nil
-		exposedPorts        map[string]struct{}            = nil
-		publishAllPorts     bool                           = false
-		portBindingMappings map[string][]map[string]string = nil
-		portSpecs           []string                       = nil
-		links               []string                       = nil
-		user                string                         = ""
-		memory              int64                          = 0
-		cpuShares           int64                          = 0
-		lxcConf             []docker_client.KeyValuePair   = nil
-		privileged          bool                           = false
-		dockerConfigurations []*docker_client.DockerConfig
+		err                   error
+		connection            *net.TCPAddr
+		backendAddresses      []*contexts.BackendAddress
+		backendAddressesIndex int = 0
+		dockerConfigurations  []*docker_client.DockerConfig
+		marshaledBytes          []byte
 	)
 
 	containers, converted := containersConfiguration.([]interface{})
 	if converted && len(containers) > 0 {
 		dockerConfigurations = make([]*docker_client.DockerConfig, len(containers))
 		backendAddresses = make([]*contexts.BackendAddress, len(containers))
-		for index := range containers {
-			var container map[string]interface{} = containers[index].(map[string]interface{})
+		for index, containerConfig := range containers {
+			container := containerConfig.(map[string]interface{})
+			var dockerConfig = &docker_client.DockerConfig{}
+			if marshaledBytes, err = json.Marshal(container); err == nil {
+				if err = json.Unmarshal(marshaledBytes, dockerConfig); err == nil {
+					if len(dockerConfig.Image) > 0 {
+						dockerConfigurations[index] = dockerConfig
+						if container["portToProxy"] != nil {
+							portToProxy, isString := container["portToProxy"].(string)
+							if !isString {
+								portToProxy = fmt.Sprintf("%v", container["portToProxy"])
+							}
+							if len(portToProxy) > 0 {
+								fmt.Printf("portToProxy: %s\n", portToProxy)
+								fmt.Printf("portToProxy: %s - %d\n", portToProxy, len(portToProxy))
+								if dockerConfig.HasPortExposed(portToProxy) {
 
-			imageConfig := container["image"]
-			if imageConfig != nil {
-				image = imageConfig.(string)
-			}
-
-			tagConfig := container["tag"]
-			if tagConfig != nil {
-				tag = tagConfig.(string)
-			}
-
-			nameConfig := container["name"]
-			if nameConfig != nil {
-				name = nameConfig.(string)
-			}
-
-			portToProxyConfig := container["portToProxy"]
-			if portToProxyConfig != nil {
-				portToProxy = int64(portToProxyConfig.(float64))
-			}
-
-			workingDirConfig := container["workingDir"]
-			if workingDirConfig != nil {
-				workingDir = workingDirConfig.(string)
-			}
-
-			entrypointConfig := container["entrypoint"]
-			if entrypointConfig != nil {
-				entrypointConfigItems := entrypointConfig.([]interface{})
-				entrypoint = make([]string, len(entrypointConfigItems))
-				for _, entrypointConfigItem := range entrypointConfigItems {
-					entrypoint[index] = entrypointConfigItem.(string)
-				}
-			}
-
-			envConfig := container["env"]
-			if envConfig != nil {
-				envConfigItems := envConfig.([]interface{})
-				env = make([]string, len(envConfigItems))
-				for _, envConfigItem := range envConfigItems {
-					env[index] = envConfigItem.(string)
-				}
-			}
-
-			cmdConfig := container["cmd"]
-			if cmdConfig != nil {
-				cmdConfigItems := cmdConfig.([]interface{})
-				cmd = make([]string, len(cmdConfigItems))
-				for _, cmdConfigItem := range cmdConfigItems {
-					cmd[index] = cmdConfigItem.(string)
-				}
-			}
-
-			hostnameConfig := container["hostname"]
-			if hostnameConfig != nil {
-				hostname = hostnameConfig.(string)
-			}
-
-			volumesConfig := container["volumes"]
-			if volumesConfig != nil {
-				volumesConfigItems := volumesConfig.([]interface{})
-				volumes = make([]string, len(volumesConfigItems))
-				for _, volumesConfigItem := range volumesConfigItems {
-					volumes[index] = volumesConfigItem.(string)
-				}
-			}
-
-			volumesFromConfig := container["volumesFrom"]
-			if volumesFromConfig != nil {
-				volumesFromConfigItems := volumesFromConfig.([]interface{})
-				volumesFrom = make([]string, len(volumesFromConfigItems))
-				for _, volumesFromConfigItem := range volumesFromConfigItems {
-					volumesFrom[index] = volumesFromConfigItem.(string)
-				}
-			}
-
-			exposedPortsConfig := container["exposedPorts"]
-			if exposedPortsConfig != nil {
-				exposedPorts = exposedPortsConfig.(map[string]struct {})
-			}
-
-			publishAllPortsConfig := container["publishAllPorts"]
-			if publishAllPortsConfig != nil {
-				publishAllPorts = publishAllPortsConfig.(bool)
-			}
-
-			portBindingsMappingConfig := container["portBindings"]
-			if portBindingsMappingConfig != nil {
-				portBindingsMappingItems := portBindingsMappingConfig.(map[string]interface{})
-				portBindingMappings = make(map[string][]map[string]string)
-				for index, portBindingsMappingItem := range portBindingsMappingItems {
-					portBindingsMappingItemMappings := portBindingsMappingItem.([]interface{})
-					portBindings := make([]map[string]string, len(portBindingsMappingItemMappings))
-					for mappingIndex, portBindingsMappingItemMapping := range portBindingsMappingItemMappings {
-						portBindingConfig := portBindingsMappingItemMapping.(map[string]interface{})
-						portBindings[mappingIndex] = map[string]string{
-							"HostIp": portBindingConfig["HostIp"].(string),
-							"HostPort": portBindingConfig["HostPort"].(string),
+									connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%s", dockerHost.Ip, portToProxy))
+									if err != nil {
+										errorMessage := "Invalid container address [" + fmt.Sprintf("%s:%s", dockerHost.Ip, portToProxy) + "] - " + err.Error()
+										err = errors.New(errorMessage)
+									} else {
+										backendAddresses[backendAddressesIndex] = &contexts.BackendAddress{Address: connection, Host: dockerHost.Ip, Port: portToProxy}
+										backendAddressesIndex++
+									}
+								} else {
+									errorMessage := "Invalid container configuration - port specified in \"portToProxy\" must be exposed by container in \"portBindings\""
+									err = errors.New(errorMessage)
+								}
+							}
 						}
+					} else {
+						errorMessage := "Invalid container configuration - no \"image\" specified"
+						err = errors.New(errorMessage)
 					}
-					portBindingMappings[index] = portBindings
-				}
-			}
-
-			portSpecsConfig := container["portSpecs"]
-			if portSpecsConfig != nil {
-				portSpecsConfigItems := portSpecsConfig.([]interface{})
-				portSpecs = make([]string, len(portSpecsConfigItems))
-				for index, portSpecsConfigItem := range portSpecsConfigItems {
-					portSpecs[index] = portSpecsConfigItem.(string)
-				}
-			}
-
-			linksConfig := container["links"]
-			if linksConfig != nil {
-				linksConfigItems := linksConfig.([]interface{})
-				links = make([]string, len(linksConfigItems))
-				for index, linksConfigItem := range linksConfigItems {
-					links[index] = linksConfigItem.(string)
-				}
-			}
-
-			userConfig := container["user"]
-			if userConfig != nil {
-				user = userConfig.(string)
-			}
-
-			memoryConfig := container["memory"]
-			if memoryConfig != nil {
-				memory = int64(memoryConfig.(float64))
-			}
-
-			cpuSharesConfig := container["cpuShares"]
-			if cpuSharesConfig != nil {
-				cpuShares = int64(cpuSharesConfig.(float64))
-			}
-
-			lxcConfConfig := container["lxcConf"]
-			if lxcConfConfig != nil {
-				lxcConfConfigItems := lxcConfConfig.([]interface{})
-				lxcConf = make([]docker_client.KeyValuePair, len(lxcConfConfigItems))
-				for index, lxcConfConfigItem := range lxcConfConfigItems {
-					for key, value := range lxcConfConfigItem.(map[string]string) {
-						lxcConf[index] = docker_client.KeyValuePair{Key: key, Value: value}
-					}
-				}
-			}
-
-			privilegedConfig := container["privileged"]
-			if privilegedConfig != nil {
-				privileged = privilegedConfig.(bool)
-			}
-
-			dockerConfigurations[index] = &docker_client.DockerConfig{
-				Image: image,
-				Tag: tag,
-				Name: name,
-				PortToProxy: portToProxy,
-				WorkingDir: workingDir,
-				Entrypoint: entrypoint,
-				Env: env,
-				Cmd: cmd,
-				Hostname: hostname,
-				Volumes: volumes,
-				VolumesFrom: volumesFrom,
-				ExposedPorts: exposedPorts,
-				PublishAllPorts: publishAllPorts,
-				PortBindings: portBindingMappings,
-				PortSpecs: portSpecs,
-				Links: links,
-				User: user,
-				Memory: memory,
-				CpuShares: cpuShares,
-				LxcConf: lxcConf,
-				Privileged: privileged,
-			}
-
-			if container["portToProxy"] != nil {
-				connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%v", dockerHost.Ip, container["portToProxy"]))
-				if err != nil {
-					errorMessage := "Invalid container address [" + fmt.Sprintf("%s:%v", dockerHost.Ip, container["portToProxy"]) + "] - " + err.Error()
-					err = errors.New(errorMessage)
-				} else {
-					backendAddresses[backendAddressesIndex] = &contexts.BackendAddress{Address: connection, Host: dockerHost.Ip, Port: fmt.Sprintf("%v", container["portToProxy"])}
-					backendAddressesIndex++
 				}
 			}
 		}
@@ -622,7 +414,11 @@ func serialiseCluster(cluster *contexts.Cluster) map[string]interface{} {
 			upgradeTransition = map[string]interface{}{"mode": contexts.ModesModeToCode[cluster.Mode], "percentageTransitionPerRequest": cluster.PercentageTransitionPerRequest}
 		}
 		}
-		jsonConfig = map[string]interface{}{"cluster": map[string]interface{}{"uuid": cluster.Uuid.String(), "servers": serversConfig, "version": cluster.Version, "upgradeTransition": upgradeTransition}}
+		clusterMap := map[string]interface{}{"uuid": cluster.Uuid.String(), "servers": serversConfig, "version": cluster.Version, "upgradeTransition": upgradeTransition}
+		if cluster.DockerConfigurations != nil {
+			clusterMap["containers"] = cluster.DockerConfigurations
+		}
+		jsonConfig = map[string]interface{}{"cluster": clusterMap}
 	}
 
 	return jsonConfig

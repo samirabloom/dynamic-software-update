@@ -2,7 +2,6 @@ package stages
 
 import (
 	"io"
-	"time"
 	"proxy/log"
 	"proxy/contexts"
 	"proxy/tcp"
@@ -11,7 +10,6 @@ import (
 // ==== WRITE - START
 
 func write(context *contexts.ChunkContext) {
-	defer log.Trace("write", time.Now())
 	log.LoggerFactory().Debug("Write Stage START - %s", context)
 	amountToWrite := len(context.Data)
 	if amountToWrite > 0 {
