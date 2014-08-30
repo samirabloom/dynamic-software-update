@@ -5,6 +5,10 @@
     "configService": {
         "port": 9090
     },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
     "cluster": {
         "containers": [
             {
@@ -15,25 +19,25 @@
                     "8080/tcp": [
                         {
                             "HostIp": "0.0.0.0",
-                            "HostPort": "49153"
+                            "HostPort": "8080"
                         }
                     ],
                     "8090/tcp": [
                         {
                             "HostIp": "0.0.0.0",
-                            "HostPort": "49154"
+                            "HostPort": "8090"
                         }
                     ],
                     "9080/tcp": [
                         {
                             "HostIp": "0.0.0.0",
-                            "HostPort": "49155"
+                            "HostPort": "9080"
                         }
                     ],
                     "9090/tcp": [
                         {
                             "HostIp": "0.0.0.0",
-                            "HostPort": "49156"
+                            "HostPort": "9090"
                         }
                     ]
                 }

@@ -11,13 +11,13 @@ import (
 	"proxy/contexts"
 )
 
-func ConfigServer(port int, routeContexts *contexts.Clusters) {
+func ConfigServer(port int, routeContexts *contexts.Clusters, dockerHost *DockerHost) {
 	urlRegex := regexp.MustCompile("/configuration/cluster/([a-z0-9-]*){1}")
 	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
 		requestMappings: []*requestMapping{
 		&requestMapping{pattern: regexp.MustCompile("/configuration/cluster"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
 			return uuid.NewUUID()
-		})},
+		}, dockerHost)},
 		&requestMapping{pattern: urlRegex, method: "GET", handler: GETHandler(urlRegex)},
 		&requestMapping{pattern: urlRegex, method: "DELETE", handler: DeleteHandler(urlRegex)}},
 		routeContexts: routeContexts,
@@ -46,7 +46,7 @@ func (handler *RegexpHandler) ServeHTTP(writer http.ResponseWriter, request *htt
 	http.NotFound(writer, request)
 }
 
-func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
+func PUTHandler(uuidGenerator func() uuid.UUID, dockerHost *DockerHost) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
 	return func(routeContexts *contexts.Clusters, writer http.ResponseWriter, request *http.Request) {
 		body := make([]byte, 1024)
 		size, _ := request.Body.Read(body)
@@ -58,7 +58,7 @@ func PUTHandler(uuidGenerator func() uuid.UUID) func(*contexts.Clusters, http.Re
 		} else {
 			clusterConfiguration := jsonConfig["cluster"]
 			if clusterConfiguration != nil {
-				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}), writer)
+				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}),dockerHost, writer)
 				if err != nil {
 					http.Error(writer, fmt.Sprintf("Error parsing cluster configuration - %s", err.Error()), http.StatusBadRequest)
 				} else {

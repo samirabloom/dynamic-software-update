@@ -108,18 +108,22 @@ func Test_Docker_Client_Should_Create_Container(testCtx *testing.T) {
 	if err != nil {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
+	config := &docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
 
-	container, err := client.CreateContainer(imageName, containerName, &outputStream)
+	createdContainer, err := client.CreateContainer(config, containerName, &outputStream)
 
 	// then
-	if container.Image == imageName {
-		testCtx.Fatalf("Container does not have the correct image name, expect: [%s], found: [%s]\n", imageName, container.Image)
-	}
-	if container.State.Running {
-		testCtx.Fatalf("Container was running, expect: [%t], found: [%t]\n", false, container.State.Running)
-	}
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
+	}
+	if createdContainer == nil {
+		testCtx.Fatalf("Container not created\n", imageName, createdContainer.Image)
+	}
+	if createdContainer.Image == imageName {
+		testCtx.Fatalf("Container does not have the correct image name, expect: [%s], found: [%s]\n", imageName, createdContainer.Image)
+	}
+	if createdContainer.State.Running {
+		testCtx.Fatalf("Container was running, expect: [%t], found: [%t]\n", false, createdContainer.State.Running)
 	}
 }
 
@@ -138,8 +142,9 @@ func Test_Docker_Client_Should_Inspect_Container(testCtx *testing.T) {
 	if err != nil {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
+	config := &docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
 
-	createdContainer, err := client.CreateContainer(imageName, containerName, &outputStream)
+	createdContainer, err := client.CreateContainer(config, containerName, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}
@@ -173,13 +178,14 @@ func Test_Docker_Client_Should_Start_Container(testCtx *testing.T) {
 	if err != nil {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
+	config := &docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
 
-	createdContainer, err := client.CreateContainer(imageName, containerName, &outputStream)
+	createdContainer, err := client.CreateContainer(config, containerName, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}
 
-	container, err := client.StartContainer(createdContainer.ID, &outputStream)
+	container, err := client.StartContainer(createdContainer.ID, &docker.HostConfig{}, &outputStream)
 
 	// then
 	if container.Image == imageName {
@@ -208,8 +214,9 @@ func Test_Docker_Client_Should_Stop_Container(testCtx *testing.T) {
 	if err != nil {
 		testCtx.Fatalf("Error while creating client %s\n", err)
 	}
+	config := &docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
 
-	createdContainer, err := client.CreateContainer(imageName, containerName, &outputStream)
+	createdContainer, err := client.CreateContainer(config, containerName, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}

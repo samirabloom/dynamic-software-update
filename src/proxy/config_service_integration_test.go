@@ -17,7 +17,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 		serverPort = networkutil.FindFreeLocalSocket(testCtx).Port
 		serverUrl  = "http://127.0.0.1:" + strconv.Itoa(int(serverPort)) + "/configuration/cluster"
 	)
-	go ConfigServer(serverPort, &contexts.Clusters{})
+	go ConfigServer(serverPort, &contexts.Clusters{}, &DockerHost{})
 
 	time.Sleep(150 * time.Millisecond)
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"code.google.com/p/go-uuid/uuid"
 	"strings"
+	"net/http"
 )
 
 type DockerClient struct {
@@ -130,16 +131,13 @@ type HostConfig struct {
 }
  */
 
-func (dc *DockerClient) CreateContainer(imageName, containerName string, outputStream io.Writer) (container *docker.Container, err error) {
-	config := docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
-	opts := docker.CreateContainerOptions{Name: containerName, Config: &config}
-
-	container, err = dc.client.CreateContainer(opts)
+func (dc *DockerClient) CreateContainer(config *docker.Config, containerName string, outputStream io.Writer) (container *docker.Container, err error) {
+	container, err = dc.client.CreateContainer(docker.CreateContainerOptions{Name: containerName, Config: config})
 	if err != nil {
 		fmt.Fprintf(outputStream, "error creating container: %s\n", err)
 		log.LoggerFactory().Error("error creating container: %s\n", err)
 	} else {
-		fmt.Fprintf(outputStream, "Created container [%s] for image [%s]\n", containerName, imageName)
+		fmt.Fprintf(outputStream, "Created container [%s] for image [%s]\n", containerName, config.Image)
 	}
 	return container, err
 }
@@ -156,7 +154,9 @@ func (dc *DockerClient) InspectContainer(id string, outputStream io.Writer) (con
 }
 
 func streamContainer(container *docker.Container, outputStream io.Writer) {
-	fmt.Fprintf(outputStream, "======================================")
+	fmt.Fprintf(outputStream, "\n======================================\n")
+	fmt.Fprintf(outputStream, "==========CONTAINER DETAILS===========\n")
+	fmt.Fprintf(outputStream, "======================================\n")
 	fmt.Fprintf(outputStream, "ID: %s\n", container.ID)
 	fmt.Fprintf(outputStream, "Created: %s\n", container.Created)
 	fmt.Fprintf(outputStream, "Path: %s\n", container.Path)
@@ -232,11 +232,11 @@ func streamContainer(container *docker.Container, outputStream io.Writer) {
 	fmt.Fprintf(outputStream, "Volumes: %s\n", container.Volumes)
 	fmt.Fprintf(outputStream, "VolumesRW: %s\n", container.VolumesRW)
 	fmt.Fprintf(outputStream, "HostConfig: %s\n", container.HostConfig)
-	fmt.Fprintf(outputStream, "======================================\n")
+	fmt.Fprintf(outputStream, "======================================\n\n")
 }
 
-func (dc *DockerClient) StartContainer(id string, outputStream io.Writer) (container *docker.Container, err error) {
-	err = dc.client.StartContainer(id, &docker.HostConfig{})
+func (dc *DockerClient) StartContainer(id string, hostConfig *docker.HostConfig, outputStream io.Writer) (container *docker.Container, err error) {
+	err = dc.client.StartContainer(id, hostConfig)
 	if err != nil {
 		fmt.Fprintf(outputStream, "error starting container: %s\n", err)
 		log.LoggerFactory().Error("error starting container: %s\n", err)
@@ -260,31 +260,94 @@ func (dc *DockerClient) StopContainer(id string, timeout uint, outputStream io.W
 type DockerConfig struct {
 	Image           string
 	Tag             string
+	Name            string
 	WorkingDir      string
-	Entrypoint      string
-	Env             string
+	Entrypoint      []string
+	Env             []string
 	Cmd             []string
 	Hostname        string
 	Volumes         []string
 	VolumesFrom     []string
-	ExposedPorts    map[docker.Port]struct{}
+	ExposedPorts    map[string]struct{}
 	PublishAllPorts bool
-	PortBindings    map[docker.Port][]docker.PortBinding
+	PortBindings    map[string][]map[string]string
 	PortToProxy     int64
 	Links           []string
 	User            string
 	Memory          int64
 	CpuShares       int64
-	LxcConf         []docker.KeyValuePair
+	LxcConf         []KeyValuePair
 	Privileged      bool
+}
+
+type KeyValuePair struct {
+	Key   string
+	Value string
+}
+
+func Flush(outputStream io.Writer) {
+	flusher, isFlusher := outputStream.(http.Flusher)
+	if isFlusher {
+		flusher.Flush()
+	}
 }
 
 func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputStream io.Writer) (container *docker.Container, err error) {
 	err = dc.PullImage(config.Image, config.Tag, outputStream)
-	if err != nil {
-		container, err = dc.CreateContainer(fmt.Sprintf("%s:%s", config.Image, config.Tag), strings.Replace(config.Image, "/", "_", 2)+"_"+uuid.NewUUID().String(), outputStream)
-		if err != nil {
-			container, err = dc.StartContainer(container.ID, outputStream)
+	fmt.Printf("outputStream: %#v\n", outputStream)
+	Flush(outputStream)
+	if err == nil {
+
+		dockerConfig := &docker.Config{
+			Image: fmt.Sprintf("%s:%s", config.Image, config.Tag),
+			Hostname: config.Hostname,
+			User: config.User,
+			Memory: config.Memory,
+			CpuShares: config.CpuShares,
+			Env: config.Env,
+			Cmd: config.Cmd,
+			WorkingDir: config.WorkingDir,
+			Entrypoint: config.Entrypoint,
+		}
+		dockerConfig.ExposedPorts = make(map[docker.Port]struct{}, len(config.ExposedPorts))
+		for index := range config.ExposedPorts {
+			dockerConfig.ExposedPorts[docker.Port(index)] = config.ExposedPorts[index]
+		}
+
+		containerName := config.Name
+		if len(containerName) == 0 {
+			containerName = strings.Replace(config.Image, "/", "_", 2)+"_"+uuid.NewUUID().String()
+		}
+		container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)
+		Flush(outputStream)
+		if err == nil {
+			dockerHostConfig := &docker.HostConfig{
+				Binds:           config.Volumes,
+				Privileged:      config.Privileged,
+				Links:           config.Links,
+				PublishAllPorts: config.PublishAllPorts,
+				VolumesFrom:     config.VolumesFrom,
+			}
+			dockerHostConfig.PortBindings = make(map[docker.Port][]docker.PortBinding, len(config.PortBindings))
+			for port := range config.PortBindings {
+				dockerHostConfig.PortBindings[docker.Port(port)] = make([]docker.PortBinding, len(config.PortBindings[port]))
+				for index := range config.PortBindings[port] {
+					dockerHostConfig.PortBindings[docker.Port(port)][index] = docker.PortBinding{
+						HostIp: config.PortBindings[port][index]["HostIp"],
+						HostPort: config.PortBindings[port][index]["HostPort"],
+					}
+				}
+			}
+			dockerHostConfig.LxcConf = make([]docker.KeyValuePair, len(config.LxcConf))
+			for index := range config.LxcConf {
+				dockerHostConfig.LxcConf[index] = docker.KeyValuePair{
+					Key: config.LxcConf[index].Key,
+					Value: config.LxcConf[index].Value,
+				}
+			}
+
+			container, err = dc.StartContainer(container.ID, dockerHostConfig, outputStream)
+			Flush(outputStream)
 		}
 	}
 

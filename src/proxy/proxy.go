@@ -28,8 +28,14 @@ var uuidGenerator = func(uuidValue uuid.UUID) func() uuid.UUID {
 type Proxy struct {
 	frontendAddr      *net.TCPAddr
 	configServicePort int
+	dockerHost        *DockerHost
 	clusters          *contexts.Clusters
 	stop              chan bool
+}
+
+type DockerHost struct {
+	Ip   string
+	Port int
 }
 
 func NewProxy(configFile string) *Proxy {
@@ -78,7 +84,7 @@ func (proxy *Proxy) String() string {
 func (proxy *Proxy) Start(blocking bool) {
 	var started = make(chan bool)
 	go proxy.acceptLoop(started)
-	go ConfigServer(proxy.configServicePort, proxy.clusters)
+	go ConfigServer(proxy.configServicePort, proxy.clusters, proxy.dockerHost)
 	<-started
 
 	if blocking {

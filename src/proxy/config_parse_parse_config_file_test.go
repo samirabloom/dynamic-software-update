@@ -22,8 +22,14 @@ func mockParseConfigService(configServicePort int, parseConfigServiceErr error) 
 	}
 }
 
-func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}, io.Writer) (*contexts.Clusters, error) {
-	return func(map[string]interface{}, io.Writer) (*contexts.Clusters, error) {
+func mockParseDockerHost(dockerHost *DockerHost, parseDockerHostErr error) func(map[string]interface{}) (*DockerHost, error) {
+	return func(map[string]interface{}) (*DockerHost, error) {
+		return dockerHost, parseDockerHostErr
+	}
+}
+
+func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error) {
+	return func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error) {
 		return clusters, clusterParseErr
 	}
 }
@@ -35,16 +41,18 @@ func Test_Parse_Config_File_With_No_Errors(testCtx *testing.T) {
 		proxyParseErr error               = nil
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = nil
+		dockerHost *DockerHost            = &DockerHost{}
+		parseDockerHostErr error          = nil
 		clusters *contexts.Clusters       = &contexts.Clusters{}
 		clusterParseErr error             = nil
 		jsonData                          = []byte("{}")
-		expectedProxy *Proxy              = &Proxy{frontendAddr: tcpProxyLocalAddress, configServicePort: configServicePort, clusters: clusters, stop: make(chan bool), }
+		expectedProxy *Proxy              = &Proxy{frontendAddr: tcpProxyLocalAddress, configServicePort: configServicePort, dockerHost: dockerHost, clusters: clusters, stop: make(chan bool), }
 		expectedError error               = nil
 		outputStream bytes.Buffer
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseDockerHost(dockerHost, parseDockerHostErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
@@ -58,6 +66,8 @@ func Test_Parse_Config_File_With_Proxy_Parse_Error(testCtx *testing.T) {
 		proxyParseErr error               = errors.New("Test Proxy Parse Error")
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = nil
+		dockerHost *DockerHost            = &DockerHost{}
+		parseDockerHostErr error          = nil
 		clusters *contexts.Clusters       = &contexts.Clusters{}
 		clusterParseErr error             = nil
 		jsonData                          = []byte("{}")
@@ -67,7 +77,7 @@ func Test_Parse_Config_File_With_Proxy_Parse_Error(testCtx *testing.T) {
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseDockerHost(dockerHost, parseDockerHostErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
@@ -81,6 +91,8 @@ func Test_Parse_Config_File_With_Config_Service_Parse_Error(testCtx *testing.T) 
 		proxyParseErr error               = nil
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = errors.New("Test Config Service Parse Error")
+		dockerHost *DockerHost            = &DockerHost{}
+		parseDockerHostErr error          = nil
 		clusters *contexts.Clusters       = &contexts.Clusters{}
 		clusterParseErr error             = nil
 		jsonData                          = []byte("{}")
@@ -90,7 +102,32 @@ func Test_Parse_Config_File_With_Config_Service_Parse_Error(testCtx *testing.T) 
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseDockerHost(dockerHost, parseDockerHostErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
+
+	// then
+	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
+	assertion.AssertDeepEqual("Correct Proxy", testCtx, expectedProxy, actualProxy)
+}
+
+func Test_Parse_Config_File_With_Docker_Host_Parse_Error(testCtx *testing.T) {
+	// given
+	var (
+		tcpProxyLocalAddress *net.TCPAddr = &net.TCPAddr{}
+		proxyParseErr error               = nil
+		configServicePort int             = 4321
+		parseConfigServiceErr error       = nil
+		dockerHost *DockerHost            = &DockerHost{}
+		parseDockerHostErr error          = errors.New("Test Docker Host Parse Error")
+		clusters *contexts.Clusters       = &contexts.Clusters{}
+		clusterParseErr error             = nil
+		jsonData                          = []byte("{}")
+		expectedProxy *Proxy              = nil
+		expectedError error               = parseDockerHostErr
+		outputStream bytes.Buffer
+	)
+
+	// when
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseDockerHost(dockerHost, parseDockerHostErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
@@ -104,7 +141,9 @@ func Test_Parse_Config_File_With_Cluster_Parse_Error(testCtx *testing.T) {
 		proxyParseErr error               = nil
 		configServicePort int             = 4321
 		parseConfigServiceErr error       = nil
-		clusters *contexts.Clusters         = &contexts.Clusters{}
+		dockerHost *DockerHost            = &DockerHost{}
+		parseDockerHostErr error          = nil
+		clusters *contexts.Clusters       = &contexts.Clusters{}
 		clusterParseErr error             = errors.New("Test Config Service Parse Error")
 		jsonData                          = []byte("{}")
 		expectedProxy *Proxy              = nil
@@ -113,7 +152,7 @@ func Test_Parse_Config_File_With_Cluster_Parse_Error(testCtx *testing.T) {
 	)
 
 	// when
-	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
+	actualProxy, actualError := parseConfigFile(jsonData, mockParseProxy(tcpProxyLocalAddress, proxyParseErr), mockParseConfigService(configServicePort, parseConfigServiceErr), mockParseDockerHost(dockerHost, parseDockerHostErr), mockParseClusters(clusters, clusterParseErr), &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)

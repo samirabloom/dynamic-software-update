@@ -27,7 +27,7 @@ func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	expectedRouteContexts.Add(&contexts.Cluster{BackendAddresses: []*contexts.BackendAddress{&contexts.BackendAddress{Address: serverOne, Host: "127.0.0.1", Port: "1024"}, &contexts.BackendAddress{Address: serverTwo, Host: "127.0.0.1", Port: "1025"}}, RequestCounter: -1, Uuid: uuidGenerator(), SessionTimeout: 1, Mode: contexts.SessionMode, Version: "1.1"})
 
 	// when
-	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+	PUTHandler(uuidGenerator, &DockerHost{})(actualRouteContexts, responseWriter, request)
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusAccepted, responseWriter.ResponseCodes[0])
@@ -65,9 +65,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 	expectedRouteContexts.ContextsByID[uuid3.String()] = cluster3
 
 	// when
-	PUTHandler(func() uuid.UUID { return uuid1 })(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte1}})
-	PUTHandler(func() uuid.UUID { return uuid2 })(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte2}})
-	PUTHandler(func() uuid.UUID { return uuid3 })(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte3}})
+	PUTHandler(func() uuid.UUID { return uuid1 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte1}})
+	PUTHandler(func() uuid.UUID { return uuid2 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte2}})
+	PUTHandler(func() uuid.UUID { return uuid3 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte3}})
 
 	// then
 	assertion.AssertDeepEqual("Correct Object Added To Clusters In Version Order", testCtx, expectedRouteContexts, actualRouteContexts)
@@ -85,7 +85,7 @@ func Test_Config_PUT_With_Valid_Cluster_Configuration_Object(testCtx *testing.T)
 	)
 
 	// when
-	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+	PUTHandler(uuidGenerator, &DockerHost{})(actualRouteContexts, responseWriter, request)
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
@@ -105,7 +105,7 @@ func Test_Config_PUT_When_Invalid_JSON(testCtx *testing.T) {
 	)
 
 	// when
-	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+	PUTHandler(uuidGenerator, &DockerHost{})(actualRouteContexts, responseWriter, request)
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
@@ -125,7 +125,7 @@ func Test_Config_PUT_When_Empty_JSON(testCtx *testing.T) {
 	)
 
 	// when
-	PUTHandler(uuidGenerator)(actualRouteContexts, responseWriter, request)
+	PUTHandler(uuidGenerator, &DockerHost{})(actualRouteContexts, responseWriter, request)
 
 	// then
 	assertion.AssertDeepEqual("Correct Response Code", testCtx, http.StatusBadRequest, responseWriter.ResponseCodes[0])
