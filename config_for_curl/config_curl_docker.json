@@ -1,0 +1,33 @@
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "mysql",
+                "tag": "latest",
+                "name": "some-mysql-four",
+                "env": [
+                    "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                ],
+                "volumes": [
+                    "/var/lib/mysql_four:/var/lib/mysql"
+                ]
+            },
+            {
+                "image": "wordpress",
+                "tag": "3.9.2",
+                "portToProxy": 8081,
+                "name": "some-wordpress-four",
+                "links": [
+                    "some-mysql-four:mysql"
+                ],
+                "portSpecs": [
+                    "8081:80"
+                ]
+            }
+        ],
+        "version": "3.9.2",
+        "upgradeTransition": {
+            "mode": "CONCURRENT"
+        }
+    }
+}

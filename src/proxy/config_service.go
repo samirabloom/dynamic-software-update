@@ -9,19 +9,22 @@ import (
 	"regexp"
 	"proxy/log"
 	"proxy/contexts"
+	"os"
+	"io"
+	"net/url"
 )
 
 func ConfigServer(port int, routeContexts *contexts.Clusters, dockerHost *DockerHost) {
 	urlRegex := regexp.MustCompile("/configuration/cluster/([a-z0-9-]*){1}")
 	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
-		requestMappings: []*requestMapping{
-		&requestMapping{pattern: regexp.MustCompile("/configuration/cluster"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
-			return uuid.NewUUID()
-		}, dockerHost)},
-		&requestMapping{pattern: urlRegex, method: "GET", handler: GETHandler(urlRegex)},
-		&requestMapping{pattern: urlRegex, method: "DELETE", handler: DeleteHandler(urlRegex)}},
-		routeContexts: routeContexts,
-	})
+			requestMappings: []*requestMapping{
+				&requestMapping{pattern: regexp.MustCompile("/configuration/cluster"), method: "PUT", handler: PUTHandler(func() uuid.UUID {
+					return uuid.NewUUID()
+				}, dockerHost)},
+				&requestMapping{pattern: urlRegex, method: "GET", handler: GETHandler(urlRegex)},
+				&requestMapping{pattern: urlRegex, method: "DELETE", handler: DeleteHandler(urlRegex)}},
+			routeContexts: routeContexts,
+		})
 }
 
 type requestMapping struct {
@@ -54,16 +57,32 @@ func PUTHandler(uuidGenerator func() uuid.UUID, dockerHost *DockerHost) func(*co
 		var jsonConfig map[string]interface{}
 		err := json.Unmarshal(body[0:size], &jsonConfig)
 		if err != nil {
-			http.Error(writer, fmt.Sprintf("Error decoding json request - %s", err.Error()), http.StatusBadRequest)
+			http.Error(writer, fmt.Sprintf("Error %s while decoding json %s", err.Error(), body[0:size]), http.StatusBadRequest)
 		} else {
 			clusterConfiguration := jsonConfig["cluster"]
 			if clusterConfiguration != nil {
-				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}),dockerHost, writer)
+				var outputStream io.Writer = writer
+
+				if request.URL != nil {
+					parsedQueryString, queryParseErr := url.ParseQuery(request.URL.RawQuery)
+					if queryParseErr == nil {
+						logQueryParameter := parsedQueryString.Get("log")
+						if logQueryParameter == "false" {
+							outputStream = os.Stdout
+						}
+					}
+				}
+				cluster, err := parseCluster(uuidGenerator, false)(clusterConfiguration.(map[string]interface{}), routeContexts, dockerHost, outputStream)
 				if err != nil {
 					http.Error(writer, fmt.Sprintf("Error parsing cluster configuration - %s", err.Error()), http.StatusBadRequest)
 				} else {
 					routeContexts.Add(cluster)
-					log.LoggerFactory().Info(fmt.Sprintf("Received new cluster configuration:\n%s", body[0:size]))
+					prettyBody, marshalErr := json.MarshalIndent(jsonConfig, "", "   ")
+					if marshalErr == nil {
+						log.LoggerFactory().Info(fmt.Sprintf("Received new cluster configuration:\n%s", prettyBody))
+					} else {
+						log.LoggerFactory().Info(fmt.Sprintf("Received new cluster configuration:\n%s", body[0:size]))
+					}
 					writer.WriteHeader(http.StatusAccepted)
 					fmt.Fprintf(writer, "%s", cluster.Uuid)
 				}

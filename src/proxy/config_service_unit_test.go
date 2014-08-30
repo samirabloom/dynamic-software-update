@@ -18,7 +18,7 @@ func Test_Config_PUT_With_Valid_Json_Object(testCtx *testing.T) {
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
 		bodyByte              = []byte("{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":1024}, {\"hostname\":\"127.0.0.1\", \"port\":1025}], \"upgradeTransition\":{\"sessionTimeout\":1}, \"version\": \"1.1\"}}")
-		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}, URL: &url.URL{}}
 		actualRouteContexts   = &contexts.Clusters{}
 		serverOne, _          = net.ResolveTCPAddr("tcp", "127.0.0.1:1024")
 		serverTwo, _          = net.ResolveTCPAddr("tcp", "127.0.0.1:1025")
@@ -65,9 +65,9 @@ func Test_Config_PUT_With_Valid_Json_Object_In_Version_Order(testCtx *testing.T)
 	expectedRouteContexts.ContextsByID[uuid3.String()] = cluster3
 
 	// when
-	PUTHandler(func() uuid.UUID { return uuid1 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte1}})
-	PUTHandler(func() uuid.UUID { return uuid2 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte2}})
-	PUTHandler(func() uuid.UUID { return uuid3 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte3}})
+	PUTHandler(func() uuid.UUID { return uuid1 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte1}, URL: &url.URL{}})
+	PUTHandler(func() uuid.UUID { return uuid2 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte2}, URL: &url.URL{}})
+	PUTHandler(func() uuid.UUID { return uuid3 }, &DockerHost{})(actualRouteContexts, responseWriter, &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte3}, URL: &url.URL{}})
 
 	// then
 	assertion.AssertDeepEqual("Correct Object Added To Clusters In Version Order", testCtx, expectedRouteContexts, actualRouteContexts)
@@ -78,7 +78,7 @@ func Test_Config_PUT_With_Valid_Cluster_Configuration_Object(testCtx *testing.T)
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
 		bodyByte              = []byte("{\"cluster\": {\"servers\": []}}")
-		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}, URL: &url.URL{}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
 		expectedResponseBody  = []byte("Error parsing cluster configuration - Invalid cluster configuration - \"servers\" list must contain at least one entry\n")
@@ -98,10 +98,10 @@ func Test_Config_PUT_When_Invalid_JSON(testCtx *testing.T) {
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
 		bodyByte              = []byte("{invalid}")
-		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}, URL: &url.URL{}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
-		expectedResponseBody  = []byte("Error decoding json request - invalid character 'i' looking for beginning of object key string\n")
+		expectedResponseBody  = []byte("Error invalid character 'i' looking for beginning of object key string while decoding json {invalid}\n")
 	)
 
 	// when
@@ -118,7 +118,7 @@ func Test_Config_PUT_When_Empty_JSON(testCtx *testing.T) {
 	var (
 		responseWriter        = mock.NewMockResponseWriter()
 		bodyByte              = []byte("{}")
-		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}}
+		request               = &http.Request{Body: &mock.MockBody{BodyBytes: bodyByte}, URL: &url.URL{}}
 		actualRouteContexts   = &contexts.Clusters{}
 		expectedRouteContexts = &contexts.Clusters{}
 		expectedResponseBody  = []byte("Invalid cluster configuration - \"cluster\" config missing\n")

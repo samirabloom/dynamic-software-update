@@ -153,7 +153,7 @@ func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map
 
 		clusterConfiguration := jsonConfig["cluster"]
 		if clusterConfiguration != nil {
-			router, err = parseCluster(uuidGenerator, initialCluster)(clusterConfiguration.(map[string]interface{}), dockerHost, outputStream)
+			router, err = parseCluster(uuidGenerator, initialCluster)(clusterConfiguration.(map[string]interface{}), nil, dockerHost, outputStream)
 			if err == nil {
 				clusters = &contexts.Clusters{}
 				clusters.Add(router)
@@ -167,100 +167,132 @@ func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map
 	}
 }
 
-func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Cluster, error) {
-	return func(clusterConfiguration map[string]interface{}, dockerHost *DockerHost, outputStream io.Writer) (*contexts.Cluster, error) {
+func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}, *contexts.Clusters, *DockerHost, io.Writer) (*contexts.Cluster, error) {
+	return func(clusterConfiguration map[string]interface{}, clusters *contexts.Clusters, dockerHost *DockerHost, outputStream io.Writer) (*contexts.Cluster, error) {
 		var (
 			err                            error
 			backendAddresses               []*contexts.BackendAddress
+			dockerConfigurations           []*docker_client.DockerConfig
 			version                        string
 			sessionTimeout                 int64
 			percentageTransitionPerRequest float64
 			mode                           contexts.TransitionMode
 			uuidValue                      uuid.UUID
+			highestVersionCluster           *contexts.Cluster
 		)
 
-		serversConfiguration := clusterConfiguration["servers"]
-		containersConfiguration := clusterConfiguration["containers"]
-		if serversConfiguration != nil {
-			backendAddresses, err = parseServers(serversConfiguration)
-		} else if containersConfiguration != nil {
-			backendAddresses, err = parseContainers(containersConfiguration, dockerHost, outputStream)
+		if clusters != nil {
+			highestVersionCluster = clusters.GetByVersionOrder(0)
+		}
+
+		uuidConfig := clusterConfiguration["uuid"]
+		if uuidConfig != nil {
+			uuidValue = uuid.Parse(uuidConfig.(string))
 		} else {
-			errorMessage := "Invalid cluster configuration - \"cluster\" must contain \"servers\" or \"containers\" list"
-			err = errors.New(errorMessage)
+			uuidValue = uuidGenerator()
+		}
+
+		versionConfig := clusterConfiguration["version"]
+		if versionConfig != nil {
+			floatVersion, isFloat := versionConfig.(float64)
+			if isFloat {
+				version = fmt.Sprintf("%.2f", floatVersion)
+			} else {
+				version = fmt.Sprintf("%s", versionConfig)
+			}
+		} else {
+			version = "0.0"
+		}
+
+		upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]
+		if upgradeTransitionConfig != nil {
+			if initialCluster {
+				errorMessage := "Invalid cluster configuration - \"upgradeTransition\" can not be specified for the intial cluster"
+				err = errors.New(errorMessage)
+			} else {
+				upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
+
+				modeConfig := upgradeTransition["mode"]
+				if modeConfig != nil {
+					mode = contexts.ModesCodeToMode[modeConfig.(string)]
+				} else {
+					mode = contexts.SessionMode
+				}
+
+				if mode != 0 {
+					sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
+					if mode == contexts.SessionMode {
+						if sessionTimeoutConfig != nil {
+							sessionTimeout = int64(sessionTimeoutConfig.(float64))
+						} else {
+							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
+							err = errors.New(errorMessage)
+						}
+					} else if sessionTimeoutConfig != nil {
+						errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
+						err = errors.New(errorMessage)
+					}
+
+					percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
+					if mode == contexts.GradualMode {
+						if percentageTransitionPerRequestConfig != nil {
+							percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
+						} else {
+							errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
+							err = errors.New(errorMessage)
+						}
+					} else if percentageTransitionPerRequestConfig != nil {
+						errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
+						err = errors.New(errorMessage)
+					}
+				} else {
+					errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\", \"SESSION\", \"GRADUAL\" or \"CONCURRENT\""
+					err = errors.New(errorMessage)
+				}
+			}
+		} else {
+			sessionTimeout = 0
+			percentageTransitionPerRequest = 0
+			mode = contexts.InstantMode
 		}
 
 		if err == nil {
-			uuidConfig := clusterConfiguration["uuid"]
-			if uuidConfig != nil {
-				uuidValue = uuid.Parse(uuidConfig.(string))
+			serversConfiguration := clusterConfiguration["servers"]
+			containersConfiguration := clusterConfiguration["containers"]
+			if serversConfiguration != nil {
+				backendAddresses, err = parseServers(serversConfiguration)
+			} else if containersConfiguration != nil {
+				dockerConfigurations, backendAddresses, err = parseContainers(containersConfiguration, dockerHost, outputStream)
 			} else {
-				uuidValue = uuidGenerator()
+				errorMessage := "Invalid cluster configuration - \"cluster\" must contain \"servers\" or \"containers\" list"
+				err = errors.New(errorMessage)
 			}
+		}
 
-			versionConfig := clusterConfiguration["version"]
-			if versionConfig != nil {
-				floatVersion, isFloat := versionConfig.(float64)
-				if isFloat {
-					version = fmt.Sprintf("%.2f", floatVersion)
-				} else {
-					version = fmt.Sprintf("%s", versionConfig)
-				}
-			} else {
-				version = "0.0"
-			}
-
-			upgradeTransitionConfig := clusterConfiguration["upgradeTransition"]
-			if upgradeTransitionConfig != nil {
-				if initialCluster {
-					errorMessage := "Invalid cluster configuration - \"upgradeTransition\" can not be specified for the intial cluster"
-					err = errors.New(errorMessage)
-				} else {
-					upgradeTransition := upgradeTransitionConfig.(map[string]interface{})
-
-					modeConfig := upgradeTransition["mode"]
-					if modeConfig != nil {
-						mode = contexts.ModesCodeToMode[modeConfig.(string)]
-					} else {
-						mode = contexts.SessionMode
-					}
-
-					if mode != 0 {
-						sessionTimeoutConfig := upgradeTransition["sessionTimeout"]
-						if mode == contexts.SessionMode {
-							if sessionTimeoutConfig != nil {
-								sessionTimeout = int64(sessionTimeoutConfig.(float64))
-							} else {
-								errorMessage := "Invalid cluster configuration - \"sessionTimeout\" must be specified in \"upgradeTransition\" for mode \"SESSION\""
-								err = errors.New(errorMessage)
-							}
-						} else if sessionTimeoutConfig != nil {
-							errorMessage := "Invalid cluster configuration - \"sessionTimeout\" should not be specified when \"mode\" is not \"SESSION\""
+		if err == nil {
+			if highestVersionCluster != nil && mode == contexts.ConcurrentMode {
+				for _, existingBackendAddress := range highestVersionCluster.BackendAddresses {
+					for _, newBackendAddress := range backendAddresses {
+						if existingBackendAddress.Equals(newBackendAddress) {
+							errorMessage := fmt.Sprintf("Invalid cluster configuration - new cluster has a conflicting address [%s] with existing highest version cluster [%s] (this is not allowed in \"CONCURRENT\" mode)", newBackendAddress, newBackendAddress)
 							err = errors.New(errorMessage)
 						}
-
-						percentageTransitionPerRequestConfig := upgradeTransition["percentageTransitionPerRequest"]
-						if mode == contexts.GradualMode {
-							if percentageTransitionPerRequestConfig != nil {
-								percentageTransitionPerRequest = percentageTransitionPerRequestConfig.(float64)
-							} else {
-								errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" must be specified in \"upgradeTransition\" for mode \"GRADUAL\""
-								err = errors.New(errorMessage)
-							}
-						} else if percentageTransitionPerRequestConfig != nil {
-							errorMessage := "Invalid cluster configuration - \"percentageTransitionPerRequest\" should not be specified when \"mode\" is not \"GRADUAL\""
-							err = errors.New(errorMessage)
-						}
-					} else {
-						errorMessage := "Invalid cluster configuration - \"upgradeTransition.mode\" should be \"INSTANT\", \"SESSION\", \"GRADUAL\" or \"CONCURRENT\""
-						err = errors.New(errorMessage)
 					}
 				}
-			} else {
-				sessionTimeout = 0
-				percentageTransitionPerRequest = 0
-				mode = contexts.InstantMode
 			}
+		}
+
+		if err == nil {
+			for _, dockerConfiguration := range dockerConfigurations {
+				var dockerClient *docker_client.DockerClient
+				dockerClient, err = docker_client.NewDockerClient(fmt.Sprintf("http://%s:%d", dockerHost.Ip, dockerHost.Port))
+				if err == nil {
+					_, err = dockerClient.CreateServerFromContainer(dockerConfiguration, outputStream)
+				}
+			}
+		}
+
+		if err == nil {
 			return &contexts.Cluster{BackendAddresses: backendAddresses, RequestCounter: -1, Uuid: uuidValue, SessionTimeout: sessionTimeout, PercentageTransitionPerRequest: percentageTransitionPerRequest, Mode: mode, Version: version}, err
 		} else {
 			return nil, err
@@ -333,11 +365,11 @@ func parseServers(serversConfiguration interface{}) ([]*contexts.BackendAddress,
  */
 
 
-func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost, outputStream io.Writer) ([]*contexts.BackendAddress, error) {
+func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost, outputStream io.Writer) ([]*docker_client.DockerConfig, []*contexts.BackendAddress, error) {
 
 	if dockerHost == nil {
 		errorMessage := "Invalid docker host configuration - \"dockerHost\" must be provided when \"containers\" are specified"
-		return nil, errors.New(errorMessage)
+		return nil, nil, errors.New(errorMessage)
 	}
 
 	var (
@@ -359,16 +391,19 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 		exposedPorts        map[string]struct{}            = nil
 		publishAllPorts     bool                           = false
 		portBindingMappings map[string][]map[string]string = nil
+		portSpecs           []string                       = nil
 		links               []string                       = nil
 		user                string                         = ""
 		memory              int64                          = 0
 		cpuShares           int64                          = 0
 		lxcConf             []docker_client.KeyValuePair   = nil
 		privileged          bool                           = false
+		dockerConfigurations []*docker_client.DockerConfig
 	)
 
 	containers, converted := containersConfiguration.([]interface{})
 	if converted && len(containers) > 0 {
+		dockerConfigurations = make([]*docker_client.DockerConfig, len(containers))
 		backendAddresses = make([]*contexts.BackendAddress, len(containers))
 		for index := range containers {
 			var container map[string]interface{} = containers[index].(map[string]interface{})
@@ -398,23 +433,31 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 				workingDir = workingDirConfig.(string)
 			}
 
-			entrypointConfig := container["entrypoint"]  // todo fix me
+			entrypointConfig := container["entrypoint"]
 			if entrypointConfig != nil {
-				entrypoint = entrypointConfig.([]string)
+				entrypointConfigItems := entrypointConfig.([]interface{})
+				entrypoint = make([]string, len(entrypointConfigItems))
+				for _, entrypointConfigItem := range entrypointConfigItems {
+					entrypoint[index] = entrypointConfigItem.(string)
+				}
 			}
 
 			envConfig := container["env"]
 			if envConfig != nil {
-				envConfigList := envConfig.([]interface{})
-				env = make([]string, len(envConfigList))
-				for index := range envConfigList {
-					env[index] = envConfigList[index].(string)
+				envConfigItems := envConfig.([]interface{})
+				env = make([]string, len(envConfigItems))
+				for _, envConfigItem := range envConfigItems {
+					env[index] = envConfigItem.(string)
 				}
 			}
 
-			cmdConfig := container["cmd"]  // todo fix me
+			cmdConfig := container["cmd"]
 			if cmdConfig != nil {
-				cmd = cmdConfig.([]string)
+				cmdConfigItems := cmdConfig.([]interface{})
+				cmd = make([]string, len(cmdConfigItems))
+				for _, cmdConfigItem := range cmdConfigItems {
+					cmd[index] = cmdConfigItem.(string)
+				}
 			}
 
 			hostnameConfig := container["hostname"]
@@ -424,16 +467,20 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 
 			volumesConfig := container["volumes"]
 			if volumesConfig != nil {
-				volumesConfigList := volumesConfig.([]interface{})
-				volumes = make([]string, len(volumesConfigList))
-				for index := range volumesConfigList {
-					volumes[index] = volumesConfigList[index].(string)
+				volumesConfigItems := volumesConfig.([]interface{})
+				volumes = make([]string, len(volumesConfigItems))
+				for _, volumesConfigItem := range volumesConfigItems {
+					volumes[index] = volumesConfigItem.(string)
 				}
 			}
 
-			volumesFromConfig := container["volumesFrom"]  // todo fix me
+			volumesFromConfig := container["volumesFrom"]
 			if volumesFromConfig != nil {
-				volumesFrom = volumesFromConfig.([]string)
+				volumesFromConfigItems := volumesFromConfig.([]interface{})
+				volumesFrom = make([]string, len(volumesFromConfigItems))
+				for _, volumesFromConfigItem := range volumesFromConfigItems {
+					volumesFrom[index] = volumesFromConfigItem.(string)
+				}
 			}
 
 			exposedPortsConfig := container["exposedPorts"]
@@ -448,31 +495,37 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 
 			portBindingsMappingConfig := container["portBindings"]
 			if portBindingsMappingConfig != nil {
-				portBindingsMappingList := portBindingsMappingConfig.(map[string]interface{})
+				portBindingsMappingItems := portBindingsMappingConfig.(map[string]interface{})
 				portBindingMappings = make(map[string][]map[string]string)
-				for index := range portBindingsMappingList {
-					portBindingsListConfig := portBindingsMappingList[index].([]interface{})
-					portBindings := make([]map[string]string, len(portBindingsListConfig))
-					for index := range portBindingsListConfig {
-						portBindingConfig := portBindingsListConfig[index].(map[string]interface{})
-						portBindings[index] = map[string]string{
+				for index, portBindingsMappingItem := range portBindingsMappingItems {
+					portBindingsMappingItemMappings := portBindingsMappingItem.([]interface{})
+					portBindings := make([]map[string]string, len(portBindingsMappingItemMappings))
+					for mappingIndex, portBindingsMappingItemMapping := range portBindingsMappingItemMappings {
+						portBindingConfig := portBindingsMappingItemMapping.(map[string]interface{})
+						portBindings[mappingIndex] = map[string]string{
 							"HostIp": portBindingConfig["HostIp"].(string),
 							"HostPort": portBindingConfig["HostPort"].(string),
 						}
 					}
 					portBindingMappings[index] = portBindings
 				}
-				fmt.Printf("portBindingMappings: %#v\n", portBindingMappings)
 			}
 
-			// todo switch to PortSpecs
+			portSpecsConfig := container["portSpecs"]
+			if portSpecsConfig != nil {
+				portSpecsConfigItems := portSpecsConfig.([]interface{})
+				portSpecs = make([]string, len(portSpecsConfigItems))
+				for index, portSpecsConfigItem := range portSpecsConfigItems {
+					portSpecs[index] = portSpecsConfigItem.(string)
+				}
+			}
 
 			linksConfig := container["links"]
 			if linksConfig != nil {
-				linksConfigList := linksConfig.([]interface{})
-				links = make([]string, len(linksConfigList))
-				for index := range linksConfigList {
-					links[index] = linksConfigList[index].(string)
+				linksConfigItems := linksConfig.([]interface{})
+				links = make([]string, len(linksConfigItems))
+				for index, linksConfigItem := range linksConfigItems {
+					links[index] = linksConfigItem.(string)
 				}
 			}
 
@@ -491,9 +544,15 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 				cpuShares = int64(cpuSharesConfig.(float64))
 			}
 
-			lxcConfConfig := container["lxcConf"] // todo fix me
+			lxcConfConfig := container["lxcConf"]
 			if lxcConfConfig != nil {
-				lxcConf = lxcConfConfig.([]docker_client.KeyValuePair)
+				lxcConfConfigItems := lxcConfConfig.([]interface{})
+				lxcConf = make([]docker_client.KeyValuePair, len(lxcConfConfigItems))
+				for index, lxcConfConfigItem := range lxcConfConfigItems {
+					for key, value := range lxcConfConfigItem.(map[string]string) {
+						lxcConf[index] = docker_client.KeyValuePair{Key: key, Value: value}
+					}
+				}
 			}
 
 			privilegedConfig := container["privileged"]
@@ -501,7 +560,7 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 				privileged = privilegedConfig.(bool)
 			}
 
-			dockerConfig := &docker_client.DockerConfig{
+			dockerConfigurations[index] = &docker_client.DockerConfig{
 				Image: image,
 				Tag: tag,
 				Name: name,
@@ -516,20 +575,13 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 				ExposedPorts: exposedPorts,
 				PublishAllPorts: publishAllPorts,
 				PortBindings: portBindingMappings,
+				PortSpecs: portSpecs,
 				Links: links,
 				User: user,
 				Memory: memory,
 				CpuShares: cpuShares,
 				LxcConf: lxcConf,
 				Privileged: privileged,
-			}
-
-			dockerClient, err := docker_client.NewDockerClient("http://192.168.50.5:2375")
-			if err == nil {
-				_, err := dockerClient.CreateServerFromContainer(dockerConfig, outputStream)
-				if err != nil {
-					fmt.Printf("err: %#v\n", err)
-				}
 			}
 
 			if container["portToProxy"] != nil {
@@ -548,7 +600,7 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 		err = errors.New(errorMessage)
 	}
 
-	return backendAddresses[0:backendAddressesIndex], err
+	return dockerConfigurations, backendAddresses[0:backendAddressesIndex], err
 }
 
 func serialiseCluster(cluster *contexts.Cluster) map[string]interface{} {

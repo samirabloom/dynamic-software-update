@@ -67,15 +67,19 @@ func (clusters *Clusters) Get(uuidValue uuid.UUID) *Cluster {
 }
 
 func (clusters *Clusters) GetByVersionOrder(age int) *Cluster {
-	var element *list.Element
-	for element = clusters.ContextsByVersion.Front(); element != nil; element = element.Next() {
-		if age == 0 {
-			break
+	if clusters.ContextsByVersion != nil {
+		var element *list.Element
+		for element = clusters.ContextsByVersion.Front(); element != nil; element = element.Next() {
+			if age == 0 {
+				break
+			}
+			age--
 		}
-		age--
-	}
-	if element != nil {
-		return element.Value.(*Cluster)
+		if element != nil {
+			return element.Value.(*Cluster)
+		} else {
+			return nil
+		}
 	} else {
 		return nil
 	}
@@ -89,6 +93,34 @@ type BackendAddress struct {
 	Address  *net.TCPAddr
 	Host string
 	Port string
+}
+
+func (this *BackendAddress) String() string {
+	return fmt.Sprintf("%s:%s", this.Host, this.Port)
+}
+
+func (this *BackendAddress) Equals(other *BackendAddress) bool {
+	return compare(this.Address.IP, other.Address.IP) && (this.Address.Port == other.Address.Port)
+}
+
+func compare(a, b []byte) bool {
+	if &a == &b {
+		return true
+	}
+	if len(a) != len(b) || len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if b[i] != v {
+			return false
+		}
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 type Cluster struct {

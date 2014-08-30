@@ -8,6 +8,8 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"strings"
 	"net/http"
+	"encoding/json"
+	"time"
 )
 
 type DockerClient struct {
@@ -40,6 +42,7 @@ func (dc *DockerClient) PullImage(repository, tag string, outputStream io.Writer
 	if err != nil {
 		log.LoggerFactory().Error("error pulling image: %s\n", err)
 	}
+	fmt.Fprintf(outputStream, "Pull Complete for [%s:%s]\n\n", repository, tag)
 	return err
 }
 
@@ -157,82 +160,13 @@ func streamContainer(container *docker.Container, outputStream io.Writer) {
 	fmt.Fprintf(outputStream, "\n======================================\n")
 	fmt.Fprintf(outputStream, "==========CONTAINER DETAILS===========\n")
 	fmt.Fprintf(outputStream, "======================================\n")
-	fmt.Fprintf(outputStream, "ID: %s\n", container.ID)
-	fmt.Fprintf(outputStream, "Created: %s\n", container.Created)
-	fmt.Fprintf(outputStream, "Path: %s\n", container.Path)
-	fmt.Fprintf(outputStream, "Args: %s\n", container.Args)
-	if container.Config != nil {
-		fmt.Printf("Config: -- \n\t Hostname: %v,\n\t " +
-					"Domainname: %v,\n\t " +
-					"User: %v,\n\t " +
-					"Memory: %v,\n\t " +
-					"MemorySwap: %v,\n\t " +
-					"CpuShares: %v,\n\t " +
-					"AttachStdin: %v,\n\t " +
-					"AttachStdout: %v,\n\t " +
-					"AttachStderr: %v,\n\t " +
-					"PortSpecs: %v,\n\t " +
-					"ExposedPorts: %v,\n\t " +
-					"Tty: %v,\n\t " +
-					"OpenStdin: %v,\n\t " +
-					"StdinOnce: %v,\n\t " +
-					"Env: %v,\n\t " +
-					"Cmd: %v,\n\t " +
-					"Dns: %v,\n\t " +
-					"Image: %v,\n\t " +
-					"Volumes: %v,\n\t " +
-					"VolumesFrom: %v,\n\t " +
-					"WorkingDir: %v,\n\t " +
-					"Entrypoint: %v,\n\t " +
-					"NetworkDisabled: %v\n",
-			container.Config.Hostname,
-			container.Config.Domainname,
-			container.Config.User,
-			container.Config.Memory,
-			container.Config.MemorySwap,
-			container.Config.CpuShares,
-			container.Config.AttachStdin,
-			container.Config.AttachStdout,
-			container.Config.AttachStderr,
-			container.Config.PortSpecs,
-			container.Config.ExposedPorts,
-			container.Config.Tty,
-			container.Config.OpenStdin,
-			container.Config.StdinOnce,
-			container.Config.Env,
-			container.Config.Cmd,
-			container.Config.Dns,
-			container.Config.Image,
-			container.Config.Volumes,
-			container.Config.VolumesFrom,
-			container.Config.WorkingDir,
-			container.Config.Entrypoint,
-			container.Config.NetworkDisabled)
-	}
-	fmt.Printf("State: -- \n\t Running: %t, \n\t " +
-				"Paused: %t, \n\t " +
-				"Pid: %d, \n\t " +
-				"ExitCode: %d, \n\t " +
-				"StartedAt: %v, \n\t " +
-				"FinishedAt: %v\n",
-		container.State.Running,
-		container.State.Paused,
-		container.State.Pid,
-		container.State.ExitCode,
-		container.State.StartedAt,
-		container.State.FinishedAt)
-	fmt.Fprintf(outputStream, "Image: %s\n", container.Image)
-	fmt.Fprintf(outputStream, "NetworkSettings: %s\n", container.NetworkSettings)
-	fmt.Fprintf(outputStream, "SysInitPath: %s\n", container.SysInitPath)
-	fmt.Fprintf(outputStream, "ResolvConfPath: %s\n", container.ResolvConfPath)
-	fmt.Fprintf(outputStream, "HostnamePath: %s\n", container.HostnamePath)
-	fmt.Fprintf(outputStream, "HostsPath: %s\n", container.HostsPath)
-	fmt.Fprintf(outputStream, "Name: %s\n", container.Name)
-	fmt.Fprintf(outputStream, "Driver: %s\n", container.Driver)
-	fmt.Fprintf(outputStream, "Volumes: %s\n", container.Volumes)
-	fmt.Fprintf(outputStream, "VolumesRW: %s\n", container.VolumesRW)
-	fmt.Fprintf(outputStream, "HostConfig: %s\n", container.HostConfig)
-	fmt.Fprintf(outputStream, "======================================\n\n")
+	fmt.Fprintf(outputStream, ConvertToJson(container))
+	fmt.Fprintf(outputStream, "\n======================================\n\n")
+}
+
+func ConvertToJson(object interface{}) string {
+	json, _ := json.MarshalIndent(object, "", "   ")
+	return string(json)
 }
 
 func (dc *DockerClient) StartContainer(id string, hostConfig *docker.HostConfig, outputStream io.Writer) (container *docker.Container, err error) {
@@ -242,19 +176,58 @@ func (dc *DockerClient) StartContainer(id string, hostConfig *docker.HostConfig,
 		log.LoggerFactory().Error("error starting container: %s\n", err)
 	} else {
 		container, err = dc.InspectContainer(id, outputStream)
+		time.Sleep(2 * time.Second)
+		fmt.Fprintf(outputStream, "Container Log (first 2 seconds):\n")
+		attachOpts := docker.AttachToContainerOptions{
+			Container:    container.ID,
+			OutputStream: outputStream,
+			ErrorStream:  outputStream,
+			Stdout:       true,
+			Stderr:       true,
+			Logs:         true,
+			Stream:		  false,
+		}
+		dc.client.AttachToContainer(attachOpts)
+		fmt.Fprintf(outputStream, "\n")
 	}
 	return container, err
 }
 
-func (dc *DockerClient) StopContainer(id string, timeout uint, outputStream io.Writer) (container *docker.Container, err error) {
-	err = dc.client.StopContainer(id, timeout)
+func (dc *DockerClient) StopContainer(id string, timeout uint, outputStream io.Writer) (string, error) {
+	err := dc.client.StopContainer(id, timeout)
 	if err != nil {
 		fmt.Fprintf(outputStream, "error stopping container: %s\n", err)
 		log.LoggerFactory().Error("error stopping container: %s\n", err)
+		return "", err
 	} else {
-		container, err = dc.InspectContainer(id, outputStream)
+		fmt.Fprintf(outputStream, "Stopped container id: %s\n", id)
+		return id, nil
 	}
-	return container, err
+}
+
+func (dc *DockerClient) RemoveContainer(name string, timeout uint, outputStream io.Writer) (err error) {
+	var (
+		containerList []docker.APIContainers
+		container docker.APIContainers
+	)
+	containerList, err = dc.client.ListContainers(docker.ListContainersOptions{All: true})
+	if err != nil {
+		fmt.Fprintf(outputStream, "error listing containers: %s\n", err)
+		log.LoggerFactory().Error("error listing containers: %s\n", err)
+	} else {
+		searchName := "/" + strings.Replace(name, ":", "/", 2)
+		for _, container = range containerList {
+			for _, containerName := range container.Names {
+				if containerName == searchName || containerName == name {
+					fmt.Fprintf(outputStream, "Stopping container id: %s name: \"%s\"\n", container.ID, containerName)
+					dc.StopContainer(container.ID, timeout, outputStream)
+					fmt.Fprintf(outputStream, "Removing container id: %s name: \"%s\"\n", container.ID, containerName)
+					dc.client.RemoveContainer(docker.RemoveContainerOptions{ID: container.ID, Force: true})
+				}
+			}
+		}
+	}
+	return err
 }
 
 type DockerConfig struct {
@@ -272,6 +245,7 @@ type DockerConfig struct {
 	PublishAllPorts bool
 	PortBindings    map[string][]map[string]string
 	PortToProxy     int64
+	PortSpecs       []string
 	Links           []string
 	User            string
 	Memory          int64
@@ -294,7 +268,6 @@ func Flush(outputStream io.Writer) {
 
 func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputStream io.Writer) (container *docker.Container, err error) {
 	err = dc.PullImage(config.Image, config.Tag, outputStream)
-	fmt.Printf("outputStream: %#v\n", outputStream)
 	Flush(outputStream)
 	if err == nil {
 
@@ -317,6 +290,10 @@ func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputSt
 		containerName := config.Name
 		if len(containerName) == 0 {
 			containerName = strings.Replace(config.Image, "/", "_", 2)+"_"+uuid.NewUUID().String()
+		} else {
+			fmt.Fprintf(outputStream, "Checking for any existing containers with name \"%s\"\n", containerName)
+			dc.RemoveContainer(containerName, 60, outputStream)
+			Flush(outputStream)
 		}
 		container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)
 		Flush(outputStream)

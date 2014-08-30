@@ -1,0 +1,15 @@
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "mysql",
+                "tag": "latest",
+                "name": "some-mysql-four",
+                "env": [
+                    "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                ],
+                "volumes": [
+                    "/var/lib/mysql_four:/var/lib/mysql"
+                ]
+            },
+            {

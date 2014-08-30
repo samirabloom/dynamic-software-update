@@ -120,10 +120,10 @@ func Test_Docker_Client_Should_Create_Container(testCtx *testing.T) {
 		testCtx.Fatalf("Container not created\n", imageName, createdContainer.Image)
 	}
 	if createdContainer.Image == imageName {
-		testCtx.Fatalf("Container does not have the correct image name, expect: [%s], found: [%s]\n", imageName, createdContainer.Image)
+		testCtx.Fatalf("Container does not have the correct image name, expected: [%s], found: [%s]\n", imageName, createdContainer.Image)
 	}
 	if createdContainer.State.Running {
-		testCtx.Fatalf("Container was running, expect: [%t], found: [%t]\n", false, createdContainer.State.Running)
+		testCtx.Fatalf("Container was running, expected: [%t], found: [%t]\n", false, createdContainer.State.Running)
 	}
 }
 
@@ -152,14 +152,17 @@ func Test_Docker_Client_Should_Inspect_Container(testCtx *testing.T) {
 	container, err := client.InspectContainer(createdContainer.ID, &outputStream)
 
 	// then
-	if container.Image == imageName {
-		testCtx.Fatalf("Container does not have the correct image name, expect: [%s], found: [%s]\n", imageName, container.Image)
-	}
-	if container.State.Running {
-		testCtx.Fatalf("Container was running, expect: [%t], found: [%t]\n", false, container.State.Running)
-	}
 	if err != nil {
 		testCtx.Fatalf("Error while inspecting container %s\n", err)
+	}
+	if container == nil {
+		testCtx.Fatalf("Container not found\n", imageName, container.Image)
+	}
+	if container.Image == imageName {
+		testCtx.Fatalf("Container does not have the correct image name, expected: [%s], found: [%s]\n", imageName, container.Image)
+	}
+	if container.State.Running {
+		testCtx.Fatalf("Container was running, expected: [%t], found: [%t]\n", false, container.State.Running)
 	}
 }
 
@@ -188,14 +191,17 @@ func Test_Docker_Client_Should_Start_Container(testCtx *testing.T) {
 	container, err := client.StartContainer(createdContainer.ID, &docker.HostConfig{}, &outputStream)
 
 	// then
-	if container.Image == imageName {
-		testCtx.Fatalf("Container does not have the correct image name, expect: [%s], found: [%s]\n", imageName, container.Image)
-	}
-	if !container.State.Running {
-		testCtx.Fatalf("Container was not running, expect: [%t], found: [%t]\n", true, container.State.Running)
-	}
 	if err != nil {
 		testCtx.Fatalf("Error while starting container %s\n", err)
+	}
+	if container == nil {
+		testCtx.Fatalf("Container not started\n", imageName, container.Image)
+	}
+	if container.Image == imageName {
+		testCtx.Fatalf("Container does not have the correct image name, expected: [%s], found: [%s]\n", imageName, container.Image)
+	}
+	if !container.State.Running {
+		testCtx.Fatalf("Container was not running, expected: [%t], found: [%t]\n", true, container.State.Running)
 	}
 }
 
@@ -221,16 +227,65 @@ func Test_Docker_Client_Should_Stop_Container(testCtx *testing.T) {
 		testCtx.Fatalf("Error while creating container %s\n", err)
 	}
 
-	container, err := client.StopContainer(createdContainer.ID, uint(10), &outputStream)
+	id, err := client.StopContainer(createdContainer.ID, uint(10), &outputStream)
 
 	// then
-	if container.Image == imageName {
-		testCtx.Fatalf("Container does not have the correct image name, expect: [%s], found: [%s]\n", imageName, container.Image)
+	if id != createdContainer.ID {
+		testCtx.Fatalf("Incorrect stopped container id, expected: [%s], found: [%s]\n", createdContainer.ID, id)
 	}
-	if container.State.Running {
-		testCtx.Fatalf("Container was not running, expect: [%t], found: [%t]\n", true, container.State.Running)
-	}
+
+	// and
+	container, err := client.InspectContainer(createdContainer.ID, &outputStream)
 	if err != nil {
 		testCtx.Fatalf("Error while stopping container %s\n", err)
+	}
+	if container == nil {
+		testCtx.Fatalf("Container not found\n", imageName, container.Image)
+	}
+	if container.Image == imageName {
+		testCtx.Fatalf("Container does not have the correct image name, expected: [%s], found: [%s]\n", imageName, container.Image)
+	}
+	if container.State.Running {
+		testCtx.Fatalf("Container was not running, expected: [%t], found: [%t]\n", true, container.State.Running)
+	}
+}
+
+func Test_Docker_Client_Should_Remove_Container(testCtx *testing.T) {
+	// given
+	createVagrantDockerBox()
+	var (
+		endpoint      = "http://192.168.50.5:2375"
+		imageName     = "samirabloom/docker-go"
+		containerName = strings.Replace(imageName, "/", "_", 2) + "_" + uuid.NewUUID().String() // "samirabloom_docker-go"
+		outputStream bytes.Buffer
+	)
+
+	// when
+	client, err := NewDockerClient(endpoint)
+	if err != nil {
+		testCtx.Fatalf("Error while creating client %s\n", err)
+	}
+	config := &docker.Config{Image: imageName, AttachStdout: true, AttachStdin: true}
+
+	createdContainer, err := client.CreateContainer(config, containerName, &outputStream)
+	if err != nil {
+		testCtx.Fatalf("Error while creating container %s\n", err)
+	}
+
+	err = client.RemoveContainer(containerName, uint(10), &outputStream)
+
+	// then
+	if err != nil {
+		testCtx.Fatalf("Error returned, expected: [%s], found: [%s]\n", (error)(nil), err)
+	}
+
+	// and
+	container, err := client.InspectContainer(createdContainer.ID, &outputStream)
+	expectedErrorMessage := "No such container: " + createdContainer.ID
+	if err == nil || err.Error() != expectedErrorMessage {
+		testCtx.Fatalf("Wrong error while stopping container, expected: [%s], found: [%s]\n", expectedErrorMessage, err)
+	}
+	if container != nil {
+		testCtx.Fatalf("Container still exists, expected: [%s], found: [%s]\n", (*docker.Container)(nil), container)
 	}
 }
