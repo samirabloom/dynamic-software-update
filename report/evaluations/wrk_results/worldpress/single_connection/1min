@@ -1,0 +1,64 @@
+### DIRECT
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d1m --latency http://192.168.50.40/
+Running 1m test @ http://192.168.50.40/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   123.68ms    4.01ms 133.49ms   69.91%
+    Req/Sec     7.67      1.25    10.00     77.78%
+  Latency Distribution
+     50%  123.14ms
+     75%  125.93ms
+     90%  129.54ms
+     99%  132.87ms
+  485 requests in 1.00m, 3.60MB read
+Requests/sec:      8.08
+Transfer/sec:     61.37KB
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d1m --latency http://192.168.50.40/
+Running 1m test @ http://192.168.50.40/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   120.85ms    3.63ms 133.63ms   74.46%
+    Req/Sec     7.48      1.31    11.00     87.88%
+  Latency Distribution
+     50%  121.42ms
+     75%  122.87ms
+     90%  124.62ms
+     99%  129.70ms
+  496 requests in 1.00m, 3.68MB read
+Requests/sec:      8.26
+Transfer/sec:     62.77KB
+samiras-mbp:wrk samirarabbanian$ 
+
+
+### PROXY
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d1m --latency http://127.0.0.1:1235/
+Running 1m test @ http://127.0.0.1:1235/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   101.39ms    3.39ms 122.57ms   85.38%
+    Req/Sec     9.27      1.34    14.00     74.53%
+  Latency Distribution
+     50%  101.11ms
+     75%  102.74ms
+     90%  104.74ms
+     99%  108.77ms
+  591 requests in 1.00m, 214.54KB read
+Requests/sec:      9.85
+Transfer/sec:      3.57KB
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d1m --latency http://127.0.0.1:1235/
+Running 1m test @ http://127.0.0.1:1235/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   103.51ms   38.46ms 536.98ms   99.23%
+    Req/Sec     9.38      2.41    13.00     70.38%
+  Latency Distribution
+     50%  100.47ms
+     75%  102.13ms
+     90%  104.10ms
+     99%  121.29ms
+  597 requests in 1.00m, 216.27KB read
+Requests/sec:      9.95
+Transfer/sec:      3.60KB

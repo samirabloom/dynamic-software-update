@@ -1,0 +1,37 @@
+### DIRECT
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10m --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 10m test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    29.31ms  134.77ms 737.79ms   96.49%
+    Req/Sec   295.56     69.98   444.00     85.48%
+  Latency Distribution
+     50%    3.32ms
+     75%    3.47ms
+     90%    3.96ms
+     99%  737.79ms
+  167572 requests in 10.00m, 1.54GB read
+Requests/sec:    279.27
+Transfer/sec:      2.62MB
+
+
+
+
+### PROXY
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10m --latency http://Administrator:password@0.0.0.0:1235/pools/default/buckets/beer-sample
+Running 10m test @ http://Administrator:password@0.0.0.0:1235/pools/default/buckets/beer-sample
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   303.32ms  369.16ms 762.36ms   60.89%
+    Req/Sec   173.05    146.54   444.00     43.26%
+  Latency Distribution
+     50%    3.84ms
+     75%  762.36ms
+     90%  762.36ms
+     99%  762.36ms
+  96663 requests in 10.00m, 0.89GB read
+Requests/sec:    161.10
+Transfer/sec:      1.51MB
+samiras-mbp:wrk samirarabbanian$ 

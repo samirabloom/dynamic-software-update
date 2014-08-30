@@ -1,0 +1,64 @@
+### DIRECT
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10 --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 10s test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    30.63ms   97.85ms 384.65ms   92.92%
+    Req/Sec   288.84     94.07   444.00     83.69%
+  Latency Distribution
+     50%    3.26ms
+     75%    3.46ms
+     90%    5.13ms
+     99%  384.65ms
+  2729 requests in 10.00s, 25.65MB read
+Requests/sec:    273.01
+Transfer/sec:      2.57MB
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10 --latency http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+Running 10s test @ http://Administrator:password@192.168.50.50:8091/pools/default/buckets/beer-sample
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.93ms   19.64ms 121.89ms   96.79%
+    Req/Sec   299.50     70.74   444.00     80.53%
+  Latency Distribution
+     50%    3.27ms
+     75%    3.42ms
+     90%    4.01ms
+     99%  121.89ms
+  2831 requests in 10.00s, 26.58MB read
+Requests/sec:    283.10
+Transfer/sec:      2.66MB
+
+### PROXY
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10 --latency http://Administrator:password@0.0.0.0:1235/pools/default/buckets/beer-sample
+Running 10s test @ http://Administrator:password@0.0.0.0:1235/pools/default/buckets/beer-sample
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   129.00ms  268.36ms 705.63ms   82.27%
+    Req/Sec   251.17    129.10   444.00     71.24%
+  Latency Distribution
+     50%    3.25ms
+     75%    4.03ms
+     90%  705.63ms
+     99%  705.63ms
+  2266 requests in 10.00s, 21.29MB read
+Requests/sec:    226.58
+Transfer/sec:      2.13MB
+samiras-mbp:wrk samirarabbanian$ 
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10 --latency http://Administrator:password@0.0.0.0:1235/pools/default/buckets/beer-sample
+Running 10s test @ http://Administrator:password@0.0.0.0:1235/pools/default/buckets/beer-sample
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    59.10ms  137.25ms 399.18ms   85.99%
+    Req/Sec   258.69    117.14   444.00     78.45%
+  Latency Distribution
+     50%    3.30ms
+     75%    3.93ms
+     90%  399.18ms
+     99%  399.18ms
+  2390 requests in 10.00s, 22.46MB read
+Requests/sec:    238.99
+Transfer/sec:      2.25MB

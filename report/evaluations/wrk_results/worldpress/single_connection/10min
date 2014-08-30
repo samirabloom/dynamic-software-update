@@ -1,0 +1,37 @@
+### DIRECT
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10m --latency http://192.168.50.40/
+Running 10m test @ http://192.168.50.40/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   124.19ms    4.84ms 172.27ms   72.93%
+    Req/Sec     7.26      1.00    12.00     94.42%
+  Latency Distribution
+     50%  124.64ms
+     75%  127.07ms
+     90%  129.24ms
+     99%  136.76ms
+  4834 requests in 10.00m, 35.85MB read
+Requests/sec:      8.06
+Transfer/sec:     61.19KB
+
+
+### PROXY
+Requests/sec:      8.06
+Transfer/sec:     61.19KB
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10m --latency http://127.0.0.1:1235/
+Running 10m test @ http://127.0.0.1:1235/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   110.84ms   47.94ms 561.78ms   98.67%
+    Req/Sec     8.62      2.15    11.00     56.14%
+  Latency Distribution
+     50%  105.46ms
+     75%  107.15ms
+     90%  109.57ms
+     99%  488.49ms
+  5624 requests in 10.00m, 1.99MB read
+Requests/sec:      9.37
+Transfer/sec:      3.39KB
+samiras-mbp:wrk samirarabbanian$ 
+
+

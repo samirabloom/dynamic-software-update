@@ -1,0 +1,68 @@
+### DIRECT
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10s --latency http://192.168.50.40/
+Running 10s test @ http://192.168.50.40/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   123.14ms    2.15ms 128.20ms   66.67%
+    Req/Sec     8.00      1.44    10.00     66.67%
+  Latency Distribution
+     50%  122.87ms
+     75%  124.40ms
+     90%  125.55ms
+     99%  128.20ms
+  81 requests in 10.00s, 615.17KB read
+Requests/sec:      8.10
+Transfer/sec:     61.50KB
+samiras-mbp:wrk samirarabbanian$ 
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10s --latency http://192.168.50.40/
+Running 10s test @ http://192.168.50.40/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   121.25ms    2.69ms 132.32ms   79.41%
+    Req/Sec     7.97      1.42    10.00     67.65%
+  Latency Distribution
+     50%  121.16ms
+     75%  122.38ms
+     90%  123.55ms
+     99%  132.32ms
+  82 requests in 10.00s, 622.77KB read
+Requests/sec:      8.20
+Transfer/sec:     62.27KB
+samiras-mbp:wrk samirarabbanian$ 
+
+
+### PROXY
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10s --latency http://127.0.0.1:1235/
+Running 10s test @ http://127.0.0.1:1235/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    89.83ms    7.43ms 125.63ms   91.89%
+    Req/Sec    11.11      1.56    12.00     81.08%
+  Latency Distribution
+     50%   87.39ms
+     75%   89.53ms
+     90%   97.19ms
+     99%  125.63ms
+  111 requests in 10.00s, 46.73KB read
+Requests/sec:     11.10
+Transfer/sec:      4.67KB
+
+
+samiras-mbp:wrk samirarabbanian$ ./wrk -t1 -c1 -d10s --latency http://127.0.0.1:1235/
+Running 10s test @ http://127.0.0.1:1235/
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    94.63ms    1.96ms  99.03ms   69.23%
+    Req/Sec     9.95      2.03    12.00     51.28%
+  Latency Distribution
+     50%   94.59ms
+     75%   95.72ms
+     90%   97.30ms
+     99%   99.03ms
+  104 requests in 10.00s, 44.71KB read
+Requests/sec:     10.40
+Transfer/sec:      4.47KB
+samiras-mbp:wrk samirarabbanian$ 

@@ -176,6 +176,65 @@ All companies and organizations use software applications to run their business,
 xxx
 
 \section{Contributions}
+
+
+
+Lighttpd1
+is a popular open-source web-server used by
+several high-traffic websites such as Wikipedia and YouTube.
+Despite its popularity, crash bugs are still a common occurrence
+in Lighttpd, as evident from its bug tracking database.2
+Below we discuss one such bug, which our approach could
+successfully eliminate.
+In April 2009, a patch was applied3
+to Lighttpd’s code related
+to the HTTP ETag functionality. An ETag is a unique string
+assigned by a web server to a specific version of a web resource,
+which can be used to quickly determine if the resource has
+changed. The patch was a one-line change, which discarded
+the terminating zero when computing a hash representing the
+ETag. More exactly, line 47 in etag.c:
+for (h=0, i=0; i < etag->used; ++i) h = (h<<5)
+ˆ(h>>27)ˆ(etag->ptr[i]);
+was changed to:
+for (h=0, i=0; i < etag->used-1; ++i) h = (h<<5)
+ˆ(h>>27)ˆ(etag->ptr[i]);
+This correctly changed the
+
+This correctly changed the way ETags are computed, but
+unfortunately, it broke the support for compression, whose
+implementation depended on the previous computation. More
+precisely, Lighttpd’s support for HTTP compression uses
+caching to avoid re-compressing files which have not changed
+since the last access. To determine whether the cached file
+is still valid, Lighttpd internally uses ETags. Unfortunately,
+the code implementing HTTP compression did not consider
+the case when ETags are disabled. In this case, etags->used
+is 0, and when the line above is executed, etag->used-1
+underflows to a very large value, and the code crashes while
+accessing etag->ptr[i]. Interestingly enough, the original
+code was still buggy (it always returns zero as the hash value,
+and thus it would never re-compress the files), but it was not
+vulnerable to a crash.
+The segfault was diagnosed and reported in March 20104
+and
+fixed at the end of April 2010,5 more than one year after it was
+introduced. The bottom line is that for about one year, users
+affected by this buggy patch essentially had to decide between
+(1) incorporating the new features and bug fixes added to the
+code, but being vulnerable to this crash bug, and (2) giving up
+on these new features and bug fixes and using an old version
+of Lighttpd, which is not vulnerable to this bug.
+Our approach provides users with a third choice; when a
+new version arrives, instead of replacing the old version, we
+run both versions in parallel. In our example, consider that we
+are using MX to run a version of Lighttpd from March 2009.
+When the buggy April 2010 version is released, MX runs it in
+parallel with the old one. As the two versions execute:
+• As long as the two versions have the same external
+behaviour (e.g. they write the same values into the same
+files, or send the same data over the network), they are
+run side-by-side and MX ensures t
 xxx
 
 \section{Outline of the Report}
@@ -931,20 +990,14 @@ The aim of these tests is to check that all components of the dynamic software u
 \clearpage
 
 \chapter{Evaluation}
-This section summarizes the qualitative and quantitative evaluation performed on the implemented dynamic software update system.
+This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy while qualitative analysis focused on the functional correctness and robustness of the proxy. 
 
-- talk about real example tests
+Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populate web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
 
 \section{Quantitative Analysis xxxxxxxxxxx}\label{Quantitative_Analysis}
-xxxx talk about couchbase and WordPress and why we chose those two...\bigskip
-xxxxxxxxx WordPress, a content management system that currently runs approximately 20\% of all Web sites.
-xxxx   http://venturebeat.com/2013/07/27/19-percent-of-the-web-runs-on-wordpress\bigskip  
+This section summarizes the load and saturation tests performed on the dynamic software update proxy. The aim of these tests were to evaluate the performance and stability of the proxy. Saturation tests focused on stability of the proxy by sending over 400 simultaneous HTTP requests per second to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses.
 
-\noindent
-xxxxxx (Couchbase) These applications must service many concurrent users; creating, storing, retrieving, aggregating, manipulating and presenting data. In support of these kinds of application needs, Couchbase is designed to provide easy-to-scale key-value or document access with low latency and high sustained throughput. It is designed to be clustered from a single machine to very large scale deployments. http://www.couchbase.com/couchbase-server/architecture (especially server architecture section) \bigskip
-
-
-\subsection{Load Test}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
+\subsection{Performance Load and Saturation Tests}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
 
 \noindent\\
 \textbf{xxx do i need to also show synatc for running mysql xxxx}
@@ -957,6 +1010,40 @@ docker run --name some-wordpress --link some-mysql:mysql \
 docker run --name some-wordpress --link some-mysql:mysql 
            -p 80:80 -d wordpress:3.9.2
 \end{lstlisting}
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.55]{absoloute-wordpress}
+  \caption{xxxxxxxxxxxxx}
+  \label{absoloute-wordpress}
+\end{figure} 
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.55]{percentage-wordpress}
+  \caption{xxxxxxxxxxxxx}
+  \label{percentage-wordpress}
+\end{figure} 
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.55]{absoloute-couchbase}
+  \caption{xxxxxxxxxxxxx}
+  \label{absoloute-couchbase}
+\end{figure} 
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.55]{percentage-couchbase}
+  \caption{xxxxxxxxxxxxx}
+  \label{percentage-couchbase}
+\end{figure} 
+
+
+
+
+
+
 
 
 
@@ -971,7 +1058,7 @@ docker run --name some-wordpress --link some-mysql:mysql
 \underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. 
  
 \section{Qualitative Analysis}
-The following qualitative analysis were performed on the dynamic software update proxy (Chapter \ref{Implementation}) using real applications to insure that different features of the proxy such as load balancing and dynamic software update functionality behave correctly:
+Qualitative analysis were performed on the dynamic software update proxy (Chapter \ref{Implementation})  using real applications. These evaluations insured that different features of the proxy such as load balancing and dynamic software upgrade functionality behave correctly and the proxy can survive crash bugs in real examples. The following qualitative analysis were performed: 
 
 \begin{list}{-}{}
   \itemsep0em
@@ -1119,7 +1206,7 @@ Cache-Control: no-cache
 \subsection{Real Software Upgrades}
 The main feature of the implemented proxy described in Chapter \ref{Implementation} is its ability to support dynamic software update for continues delivery into production. The proxy is able to dynamically update an application to a new version. It then runs different versions of an application concurrently and it automatically monitors the behavior of the most updated version. If the updated version behaves incorrectly, the proxy seamlessly removes that version of the application and routes all requests to the previous stable version with no downtime. This section evaluates the aforementioned functionality of the proxy in details using real applications.
 
-Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application which currently runs approximately 20\% of Web sites. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}.
+Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}.
 
 For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the following actions were executed sequentially:
 
@@ -1138,7 +1225,7 @@ For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the 
 In an INSTANT upgrade the proxy  forwards requests to the most updated version of the application. However, if the most updated version does not behave correctly, the proxy removes that version and forwards requests to the previous version of the application (Section \ref{modes}). This section explains the process executed to evaluate the INSTANT upgrade mode of the proxy.\medskip
 
 \noindent
-\textit{Proxy's Initial Configuration} - The proxy was configured to forward HTTP requests to a cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy Initial Configuration} - The proxy was configured to forward HTTP requests to a cluster running version 3.9.1 of the WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:22:24.922144 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1264,7 +1351,7 @@ curl -v http://127.0.0.1:1235
 \end{lstlisting}
 
 \noindent\\
-\textit{Proxy's Output After INSTANT Upgrade}
+\textit{Proxy Log Output After INSTANT Upgrade}
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:28:20.400747 proxy_context_cluster.go:114:     
    INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
@@ -1292,7 +1379,7 @@ Content-Type: text/html; charset=UTF-8
 %The time shown in the proxy's terminal output demonstrates that the time it takes for the proxy to %switch back to the older version is less than 650 us.
 
 \noindent\\
-\textit{Proxy's Output After WordPress Version 3.9.2 crashed}
+\textit{Proxy Log Output After WordPress Version 3.9.2 crashed}
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:32:59.897032 proxy_context_cluster.go:114:     
    INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
@@ -1329,7 +1416,7 @@ Content-Type: text/html; charset=UTF-8
 In the SESSION upgrade the proxy generates cookies with a configured expiry time for requests forwarded to that cluster. An HTTP client returns the cookie as long as it is not expired. This insures that the client stays on the same cluster until it has not interacted with the proxy for the duration of the cookie. As with INSTANT update, if the cluster with SESSION upgrade does not behave correctly, it will be removed and requests will be forwarded to the previous version of the application (Section \ref{modes}). This section explains the process executed to evaluate the proxy for SESSION upgrade.\medskip
 
 \noindent
-\textit{Proxy's Initial Configuration} - The proxy was configured with a cluster running version 3.9.1 of WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
+\textit{Proxy Initial Configuration} - The proxy was configured with a cluster running version 3.9.1 of WordPress application. The start-up configuration echoed by proxy is shown in the following terminal output.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:10:46.064526 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1487,7 +1574,7 @@ curl -v 'http://127.0.0.1:1235/' \
 \end{lstlisting}
 
 \noindent\\
-\textit{Proxy's output}
+\textit{Proxy Log Output}
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:24:17.273012 proxy_context_cluster.go:114:     
    INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
@@ -1551,7 +1638,7 @@ Content-Type: text/html; charset=UTF-8
 In the GRADUAL upgrade each client will be allocated a transition cookie. The transition cookie will be used to randomly create each client a number between 0 and 100. The random number will be used to define which client should be upgraded to the new version. If the randomly generated number is less than or equal to a defined threshold then that client will be moved to the latest cluster version (Section \ref{route-stage}). This section summarizes the performance evaluation of the proxy when a GRADUAL upgrade of WordPress from version 3.9.1 to 3.9.2 was applied. \medskip
 
 \noindent
-\textit{Proxy's Initial Configuration} - The initial configuration of the proxy is shown in the following terminal output echoed by proxy. Note that the proxy was initially configured with version 3.9.1 of WordPress application.\smallskip
+\textit{Proxy Initial Configuration} - The initial configuration of the proxy is shown in the following terminal output echoed by proxy. Note that the proxy was initially configured with version 3.9.1 of WordPress application.\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:05:30.745828 config_parse.go:53:   NOTICE - Parsed config file:
@@ -1612,7 +1699,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy for upgrading WordPress application from version 3.9.1 to version 3.9.2.\smallskip
+\textit{PUT Request for GRADUAL Upgrade} - The following PUT request was sent to the proxy's configuration service for upgrading WordPress application from version 3.9.1 to version 3.9.2.\smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v \
@@ -1734,10 +1821,11 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}     
 
 \subsubsection*{CONCURRENT Upgrade}
-To evaluate that the CONCURRENT mode works reliably, WordPress version 3.9.1 was upgraded to version 3.9.2 via proxy. The upgrade process and the proxy's reaction to the upgrade and requests / responses associated with the proxy is summarized in this section.
+In the CONCURRENT mode, the proxy sends HTTP requests to the old and new versions of an application and it monitors the responses arriving from the highest version of the application. If the latest version correctly accepts a new TCP connection and responds with an HTTP status code that is not in the 5xx range, for server errors, then the proxy forwards its response to the client. However, If the latest cluster does not accept a new TCP connection or responds with an HTTP status code in the 5xx range, the proxy drops its response and forwards the response from the older version of the application to the client. To evaluate that the CONCURRENT mode of the proxy works reliably, WordPress version 3.9.1 was upgraded to version 3.9.2. The upgrade process, it is summarized in this section. Proxy log output and the HTTP request and responses are used to demonstrate how the proxy behaves for the concurrent upgrade.
 
 \noindent
-\textit{Proxy Configuration} - the following terminal output shows the initial configuration of the proxy. Proxy is configured with version 3.9.1 of WordPress application.\smallskip
+\textit{Proxy Initial Configuration} - The following terminal output shows the initial configuration of the proxy. Proxy is configured with version 3.9.1 of WordPress application.\smallskip
+
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:39:55.615246 config_parse.go:56:   NOTICE - Parsed config file:
 {
@@ -1770,7 +1858,7 @@ curl -v http://127.0.0.1:1235
 \end{lstlisting}  
 
 \noindent\\
-As it is shown in the following terminal output echoed by proxy, requested were successfully forwarded to WordPress application version 3.9.1 by proxy. Upgrade transition mode INSTANT was given to the initial configuration since no upgrade mode was specified.
+As it is shown in the following terminal output echoed by proxy, WordPress version 3.9.1 was processing the requests. Upgrade transition mode INSTANT was given to the initial configuration since no upgrade mode was specified. \smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:40:00.005587 proxy_context_cluster.go:115:     
@@ -1779,7 +1867,7 @@ As it is shown in the following terminal output echoed by proxy, requested were 
 \end{lstlisting}  
 
 \noindent\\
-The X-Pingback header in the response received from proxy also confirmed that version 3.9.1 of the WordPress application with IP address "192.168.50.30" is processing the requests. \smallskip
+The "X-Pingback" header in the response received from proxy also confirmed that version 3.9.1 of the WordPress application with IP address "192.168.50.30" is processing the requests. \smallskip 
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -1787,7 +1875,7 @@ Set-Cookie: dynsoftup=32afd70b-2f71-11e4-b59e-600308a8245e;
 Date: Fri, 29 Aug 2014 11:40:00 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-<@\textcolor{magenta}{X-Pingback: http://192.168.50.30/xmlrpc.php}@>
+X-Pingback: http://192.168.50.30/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -1796,7 +1884,7 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{PUT Request for CONCURRENT Upgrade} - to upgrade WordPress from version 3.9.1 to version 3.9.2, the following PUT request was sent to proxy's configuration service: \smallskip
+\textit{PUT Request for CONCURRENT Upgrade} - To upgrade WordPress from version 3.9.1 to version 3.9.2, the following PUT request was sent to the proxy's configuration service: \smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v \
@@ -1805,7 +1893,7 @@ http://127.0.0.1:9090/configuration/cluster -X PUT \
 \end{lstlisting}  
 
 \noindent\\
-The following terminal output showed successful addition of a cluster running version 3.9.2 of WordPress application in CONCURRENT upgrade transition mode:\smallskip
+The following terminal output showed successful addition of the cluster running version 3.9.2 of WordPress application in CONCURRENT upgrade transition mode:\smallskip
 
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:42:55.844840 config_service.go:66:     INFO - Received new cluster configuration:
@@ -1826,7 +1914,7 @@ The following terminal output showed successful addition of a cluster running ve
 \end{lstlisting} 
 
 \noindent
-The response body received from proxy contained a cluster id associated to the new cluster.
+The response body received from the proxy contained a cluster id associated to the new cluster.\smallskip
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 202 Accepted
@@ -1838,14 +1926,14 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting} 
 
 \noindent\\
-\textit{GRADUAL Upgrade} - To evaluate the behavior of the proxy after the CONCURRENT upgrade, HTTP requests were sent to proxy. \smallskip
+\textit{Evaluation of the CONCURRENT Upgrade} - To evaluate the behavior of the proxy after the CONCURRENT upgrade, HTTP requests were sent to the proxy. \smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
 \end{lstlisting}
 
 \noindent\\ 
-The following terminal output echoed by proxy showed that proxy sent requests to both versions of WordPress application (\textit{i.e.} version 3.9.1 and 3.9.2) concurrently. 
+The proxy's log output showed that the proxy sent requests concurrently to both versions of the WordPress application (\textit{i.e.} version 3.9.1 and 3.9.2). \smallskip 
 
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:45:00.892252 proxy_context_cluster.go:115:     
@@ -1858,7 +1946,7 @@ The following terminal output echoed by proxy showed that proxy sent requests to
 \end{lstlisting}
 
 \noindent\\
-However, the client only received a response from the most updated version as shown below. Note that the X-Pingback header contains the IP address of WordPress application version 3.9.2. \smallskip
+However, the client only received a response from the most updated version as shown below. Note that the "X-Pingback" header contains the IP address of the WordPress application version 3.9.2. \smallskip
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -1866,7 +1954,7 @@ Set-Cookie: dynsoftup=9e1cb1e4-2f71-11e4-b59e-600308a8245e;
 Date: Fri, 29 Aug 2014 11:45:00 GMT
 Server: Apache/2.2.22 (Debian)
 X-Powered-By: PHP/5.4.4-14+deb7u12
-<@\textcolor{magenta}{X-Pingback: http://192.168.50.40/xmlrpc.php}@>
+X-Pingback: http://192.168.50.40/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -1875,17 +1963,17 @@ Content-Type: text/html; charset=UTF-8
 \end{lstlisting}
 
 \noindent\\
-\textit{Handling Incorrect Behavior} - to insure that the proxy is capable of dropping responses arriving from the newest version of the application when it is not behaving correctly the following scenario was performed. docker container running version 3.9.2 of the WordPress application was stopped and then HTTP request were sent to the proxy using cURL.
+\textit{Handling Incorrect Behavior} - To insure that the proxy drops responses arriving from the newest version of the application when it is not behaving correctly the following evaluation was performed. Docker container running version 3.9.2 of the WordPress application was stopped and HTTP requests were consequently sent to the proxy using cURL.\smallskip
 
 \begin{lstlisting}[language=terminal]
 curl -v http://127.0.0.1:1235
 \end{lstlisting}
 
 \noindent\\
-The messages outputted by proxy showed that proxy concurrently forwards messages to both versions of the WorldPress application. However, since the latest version is not available the proxy forwards the respond recievd from version 3.9.1 to the client as shown below. Note the IP address demonstrated in the "X-Pingback" header referring to version 3.9.1 of WordPress application.    
+The log outputted by proxy showed that proxy concurrently forwards messages to both versions of the WorldPress application. However, since the latest version is not available, the proxy ignores the cluster running the latest version and forwards the respond received from version 3.9.1 to the client as shown below. Note the IP address demonstrated in the "X-Pingback" header of the response refers to version 3.9.1 of the WordPress application.    
 
 \noindent\\
-\textit{Proxy's Output}
+\textit{Proxy Log Output}
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:47:30.434366 proxy_context_cluster.go:115:     
    INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
@@ -1905,7 +1993,7 @@ Set-Cookie: dynsoftup=9e1cb1e4-2f71-11e4-b59e-600308a8245e;
 Date: Fri, 29 Aug 2014 11:47:30 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-<@\textcolor{magenta}{X-Pingback: http://192.168.50.30/xmlrpc.php}@>
+X-Pingback: http://192.168.50.30/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -1932,6 +2020,66 @@ Content-Type: text/html; charset=UTF-8
 
 \subsection{Handling Incorrect Behavior} 
 To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
+
+
+
+Lighttpd1
+is a popular open-source web-server used by
+several high-traffic websites such as Wikipedia and YouTube.
+Despite its popularity, crash bugs are still a common occurrence
+in Lighttpd, as evident from its bug tracking database.2
+Below we discuss one such bug, which our approach could
+successfully eliminate.
+In April 2009, a patch was applied3
+to Lighttpd’s code related
+to the HTTP ETag functionality. An ETag is a unique string
+assigned by a web server to a specific version of a web resource,
+which can be used to quickly determine if the resource has
+changed. The patch was a one-line change, which discarded
+the terminating zero when computing a hash representing the
+ETag. More exactly, line 47 in etag.c:
+for (h=0, i=0; i < etag->used; ++i) h = (h<<5)
+ˆ(h>>27)ˆ(etag->ptr[i]);
+was changed to:
+for (h=0, i=0; i < etag->used-1; ++i) h = (h<<5)
+ˆ(h>>27)ˆ(etag->ptr[i]);
+This correctly changed the
+
+This correctly changed the way ETags are computed, but
+unfortunately, it broke the support for compression, whose
+implementation depended on the previous computation. More
+precisely, Lighttpd’s support for HTTP compression uses
+caching to avoid re-compressing files which have not changed
+since the last access. To determine whether the cached file
+is still valid, Lighttpd internally uses ETags. Unfortunately,
+the code implementing HTTP compression did not consider
+the case when ETags are disabled. In this case, etags->used
+is 0, and when the line above is executed, etag->used-1
+underflows to a very large value, and the code crashes while
+accessing etag->ptr[i]. Interestingly enough, the original
+code was still buggy (it always returns zero as the hash value,
+and thus it would never re-compress the files), but it was not
+vulnerable to a crash.
+The segfault was diagnosed and reported in March 20104
+and
+fixed at the end of April 2010,5 more than one year after it was
+introduced. The bottom line is that for about one year, users
+affected by this buggy patch essentially had to decide between
+(1) incorporating the new features and bug fixes added to the
+code, but being vulnerable to this crash bug, and (2) giving up
+on these new features and bug fixes and using an old version
+of Lighttpd, which is not vulnerable to this bug.
+Our approach provides users with a third choice; when a
+new version arrives, instead of replacing the old version, we
+run both versions in parallel. In our example, consider that we
+are using MX to run a version of Lighttpd from March 2009.
+When the buggy April 2010 version is released, MX runs it in
+parallel with the old one. As the two versions execute:
+• As long as the two versions have the same external
+behaviour (e.g. they write the same values into the same
+files, or send the same data over the network), they are
+run side-by-side and MX ensures t
+
 \clearpage
 
 
