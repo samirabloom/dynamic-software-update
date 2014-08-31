@@ -11,6 +11,8 @@
 \usepackage{caption}
 \captionsetup[table]{skip=0pt}
 
+\usepackage{lipsum}
+
 
 % for adding space between paragraphs
 %\usepackage{parskip}
@@ -138,7 +140,7 @@
         
         \vspace{4.5 cm}
         \large
-        {\Large \textbf{Highly Reliable Upgrading of Software Containers}}\\
+        {\huge \textbf{Highly Reliable Upgrading of Software Containers}}\\
         \vspace{1.0 cm}
         {by}\\
         {Samira Rabbanian (sr1213)}
@@ -169,83 +171,104 @@ This is where the abstract will be
 
 \chapter{Introduction}
 \section{Motivation}
-Reliable software is important in many sectors such as E-commerce, healthcare, banking, air traffic control and nuclear control.
-
-In safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In E-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
-
-All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive. In addition, no existing system or technique is considered robust enough to be used widely for fully automated continuous delivery of upgrades into production.
+Software development is a complex process where errors can easily cause instability, unreliability and incorrect behavior. The most significant problems are; the risks inherent with software upgrade, and the cost of software development and support. 
  
-{\color{red}This report summarizes different approaches and techniques used for the past few decades to overcome software reliability. In addition, a simple lightweight system is proposed to support reliable dynamic software update via a fully automated process suitable for continuous delivery of applications written in any programming language.}\\  
-\colorbox{yellow}{This paragraph will be updated when the report is finished}
+\setlength{\leftskip}{0.5cm}
+\setlength{\rightskip}{0.5cm}
+\noindent \textbf{Reliable Software Upgrade} - in safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In E-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
 
+All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities. Recent studies have demonstrated that 14.8\% to 25\% of software upgrades are incorrect and have made impacts on end-users \cite{bugs}. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive.\medskip 
+
+\noindent \textbf{Reducing Cost of Software Development and Support} - studies have shown that fixing software errors and bugs after delivery is often 100 times more expensive than finding and fixing them during the development process. Moreover, fast feedback is critical in reducing the cost of bugs in all phases (\cite{Boehm_a}, \cite{Boehm_b}). Figure xxxxxxxxx shows that as the feature development lifecycle progresses the cost of bugs significantly increases. 
+
+Thus, there has been a continuous introduction of new techniques to reduce the feedback cycle.  Initially code review, pair programming and continuous integration were adopted.  More recently these approaches have been further developed into new techniques such as continuous delivery and immutable infrastructures.  However, these more recent techniques are challenging to adopt.  In a typical software development team testing is performed both by developers and software testers on a testing environment that mirrors production.  For continuous delivery and immutable infrastructures to be adopted this testing environment should be updated with the latest software changes on a regular cycle, however, each update takes a long time and prevents any testing on the testing environment.  The frequency of update is therefor in conflict with the availability of the testing environment.  Also the extent to which the infrastructure is immutable is also in conflict as more immutable an infrastructures is the longer the deployment typically takes as more activities are performed during the deployment. 
+
+\setlength{\leftskip}{0pt}
+\setlength{\rightskip}{0pt}
+\noindent 
+To date, there is no existing system considered robust enough to be used widely for fully automated continuous delivery and reliable software upgrades from development into production.
+ 
 \section{Objectives}
-xxx
+The main objective of this project was to implement a proxy that:
 
+\begin{list}{-}{}
+\itemsep0em
+\item Support reliable dynamic software update
+
+\item Support seamless rollback to the old version of the application when the upgraded version behaves incorrectly  
+\end{list}
+ 
 \section{Contributions}
+This report presents a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to failure. The main features provided are:
+\begin{list}{-}{}
+\itemsep0em
+\item Seamless dynamic software upgrade using four different upgrade mechanisms:
+	\begin{list}{-}{}
+		\itemsep0em
+		\item{Instant upgrade} - immediate upgrade to the new version of the application 
+		\item{Session upgrade} - upgrading new sessions to the updated version  
+		\item{Gradual upgrade} - gradual upgrade of new sessions to the updated version
+		\item{Concurrent upgrade} - the old and the new versions of the application concurrently process requests  
+	\end{list}
+\item Automatic rollback when an upgraded version does not behave correctly. 
+\item Two mechanisms to manage software versions:
+	\begin{list}{-}{}
+		\itemsep0em
+		\item Distinct TCP sockets for each version of an application.  The proxy is configured to communicate with each application version on a separate IP and port combination.
+		\item Distinct Docker images for each version of an application.  The proxy manages a Docker container based on each image and therefore isolating each application version in a separate userspace sand-boxed process providing resource isolation while sharing a single operating system kernel. 
+	\end{list}
+\item Two mechanisms configure the proxy:
+	\begin{list}{-}{}
+		\itemsep0em
+		\item Configuration file in JSON format which is parsed when the proxy loads. All features of the TCP based server configuration and Docker image based configuration are supported.
+		\item A REST API in JSON / HTTP format with can be used to query, add or remove server and cluster configurations.  All features of the TCP based server configuration and Docker image based configuration are supported.
+	\end{list}
+\item Extensive support for managing Docker containers and images, including support for all features of Docker such as:
+	\begin{list}{-}{}
+		\itemsep0em
+		\item Volume (Directory) Binding
+		\item Port & IP Binding
+		\item Container Linking
+		\item Process security
+	\end{list}
+\end{list}
+
+
+	
+   
+The most important 
 
 
 
-Lighttpd1
-is a popular open-source web-server used by
-several high-traffic websites such as Wikipedia and YouTube.
-Despite its popularity, crash bugs are still a common occurrence
-in Lighttpd, as evident from its bug tracking database.2
-Below we discuss one such bug, which our approach could
-successfully eliminate.
-In April 2009, a patch was applied3
-to Lighttpd’s code related
-to the HTTP ETag functionality. An ETag is a unique string
-assigned by a web server to a specific version of a web resource,
-which can be used to quickly determine if the resource has
-changed. The patch was a one-line change, which discarded
-the terminating zero when computing a hash representing the
-ETag. More exactly, line 47 in etag.c:
-for (h=0, i=0; i < etag->used; ++i) h = (h<<5)
-ˆ(h>>27)ˆ(etag->ptr[i]);
-was changed to:
-for (h=0, i=0; i < etag->used-1; ++i) h = (h<<5)
-ˆ(h>>27)ˆ(etag->ptr[i]);
-This correctly changed the
 
-This correctly changed the way ETags are computed, but
-unfortunately, it broke the support for compression, whose
-implementation depended on the previous computation. More
-precisely, Lighttpd’s support for HTTP compression uses
-caching to avoid re-compressing files which have not changed
-since the last access. To determine whether the cached file
-is still valid, Lighttpd internally uses ETags. Unfortunately,
-the code implementing HTTP compression did not consider
-the case when ETags are disabled. In this case, etags->used
-is 0, and when the line above is executed, etag->used-1
-underflows to a very large value, and the code crashes while
-accessing etag->ptr[i]. Interestingly enough, the original
-code was still buggy (it always returns zero as the hash value,
-and thus it would never re-compress the files), but it was not
-vulnerable to a crash.
-The segfault was diagnosed and reported in March 20104
-and
-fixed at the end of April 2010,5 more than one year after it was
-introduced. The bottom line is that for about one year, users
-affected by this buggy patch essentially had to decide between
-(1) incorporating the new features and bug fixes added to the
-code, but being vulnerable to this crash bug, and (2) giving up
-on these new features and bug fixes and using an old version
-of Lighttpd, which is not vulnerable to this bug.
-Our approach provides users with a third choice; when a
-new version arrives, instead of replacing the old version, we
-run both versions in parallel. In our example, consider that we
-are using MX to run a version of Lighttpd from March 2009.
-When the buggy April 2010 version is released, MX runs it in
-parallel with the old one. As the two versions execute:
-• As long as the two versions have the same external
-behaviour (e.g. they write the same values into the same
-files, or send the same data over the network), they are
-run side-by-side and MX ensures t
-xxx
+
+
+
+
+
+
+
 
 \section{Outline of the Report}
-xx
+\textbf{Chapter 2} - 
 
+\noindent \\
+\textbf{Chapter 3} -
+
+\noindent \\
+\textbf{Chapter 4} -
+
+\noindent \\
+\textbf{Chapter 5} -
+
+\noindent \\
+\textbf{Chapter 6} -
+
+\noindent \\
+\textbf{Chapter 7} -
+
+\noindent \\
+\textbf{Chapter 8} -
 
 
 \chapter{Related Work}
@@ -322,6 +345,13 @@ Configuration as code is a technique used to ensure all environment configuratio
 Continuous delivery is a software development approach that ensures application updates can be deployed to production at any point throughout the development life cycle. To support continuous delivery a pipeline is typically used to promote application updates automatically through several stages from initial development through to production \cite{Continuous Delivery}. Continuous delivery supports reliable software update by ensuring that each update has been applied to multiple stages prior to reaching production. 
 
 Furthermore, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
+
+
+\subsection{Immutable Infrastructure}
+
+xxxxxxx
+
+
 
 \section{Dynamic Software Update Systems} \label{DSU}
 Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. In the past decades several systems have been developed to support highly reliable dynamic software upgrades. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
@@ -2716,6 +2746,18 @@ Content-Type: text/plain; charset=utf-8
 \bibitem{broker} Aneesh Raj, P. Sreenivasa Kumar, {\em "Branch Sequencing Based XML Message Broker Architecture,"}, IEEE 23rd International Conference on Data Engineering, 2007.  
 
 \bibitem{hypertext} A File Structure for the Complex, the Changing, and the Indeterminate. 20th National Conference, New York, Association for Computing Machinery, 1965
+
+\bibitem{bugs}Yin Z, Yuan D, Zhou Y, Pasupathy S, and Bairavasundaram L, \textit{"How
+do fixes become bugs?"}, ESEC/FSE, 2011.
+
+\bibitem{Boehm_a}Boehm, B. W, \textit{Improving software productivity}, IEEE Computer, 1987a.
+
+\bibitem{Boehm_b} Boehm, B. W, Victor R. B, \textit{Software Defect Reduction Top 10 List}, Computer, v.34, 2001.
+
+
+
 \end{thebibliography} 
+
+
 \end{document}
 
