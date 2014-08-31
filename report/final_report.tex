@@ -4,6 +4,12 @@
 % for using customised colours
 \usepackage[usenames,dvipsnames]{color}
 
+% for using table
+\usepackage[english]{babel}
+
+% for reducing the space between caption and table 
+\usepackage{caption}
+\captionsetup[table]{skip=0pt}
 
 
 % for adding space between paragraphs
@@ -989,15 +995,15 @@ The aim of these tests is to check that all components of the dynamic software u
 
 \clearpage
 
-\chapter{Evaluation}
-This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy while qualitative analysis focused on the functional correctness and robustness of the proxy. 
+\chapter{xxxxx   xxxxx    xxx  Evaluation add one sentence for recovery speed test}
+This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy and while qualitative analysis focused on the functional correctness and robustness of the proxy. 
 
 Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populate web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
 
-\section{Quantitative Analysis xxxxxxxxxxx}\label{Quantitative_Analysis}
+\section{xxx xxxxx   xxxx Quantitative Analysis add one sentence for recovery speed test}\label{Quantitative_Analysis}
 This section summarizes the load and saturation tests performed on the dynamic software update proxy. The aim of these tests were to evaluate the performance and stability of the proxy. Saturation tests focused on stability of the proxy by sending over 400 simultaneous HTTP requests per second to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses.
 
-\subsection{Performance Load and Saturation Tests}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
+\subsection{xxxx Load Performance and Saturation Tests}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
 
 \noindent\\
 \textbf{xxx do i need to also show synatc for running mysql xxxx}
@@ -1039,24 +1045,32 @@ docker run --name some-wordpress --link some-mysql:mysql
   \label{percentage-couchbase}
 \end{figure} 
 
-
-
-
-
-
-
-
-
-
 \noindent
 \underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
 
+
+\subsection{xxx xxxx Dynamic Upgrade and Recovery Speed}\label{Recovery}
 \noindent
 \underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
 
 \noindent
 \underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. 
- 
+
+\begin{table}
+\caption {Proxy Latency for dynamic upgrade and error recovery}
+\begin{center}
+    \begin{tabular}{ | l | l | l | p{5cm} |}
+    \hline
+   \textbf{Upgrade Scenarios} & \textbf{Latency (ms)} & \textbf{+\textbackslash }\textbf{- SD (ms)} \\ \hline
+    INSATNT Upgrade & 44 &1.36 \\ \hline
+    INSTANT Upgrade Failure & 45 & 0.75\\ \hline
+    CONCURRENT Upgrade & 44.00 & 0.50\\ \hline
+    CONCURRENT Upgrade Failure & 44.00 & 0.49\\
+    \hline
+    \end{tabular}
+\end{center}
+\end{table}
+
 \section{Qualitative Analysis}
 Qualitative analysis were performed on the dynamic software update proxy (Chapter \ref{Implementation})  using real applications. These evaluations insured that different features of the proxy such as load balancing and dynamic software upgrade functionality behave correctly and the proxy can survive crash bugs in real examples. The following qualitative analysis were performed: 
 

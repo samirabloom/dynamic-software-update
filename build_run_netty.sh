@@ -33,7 +33,7 @@ echo "Building project"
 go build -o dynsoftup ./src/main_run.go
 
 echo "Running proxy with logLevel ${logLevel}"
-./dynsoftup -logLevel="${logLevel}" -configFile="config/config_script.json" &
+proxy -logLevel="${logLevel}" -configFile="config/config_script.json" &
 
 trap "pkill dynsoftup; kill $testServer1034Pid $testServer1035Pid $testServer1036Pid" exit INT TERM
 

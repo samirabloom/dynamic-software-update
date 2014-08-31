@@ -71,6 +71,7 @@ system_test_config.json
 
 # latex #
 #########
+*.lof
 *.aux
 *.log
 *.out
