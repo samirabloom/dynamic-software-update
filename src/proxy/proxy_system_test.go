@@ -5,7 +5,97 @@ import (
 	networkutil "util/test/network"
 	assertion "util/test/assertion"
 	"strconv"
+	"io/ioutil"
+	"util/test/vagrant"
+	"github.com/franela/goreq"
+	"time"
 )
+
+func WriteConfigSystemTestConfigFile(proxyPort int, configPort int, uuid string, serverPorts []int, version string) string {
+	fileName := "/tmp/system_test_config.json"
+	data := "{\"proxy\":{\"hostname\":\"localhost\",\"port\":" + strconv.Itoa(proxyPort) + "},\"configService\":{\"port\":" + strconv.Itoa(configPort) + "},\"cluster\":{\"servers\":["
+	for index, serverPort := range serverPorts {
+		if index > 0 {
+			data += ","
+		}
+		data += "{\"hostname\":\"127.0.0.1\",\"port\":"+strconv.Itoa(serverPort)+"}"
+	}
+	data += "]"
+	if len(uuid) > 0 {
+		data += ",\"uuid\":\""+uuid+"\""
+	}
+	if len(version) > 0 {
+		data += ",\"version\":\""+version+"\""
+	}
+	data += "}}"
+
+	ioutil.WriteFile(fileName, []byte(data), 0644)
+	return fileName
+}
+
+func WriteConfigSystemTestDockerConfigFile(proxyPort int, configPort int, dockerHost string, dockerPort int, uuid string, serverPorts []int, version string) string {
+	fileName := "/tmp/system_test_docker_config.json"
+	data := "{\n" +
+			"    \"proxy\": {\n" +
+			"        \"port\": " + strconv.Itoa(proxyPort) + "\n" +
+			"    },\n" +
+			"    \"configService\": {\n" +
+			"        \"port\": " + strconv.Itoa(configPort) + "\n" +
+			"    },\n" +
+			"    \"dockerHost\": {\n" +
+			"        \"ip\": \"" + dockerHost + "\",\n" +
+			"        \"port\": " + strconv.Itoa(dockerPort) + ",\n" +
+			"        \"log\": false\n" +
+			"    },\n" +
+			"    \"cluster\": {\n" +
+			"        \"containers\": [\n";
+	for index, serverPort := range serverPorts {
+		if index > 0 {
+			data += ","
+		}
+		data += "         {\n" +
+				"             \"image\": \"mysql\",\n" +
+				"             \"tag\": \"latest\",\n" +
+				"             \"alwaysPull\": false,\n" +
+				"             \"name\": \"some-mysql-test\",\n" +
+				"             \"environment\": [\n" +
+				"                 \"MYSQL_ROOT_PASSWORD=mysecretpassword\"\n" +
+				"             ],\n" +
+				"             \"volumes\": [\n" +
+				"                 \"/var/lib/mysql:/var/lib/mysql\"\n" +
+				"             ]\n" +
+				"         },\n" +
+				"         {\n" +
+				"             \"image\": \"wordpress\",\n" +
+				"             \"tag\": \"3.9.2\",\n" +
+				"             \"alwaysPull\": false,\n" +
+				"             \"portToProxy\": "+strconv.Itoa(serverPort)+",\n" +
+				"             \"name\": \"some-wordpress-test\",\n" +
+				"             \"links\": [\n" +
+				"                 \"some-mysql-test:mysql\"\n" +
+				"             ],\n" +
+				"             \"portBindings\": {\n" +
+				"                 \"80/tcp\": [\n" +
+				"                     {\n" +
+				"                         \"HostIp\": \"0.0.0.0\",\n" +
+				"                         \"HostPort\": \""+strconv.Itoa(serverPort)+"\"\n" +
+				"                     }\n" +
+				"                 ]\n" +
+				"             }\n" +
+				"         }\n";
+	}
+	data += "        ]\n";
+	if len(uuid) > 0 {
+		data += ",   \"uuid\":\""+uuid+"\""
+	}
+	if len(version) > 0 {
+		data += ",   \"version\":\""+version+"\""
+	}
+	data += "    }\n" +
+			"}\n"
+	ioutil.WriteFile(fileName, []byte(data), 0644)
+	return fileName
+}
 
 func makeProxyRequest(proxyPort int, path string, sessionUuidCookie string, gradualTransitionUuidCookie string) string {
 	var (
@@ -31,7 +121,7 @@ func Test_Proxy_System_Test_Load_Balancing_With_Initial_Config_File(testCtx *tes
 	)
 
 	// given
-	NewProxy(writeConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// then - should load balance requests
@@ -53,7 +143,7 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Session_Cluster_Transition(
 	)
 
 	// given
-	NewProxy(writeConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new cluster
@@ -109,7 +199,7 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Instant_Cluster_Transition(
 	)
 
 	// given
-	NewProxy(writeConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// then - should load balance requests
@@ -159,7 +249,7 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 	)
 
 	// given
-	NewProxy(writeConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new cluster
@@ -221,7 +311,7 @@ func Test_Proxy_System_Test_Should_Maintain_Version_Order_With_Multiple_Clusters
 	)
 
 	// given
-	NewProxy(writeConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new cluster - version less then initial cluster i.e. version 0.9
@@ -256,7 +346,7 @@ func Test_Proxy_System_Test_Should_Route_Concurrently(testCtx *testing.T) {
 	)
 
 	// given
-	NewProxy(writeConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new concurrent cluster
@@ -274,6 +364,62 @@ func Test_Proxy_System_Test_Should_Route_Concurrently(testCtx *testing.T) {
 	assertion.AssertDeepEqual("Previous Cluster When Concurrent Clusters And Latest Crashes - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[0])+"\n", makeProxyRequest(proxyPort, "/crash", "", ""))
 	assertion.AssertDeepEqual("Previous Cluster When Concurrent Clusters And Latest Crashes - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[1])+"\n", makeProxyRequest(proxyPort, "/crash", "", ""))
 
+}
+
+func Test_Proxy_System_Test_Should_Fallback_On_Connection_Error(testCtx *testing.T) {
+	var (
+		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
+		configPort int              = networkutil.FindFreeLocalSocket(testCtx).Port
+		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
+		serverPortsClusterTwo []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
+		serverPortsCluster3re []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port, networkutil.FindFreeLocalSocket(testCtx).Port}
+		configServiceUrl            = "http://127.0.0.1:" + strconv.Itoa(configPort) + "/configuration/cluster"
+	)
+
+	// given
+	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
+	networkutil.Test_server(serverPortsClusterOne, false)
+
+	// given - new instant cluster (that will fail immediately)
+	_, putStatus := networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsClusterTwo[1])+"}], \"upgradeTransition\":{\"mode\":\"INSTANT\"}, \"version\": \"1.1\"}}")
+
+	// then - should update cluster configuration
+	assertion.AssertDeepEqual("Update INSTANT Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
+
+	// given - new session cluster (that will fail immediately)
+	_, putStatus = networkutil.PUTRequest(configServiceUrl, "{\"cluster\": {\"servers\": [{\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[0])+"}, {\"hostname\":\"127.0.0.1\", \"port\":"+strconv.Itoa(serverPortsCluster3re[1])+"}], \"upgradeTransition\":{\"mode\":\"SESSION\", \"sessionTimeout\":1}, \"version\": \"1.2\"}}")
+
+	// then - should update cluster configuration
+	assertion.AssertDeepEqual("Update SESSION Cluster - Correct PUT Status", testCtx, "202 Accepted", putStatus)
+
+	// then - should fallback to previous cluster
+	assertion.AssertDeepEqual("Latest Cluster When Concurrent Clusters - 1st response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[0])+"\n", makeProxyRequest(proxyPort, "", "", ""))
+	assertion.AssertDeepEqual("Latest Cluster When Concurrent Clusters - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[1])+"\n", makeProxyRequest(proxyPort, "", "", ""))
+}
+
+func Test_Proxy_System_Test_Should_Start_Up_With_Docker_Containers(testCtx *testing.T) {
+	var (
+		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
+		configPort int              = networkutil.FindFreeLocalSocket(testCtx).Port
+		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port}
+	)
+
+	// given
+	vagrant.CreateVagrantDockerBox()
+	NewProxy(WriteConfigSystemTestDockerConfigFile(proxyPort, configPort, "192.168.50.5", 2375, "", serverPortsClusterOne, "1.0")).Start(false)
+	time.Sleep(1 * time.Second)
+
+	// then - should proxy requests to wordpress
+	res, err := goreq.Request{
+		Method: "GET",
+		Uri: "http://127.0.0.1:" + strconv.Itoa(proxyPort) + "/",
+	}.Do()
+
+	if res == nil {
+		testCtx.Fatalf("Response from WordPress cluster is nil - err: %s\n", err)
+	}
+	assertion.AssertDeepEqual("Wordpress Header Returned", testCtx, []string{"Apache/2.2.22 (Debian)"}, res.Header["Server"])
+	assertion.AssertDeepEqual("Wordpress Header Returned", testCtx, []string{"PHP/5.4.4-14+deb7u12"}, res.Header["X-Powered-By"])
 }
 
 

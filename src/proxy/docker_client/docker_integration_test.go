@@ -7,9 +7,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"time"
 	"code.google.com/p/go-uuid/uuid"
-	"fmt"
-	"os/exec"
-	"os"
+	"util/test/vagrant"
 )
 
 func createContainer(containerName string) *docker.Container {
@@ -30,19 +28,6 @@ func createContainer(containerName string) *docker.Container {
 		Volumes: nil,
 		VolumesRW: nil,
 		HostConfig: nil,
-	}
-}
-
-func createVagrantDockerBox() {
-	vagrantCommand := exec.Command("/usr/bin/vagrant", "up", "docker")
-	fmt.Println("===================================")
-	fmt.Println("Launching Vagrant Docker Ubuntu Box")
-	fmt.Println("===================================")
-	vagrantCommand.Stderr = os.Stderr
-	vagrantCommand.Stdout = os.Stdout
-	err := vagrantCommand.Run()
-	if err != nil {
-		fmt.Printf("error occured %s\n", err)
 	}
 }
 
@@ -67,7 +52,7 @@ func Test_Docker_Client_Should_Indicate_Docker_Not_Available(testCtx *testing.T)
 
 func Test_Docker_Client_Should_Pull_Container(testCtx *testing.T) {
 	// given
-	createVagrantDockerBox()
+	vagrant.CreateVagrantDockerBox()
 	var (
 		endpoint   = "http://192.168.50.5:2375"
 		repository = "samirabloom/docker-go"
@@ -95,7 +80,7 @@ func Test_Docker_Client_Should_Pull_Container(testCtx *testing.T) {
 
 func Test_Docker_Client_Should_Create_Container(testCtx *testing.T) {
 	// given
-	createVagrantDockerBox()
+	vagrant.CreateVagrantDockerBox()
 	var (
 		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"
@@ -129,7 +114,7 @@ func Test_Docker_Client_Should_Create_Container(testCtx *testing.T) {
 
 func Test_Docker_Client_Should_Inspect_Container(testCtx *testing.T) {
 	// given
-	createVagrantDockerBox()
+	vagrant.CreateVagrantDockerBox()
 	var (
 		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"
@@ -168,7 +153,7 @@ func Test_Docker_Client_Should_Inspect_Container(testCtx *testing.T) {
 
 func Test_Docker_Client_Should_Start_Container(testCtx *testing.T) {
 	// given
-	createVagrantDockerBox()
+	vagrant.CreateVagrantDockerBox()
 	var (
 		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"
@@ -207,7 +192,7 @@ func Test_Docker_Client_Should_Start_Container(testCtx *testing.T) {
 
 func Test_Docker_Client_Should_Stop_Container(testCtx *testing.T) {
 	// given
-	createVagrantDockerBox()
+	vagrant.CreateVagrantDockerBox()
 	var (
 		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"
@@ -252,7 +237,7 @@ func Test_Docker_Client_Should_Stop_Container(testCtx *testing.T) {
 
 func Test_Docker_Client_Should_Remove_Container(testCtx *testing.T) {
 	// given
-	createVagrantDockerBox()
+	vagrant.CreateVagrantDockerBox()
 	var (
 		endpoint      = "http://192.168.50.5:2375"
 		imageName     = "samirabloom/docker-go"

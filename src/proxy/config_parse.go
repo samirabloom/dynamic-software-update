@@ -10,6 +10,7 @@ import (
 	"proxy/contexts"
 	"proxy/log"
 	"proxy/docker_client"
+	"bytes"
 	"io"
 )
 
@@ -33,6 +34,8 @@ func readConfigFile(configFile string) ([]byte, error) {
 }
 
 func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseConfigService func(map[string]interface{}) (int, error), parseDockerHost func(map[string]interface{}) (*DockerHost, error), parseClusters func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error), outputStream io.Writer) (proxy *Proxy, err error) {
+	var devNull bytes.Buffer
+
 	// parse json object
 	var jsonConfig = make(map[string]interface{})
 	err = json.Unmarshal(jsonData, &jsonConfig)
@@ -45,6 +48,9 @@ func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*
 			if parseConfigServiceErr == nil {
 				dockerHost, parseDockerHostErr := parseDockerHost(jsonConfig)
 				if parseDockerHostErr == nil {
+					if dockerHost != nil && !dockerHost.Log {
+						outputStream = &devNull
+					}
 					clusters, clusterParseErr := parseClusters(jsonConfig, dockerHost, outputStream)
 					if clusterParseErr == nil {
 						// create load balancer
@@ -120,6 +126,7 @@ func parseDockerHost(jsonConfig map[string]interface{}) (*DockerHost, error) {
 		err             error
 		dockerHostIp    string
 		dockerHostPort  int
+		dockerHostLog   bool
 		dockerHost      *DockerHost
 	)
 
@@ -131,13 +138,16 @@ func parseDockerHost(jsonConfig map[string]interface{}) (*DockerHost, error) {
 			errorMessage := "Invalid docker host configuration - \"ip\" is missing from \"dockerHost\" config"
 			err = errors.New(errorMessage)
 		}
+		if dockerHostConfig["log"] != nil {
+			dockerHostLog = dockerHostConfig["log"].(bool)
+		}
 		if err == nil {
 			if dockerHostConfig["port"] != nil {
 				dockerHostPort = int(dockerHostConfig["port"].(float64))
 			} else {
 				dockerHostPort = 2375
 			}
-			dockerHost = &DockerHost{Ip: dockerHostIp, Port: dockerHostPort}
+			dockerHost = &DockerHost{Ip: dockerHostIp, Port: dockerHostPort, Log: dockerHostLog}
 		}
 	}
 	return dockerHost, err
@@ -362,8 +372,6 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 								portToProxy = fmt.Sprintf("%v", container["portToProxy"])
 							}
 							if len(portToProxy) > 0 {
-								fmt.Printf("portToProxy: %s\n", portToProxy)
-								fmt.Printf("portToProxy: %s - %d\n", portToProxy, len(portToProxy))
 								if dockerConfig.HasPortExposed(portToProxy) {
 
 									connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%s", dockerHost.Ip, portToProxy))

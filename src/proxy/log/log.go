@@ -38,4 +38,10 @@ var LoggerFactory = func() func() *logging.Logger {
 	}
 }()
 
+func SetLogLevel(level string) {
+	var logLevel = new(string)
+	*logLevel = level
+	LogLevel = logLevel
+}
+
 // ==== LOGGER - END

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"log"
 	"io"
+	"fmt"
 )
 
 type Header struct {
@@ -44,16 +45,25 @@ func MakeRequest(method, url string, request io.Reader, headers ...*Header) (bod
 	}
 	resp, err := client.Do(req)
 	defer func() {
+		fmt.Printf("5")
 		if resp.Body != nil {
+			fmt.Printf("6")
 			resp.Body.Close()
 		}
 	}();
 
+	fmt.Printf("0")
 	if err != nil {
+		fmt.Printf("1")
 		log.Fatalln(err)
+		fmt.Printf("2")
 		return "", resp.Status
 	} else {
+		fmt.Printf("3")
 		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("4")
+		resp.Body.Close()
+		fmt.Printf("5")
 		return string(body), resp.Status
 	}
 }

@@ -36,6 +36,7 @@ type Proxy struct {
 type DockerHost struct {
 	Ip   string
 	Port int
+	Log  bool
 }
 
 func NewProxy(configFile string) *Proxy {
