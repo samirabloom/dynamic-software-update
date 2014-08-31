@@ -13,7 +13,7 @@
 # 	run:          the proxy with INFO log level
 
 GOBIN := /usr/local/bin/
-GOPATH := $(shell pwd):$(GOPATH)
+GOPATH := $(GOPATH):$(shell pwd)
 PATH := $(PATH):$(GOPATH)/bin
 
 FLAGS := GOPATH=$(GOPATH)
@@ -25,7 +25,7 @@ clean:
 	$(FLAGS) go clean -i -x ./.../$*
 	rm -rf $(GOBIN)proxy proxy pkg
 
-test: clean
+test: clean dependencies
 	vagrant up docker
 	$(FLAGS) go test -v ./.../$*
 	

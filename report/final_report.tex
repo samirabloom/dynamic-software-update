@@ -177,7 +177,13 @@ Software development is a complex process where errors can easily cause instabil
 \setlength{\rightskip}{0.5cm}
 \noindent \textbf{Reliable Software Upgrade} - in safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In E-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
 
-All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities. Recent studies have demonstrated that 14.8\% to 25\% of software upgrades are incorrect and have made impacts on end-users \cite{bugs}. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive.\medskip 
+All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities.   Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP)\footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.  Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities, as stated by Fred Brooks in The Mythical Man-Month. 
+
+\noindent\textit{ "The fundamental problem with program maintenance is that fixing a defect has a substantial (20-50\%) chance of introducing another. So the whole process is two steps forward and one step back"}  
+
+\hfill \textbf{Fred Brooks, Turing Award Winner (1999) -  The Mythical Man-Month}\bigskip
+
+Recent studies have demonstrated that 14.8\% to 25\% of software upgrades are incorrect and have made impacts on end-users \cite{bugs}. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive.\medskip 
 
 \noindent \textbf{Reducing Cost of Software Development and Support} - studies have shown that fixing software errors and bugs after delivery is often 100 times more expensive than finding and fixing them during the development process. Moreover, fast feedback is critical in reducing the cost of bugs in all phases (\cite{Boehm_a}, \cite{Boehm_b}). Figure xxxxxxxxx shows that as the feature development lifecycle progresses the cost of bugs significantly increases. 
 
@@ -199,55 +205,29 @@ The main objective of this project was to implement a proxy that:
 \end{list}
  
 \section{Contributions}
-This report presents a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to failure. The main features provided are:
+This report presents a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to application failure. The main features provided are:
 \begin{list}{-}{}
 \itemsep0em
 \item Seamless dynamic software upgrade using four different upgrade mechanisms:
-	\begin{list}{-}{}
-		\itemsep0em
-		\item{Instant upgrade} - immediate upgrade to the new version of the application 
-		\item{Session upgrade} - upgrading new sessions to the updated version  
-		\item{Gradual upgrade} - gradual upgrade of new sessions to the updated version
-		\item{Concurrent upgrade} - the old and the new versions of the application concurrently process requests  
-	\end{list}
+	\begin{itemize}
+		\item{Instant upgrade} - immediate upgrade to the latest version of an application 
+		\item{Session upgrade} - upgrading only new sessions to the latest version of an application 
+		\item{Gradual upgrade} - gradual upgrade of clients to the latest version of an application
+		\item{Concurrent upgrade} - routing requests to multiple versions of an application simultaneously and returning the response from the latest version of the application that is behaving correctly 
+	\end{itemize}
 \item Automatic rollback when an upgraded version does not behave correctly. 
 \item Two mechanisms to manage software versions:
-	\begin{list}{-}{}
-		\itemsep0em
+	\begin{itemize}
 		\item Distinct TCP sockets for each version of an application.  The proxy is configured to communicate with each application version on a separate IP and port combination.
-		\item Distinct Docker images for each version of an application.  The proxy manages a Docker container based on each image and therefore isolating each application version in a separate userspace sand-boxed process providing resource isolation while sharing a single operating system kernel. 
-	\end{list}
-\item Two mechanisms configure the proxy:
-	\begin{list}{-}{}
-		\itemsep0em
-		\item Configuration file in JSON format which is parsed when the proxy loads. All features of the TCP based server configuration and Docker image based configuration are supported.
-		\item A REST API in JSON / HTTP format with can be used to query, add or remove server and cluster configurations.  All features of the TCP based server configuration and Docker image based configuration are supported.
-	\end{list}
-\item Extensive support for managing Docker containers and images, including support for all features of Docker such as:
-	\begin{list}{-}{}
-		\itemsep0em
-		\item Volume (Directory) Binding
-		\item Port & IP Binding
-		\item Container Linking
-		\item Process security
-	\end{list}
+		\item Distinct Docker images for each version of an application.  The proxy manages a Docker container based on each application version using a different image or image tag.  Each application version is therefore isolated in a separate user space sand-boxed process providing resource isolation while sharing a single operating system kernel. 
+	\end{itemize}
+\item Two mechanisms to configure the proxy:
+	\begin{itemize}
+		\item File base API in JSON format which is parsed when the proxy loads. All features of the TCP based application version configuration and Docker image based configuration are supported.
+		\item A REST API in JSON / HTTP format which can be used to query, add or remove application versions.  All features of the TCP based application version configuration and Docker image based configuration are supported.
+	\end{itemize}
+\item Extensive support for starting, stopping and updating Docker containers and images, including support for all Docker container and image features.	
 \end{list}
-
-
-	
-   
-The most important 
-
-
-
-
-
-
-
-
-
-
-
 
 \section{Outline of the Report}
 \textbf{Chapter 2} - 
@@ -285,21 +265,13 @@ Software reliability is compromised of the following main activities:
 
 \noindent
 The Institute of Electrical and Electronics Engineers (IEEE) defines reliability as "the ability of a system or component to perform its required functions under stated conditions for a specified period of time". 
-This section of the report will describe different approaches and technologies used to achieve and maintain software reliability, specifically to support the activities mentioned above. 
+This section of the report describes different approaches and technologies used to achieve and maintain software reliability, specifically to support the activities mentioned above. 
 
 \section{Software High Availability }\label{subsec:rules}
 System availability is the percentage of time the system is available to users. A highly available application is fault tolerant and reliable. A reliable system ensures that failure of a single component in the system does not cause failure of the entire application. In a reliable system data updates are not lost and the most recent data is available within acceptable tolerances. 
 
 
-\section{Software Update} 
-Once faults, such as bugs and security vulnerabilities, have been detected software must be updated to remove these faults. Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP)\footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.
-
-Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, updating or patching software is not risk free as stated by Fred Brooks in The Mythical Man-Month.\bigskip
-
-\noindent\textit{ "The fundamental problem with program maintenance is that fixing a defect has a substantial (20-50\%) chance of introducing another. So the whole process is two steps forward and one step back"}  
-
-\hfill \textbf{Fred Brooks, Turing Award Winner (1999) -  The Mythical Man-Month}\bigskip
-
+\subsection*{Software Update} 
 Software update typically requires restarting of the system that is to be updated. This can happen in two ways either the system is stopped, the update is applied and the system is restarted. Alternatively the update is applied while the system is still running and then the application is restarted. In the second scenario the system's binary code on persistent storage (\textit{e.g.} disk) is updated while the system is running in memory before it is restarted and the new binary code is loaded into memory \cite{Java}. 
 
 In both cases performing the code update requires the system to be restarted resulting in a period of unavailability. Many applications are performing critical life saving functions and cannot be interrupted, for example, nuclear control systems, air-traffic controllers or hospital life-support software. In addition, other applications have an extremely high downtime cost such as E-commerce, telecommunications and banking systems \cite{fly}. It is therefore extremely important to support seamless upgrade where the system stays fully available during the upgrade. 
@@ -378,11 +350,11 @@ In 1999 Cook \textit{et al.} introduced a multi-version framework called Hercule
 More recently, Hosek \textit{et al.} proposed a novel framework called Mx, which takes advantage of the idle resources made available by multi-core platforms, and allows applications to survive crash errors introduced by incorrect software updates (\cite{Cadar1}, \cite{Cadar2}). Similar to Hercules, Mx achieves reliability by running the old and new version of an application concurrently. The fundamental difference between the two frameworks is that Hercules requires the programmer to define the functionality of each component version, whilst Mx targets crash bugs and is fully automated. Additionally, in the latter system all versions are live at all times and when Mx detects that one of the versions is not behaving correctly or has crashed, the correctly behaving version is used to handle all software requests. This allows appropriate actions to be taken at a convenient moment; at this point, the incorrectly behaving version can be fixed or restarted. 
 \clearpage
 
-\chapter{Background}
+\chapter{Technical Background}
 This chapter explains and justifies the technologies that will be used in the implementation of the dynamic software update system proposed in chapter \ref{Implementation}.
  
 \section{Efficient Cluster Management} 
-As described in section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
+As described in Section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
 
 \subsection{Virtualization} 
 Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system\footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
@@ -390,7 +362,7 @@ Virtualization is the separation of a resource or service from the underlying ph
 The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.
 
 \subsubsection*{Hypervisor Virtualization}
-Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware\footnote{\url{http://www.vmware.com/}} or VirtualBox\footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor} ).\bigskip
+Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware\footnote{\url{http://www.vmware.com/}} or VirtualBox\footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor}).\bigskip
 
 
 %\vspace{-8pt}
@@ -460,24 +432,22 @@ LXC provides user environments whose resources can be tightly controlled, withou
 \noindent
 Docker is an open source application (or framework) that extend and simplifies LXC to provide Linux Containers. Docker allows easy creation of lightweight, portable, self-sufficient containers. Docker extends LXC by providing many features that make it is easier to develop, deploy, automate and share containers\footnote{\label{dockerB} \url{https://www.docker.io/the_whole_story/}}. Docker simplifies containerization supporting techniques such as Continuous Delivery by allowing a Docker container built and tested on a developer's laptop to be run anywhere. Docker containers can run on bare metal servers, virtual machines, OpenStack\footnote{\url{https://www.openstack.org/}} clusters or on a service provider's infrastructure such as Digital Ocean\footnote{\url{https://www.digitalocean.com/}}. 
 
-Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems. A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git\footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another (Figure \ref{docker}). 
+Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems (Figure \ref{docker-filesystem}). A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git\footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another. \bigskip
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.55]{docker-filesystem}
+  \caption{Docker Filesystem\textsuperscript{\ref{filesystem}}} %\footnotemark
+  \label{docker-filesystem}
+\end{figure}
+\footnotetext{ \label{filesystem}\url{https://docs.docker.com/terms/layer/}} 
+
 
 In addition,  Docker provides a scripting language for creating containers and images based on other images. The script, called a Dockerfile, defines the differences between the new image and the previous base image. Dockerfiles allow the execution of shell commands, the configuration of processes to run when the container is started and control over the public interface of the container including exposed ports and directories. 
 
 Docker also provides a registry of containers called the Docker Index. It allows containers to be publicly shared. The index contains images created by committing a filesystem layer and images created by the Docker Index build system using a Dockerfile \cite{docker2}.
    
 With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately\footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \bigskip
-
-%\vspace{-8pt}
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=1]{docker}
-  \caption{Basic Docker Function \textsuperscript{\ref{dockerC}}} %\footnotemark
-  \label{docker}
-\end{figure}
-\vspace{-18pt}
-
-%\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
 
 \noindent
 \section{Messaging Systems} \label{MOM}
@@ -506,7 +476,7 @@ HTTP is the foundation protocol of the World Wide Web and it is widely used betw
 \subsection{HTTP Requests} \label{Requests}
 An HTTP request has the following format:\bigskip
 
-\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=3.25in]
+\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=2.5in]
 <Request> ::=	<Request-Line>
 		<general-headers>
 		|<request-headers>
@@ -546,7 +516,7 @@ Accept: */*
 \subsection{HTTP Responses}
 An HTTP response has the following format:\bigskip
 
-\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=3.25in]
+\begin{lstlisting}[language=terminal, xleftmargin=.3in,xrightmargin=2.25in]
 <Response> ::=	<Status-Line>
 		<general-headers>
 		|<response-headers>
@@ -829,7 +799,7 @@ type ChunkContext struct {
   
    \item{\textbf{GRADUAL}} - an additional transition cookie is used to control GRADUAL mode routing.  The transition cookies is added to each response but as it does not have an expiry time, each client should keep the same cookie. The transition cookie is used to randomly allocate each client a number between 0 and 100. This number is then used to determine which clients should be routed to the latest cluster version.   If the randomly allocated value is <= to a defined threshold then it will be routed to the latest cluster version. As more requests are correctly processed by the latest cluster version, the threshold continually increases.  This results in a gradual increase in the percentage of clients being forwarded to the latest cluster version.  As an example, if the threshold is 15 then 15\% of random clients will use the latest cluster version.  Once a client is assigned a random value, the client will keep that value. Therefore when clients start using the latest cluster, they will remain on that cluster.  However, if the latest cluster fails, it will be removed from the set of available clusters resulting in requests being routed to the previous version. \medskip
    
-   \item{\textbf{CONCURRENT}} - for CONCURRENT mode, the \textit{Route} stage forwards requests concurrently to the two most updated cluster versions.  If the latest cluster version correctly accepts a new TCP connection and responds with an HTTP status code that is not in the 5xx range, for server errors, then the client will receive a response from the latest cluster.  If the latest cluster does not accept a new TCP connection or responds with an HTTP status code in the 5xx range then the client will receive a response from the previous cluster version.
+   \item{\textbf{CONCURRENT}} - for CONCURRENT mode, the \textit{Route} stage forwards requests concurrently to a configurable number of the most updated cluster versions.  If the latest cluster version correctly accepts a new TCP connection and responds with an HTTP status code that is not in the 5xx range, for server errors, then the client will receive a response from the latest cluster.  If the latest cluster does not accept a new TCP connection or responds with an HTTP status code in the 5xx range then the client will receive a response from the previous cluster version.
 \end{list}
 
 \noindent
@@ -847,6 +817,31 @@ If the latest cluster version is deleted using the REST API or an error occurs w
 \subsubsection*{Back Pipe}
 \textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for responses and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
+\section{Docker Integration}
+
+Extensive support for managing Docker containers and images, including support for the following features:
+	\begin{list}{-}{}
+		\itemsep0em	
+		\item name of the image to create each container from
+		\item the tag for the image, defaulting to `latest`
+		\item whether to automatically check for new image versions
+		\item the name of the container, defaulting to an auto-generated unique name
+		\item the current working directory inside the container's root file system
+		\item the container's entrypoint
+		\item the environment variables that are set in the running container
+		\item the command to be executed when running the container
+		\item the container's hostname
+		\item mounting volumes from either the host or from another docker container
+		\item mounting all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode
+		\item binding ports from within the container to one or more host port and IP combinations
+		\item linking the container to another Docker container
+		\item setting the user user id and group id of the executing process running inside the container
+		\item restricting the container's memory (in bytes)
+		\item restricting the container's cpu share using relative weight compared to other containers
+		\item adding custom LXC options for the container
+		\item giving extended privileges to the container
+	\end{list}
+
 \section{Proxy Installation}
 The proxy can be installed in two simple steps as follows:
 \begin{list}{-}{}
@@ -859,7 +854,7 @@ The proxy can be installed in two simple steps as follows:
 The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
 
 \section{Command Line Interface}
-The proxy runs from the command line with the following options:\bigskip
+The proxy can be run from the command line with the following options:\bigskip
 
 \begin{lstlisting}[language=terminal]
 Usage of proxy:
@@ -1832,7 +1827,7 @@ The proxy used the transition cookie to randomly generate a number which determi
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:20:48.105660 proxy_context_cluster.go:115:     
-   INFO - Serving response 4 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 2 from ip: [192.168.50.40] port: [80] 
    version: [3.9.2] mode: [GRADUAL] transition counter [8.00] 
    percentage transition per request [1.00]
    
