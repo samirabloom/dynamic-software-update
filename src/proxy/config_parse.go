@@ -126,7 +126,7 @@ func parseDockerHost(jsonConfig map[string]interface{}) (*DockerHost, error) {
 		err             error
 		dockerHostIp    string
 		dockerHostPort  int
-		dockerHostLog   bool
+		dockerHostLog   bool = true
 		dockerHost      *DockerHost
 	)
 
