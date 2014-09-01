@@ -64,14 +64,44 @@ func CLI() {
 				"\n                                               \"configService\": {" +
 				"\n                                                   \"port\": 9090" +
 				"\n                                               }," +
+				"\n                                               \"dockerHost\": {" +
+				"\n                                                   \"ip\": \"127.0.0.1\"," +
+				"\n                                                   \"port\": 2375" +
+				"\n                                               }," +
 				"\n                                               \"cluster\": {" +
-				"\n                                                   \"servers\":[" +
-				"\n                                                       {\"hostname\": \"127.0.0.1\", \"port\": 1034}," +
-				"\n                                                       {\"hostname\": \"127.0.0.1\", \"port\": 1035}" +
+				"\n                                                   \"containers\":[" +
+				"\n                                                       {" +
+				"\n                                                           \"image\": \"mysql\"," +
+				"\n                                                           \"name\": \"some-mysql\"," +
+				"\n                                                           \"environment\": [" +
+				"\n                                                               \"MYSQL_ROOT_PASSWORD=mysecretpassword\"" +
+				"\n                                                           ]," +
+				"\n                                                           \"volumes\": [" +
+				"\n                                                               \"/var/lib/mysql:/var/lib/mysql\"" +
+				"\n                                                           ]" +
+				"\n                                                       }," +
+				"\n                                                       {" +
+				"\n                                                           \"image\": \"wordpress\"," +
+				"\n                                                           \"tag\": \"3.9.1\"," +
+				"\n                                                           \"portToProxy\": 8080," +
+				"\n                                                           \"name\": \"some-wordpress\"," +
+				"\n                                                           \"links\": [" +
+				"\n                                                               \"some-mysql:mysql\"" +
+				"\n                                                           ]," +
+				"\n                                                           \"portBindings\": {" +
+				"\n                                                               \"80/tcp\": [" +
+				"\n                                                                   {" +
+				"\n                                                                       \"HostIp\": \"0.0.0.0\"," +
+				"\n                                                                       \"HostPort\": \"8080\"" +
+				"\n                                                                   }" +
+				"\n                                                               ]" +
+				"\n                                                           }" +
+				"\n                                                       }" +
 				"\n                                                   ]," +
-				"\n                                                   \"version\": \"1.0\"" +
+				"\n                                                   \"version\": \"3.9.1\"" +
 				"\n                                               }" +
 				"\n                                           }\n")
+
 
 	flag.Parse()
 

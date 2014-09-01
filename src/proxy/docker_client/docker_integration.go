@@ -205,7 +205,7 @@ type DockerConfig struct {
 	Cmd             []string `json:"cmd,omitempty"`
 	// the container's hostname
 	Hostname        string `json:"hostname,omitempty"`
-	// mounte volumes from either the host or from another docker container
+	// mount volumes from either the host or from another docker container
 	Volumes         []string `json:"volumes,omitempty"`
 	// mount all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode
 	VolumesFrom     []string `json:"volumesFrom,omitempty"`

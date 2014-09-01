@@ -958,12 +958,42 @@ Usage of proxy:
                   "configService": {
                       "port": 9090
                   },
+                  "dockerHost": {
+                      "ip": "127.0.0.1",
+                      "port": 2375
+                  },
                   "cluster": {
-                      "servers":[
-                          {"hostname": "127.0.0.1", "port": 1034},
-                          {"hostname": "127.0.0.1", "port": 1035}
+                      "containers":[
+                          {
+                              "image": "mysql",
+                              "tag": "latest",
+                              "name": "some-mysql",
+                              "environment": [
+                                  "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                              ],
+                              "volumes": [
+                                  "/var/lib/mysql:/var/lib/mysql"
+                              ]
+                          },
+                          {
+                              "image": "wordpress",
+                              "tag": "3.9.1",
+                              "portToProxy": 8080,
+                              "name": "some-wordpress",
+                              "links": [
+                                  "some-mysql:mysql"
+                              ],
+                              "portBindings": {
+                                  "80/tcp": [
+                                      {
+                                          "HostIp": "0.0.0.0",
+                                          "HostPort": "8080"
+                                      }
+                                  ]
+                              }
+                          }
                       ],
-                      "version": "1.0"
+                      "version": "3.9.1"
                   }
               }
 
@@ -1010,7 +1040,66 @@ The REST API supports the following HTTP response codes:
 \end{list}
 
 \subsection{PUT /configuration/cluster}\label{PUT}
-The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. The format of the request body is as follows:\bigskip
+The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. There are two supported request body formats depending on whether the cluster is using docker containers or pre-existing servers (i.e. IP and port combinations), as follows:\bigskip
+
+\subsubsection*{Docker Container Configuration}
+
+\begin{lstlisting}[language=json]
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "", 
+                "tag": "", 
+                "alwaysPull": false, 
+                "portToProxy": 0, 
+                "name": "", 
+                "workingDir": "", 
+                "entrypoint": [
+                    ""
+                ], 
+                "environment": [
+                    ""
+                ], 
+                "cmd": [
+                    ""
+                ], 
+                "hostname": "", 
+                "volumes": [
+                    ""
+                ], 
+                "volumesFrom": [
+                    ""
+                ], 
+                "portBindings": {
+                    "": [
+                        {
+                            "hostIp": "", 
+                            "hostPort": ""
+                        }
+                    ]
+                }, 
+                "links": [
+                    ""
+                ], 
+                "user": "",
+                "memory": 0,
+                "cpuShares": 0, 
+                "lxcConf": [
+                    {
+                        "key": "", 
+                        "value": ""
+                    }
+                ],
+                "privileged": false,
+            }
+        ], 
+        "version": ""
+    }
+}
+\end{lstlisting}
+
+\subsubsection*{Existing Server Configuration}
 
 \begin{lstlisting}[language=json]
 {
@@ -1037,6 +1126,33 @@ The JSON fields are used for the following reasons:
 
 \begin{list}{-}{}
   \itemsep0em
+  \item\textbf{{cluster.containers}} - specifies the list of docker containers in the cluster.
+
+  \item\textbf{{cluster.containers[i].image}} - name of the image to create each container from.
+  \item\textbf{{cluster.containers[i].tag}} - the tag for the image, defaulting to `latest`.
+  \item\textbf{{cluster.containers[i].alwaysPull}} - whether to automatically check for new image versions.
+  \item\textbf{{cluster.containers[i].portToProxy}} - the port the proxy routes HTTP request to
+  \item\textbf{{cluster.containers[i].name}} - the name of the container, defaulting to an auto-generated unique name
+  \item\textbf{{cluster.containers[i].workingDir}} - the current working directory inside the container's root file system
+  \item\textbf{{cluster.containers[i].entrypoint}} - the container's entrypoint
+  \item\textbf{{cluster.containers[i].environment}} - the environment variables that are set in the running container
+  \item\textbf{{cluster.containers[i].cmd}} - the command to be executed when running the container
+  \item\textbf{{cluster.containers[i].hostname}} - the container's hostname
+
+  \item\textbf{{cluster.containers[i].volumes}} - mount volumes from either the host or from another docker container
+  \item\textbf{{cluster.containers[i].volumesFrom}} - mount all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode
+  \item\textbf{{cluster.containers[i].portBindings}} - bind ports from within the container to one or more host port and IP combination, using format <port>/tcp or <port>/udp as the key
+  \item\textbf{{cluster.containers[i].portBindings[i].hostIp}} - the host ip address to bind the port to
+  \item\textbf{{cluster.containers[i].portBindings[i].hostPort}} - the host port to bind the port to
+  \item\textbf{{cluster.containers[i].links}} - link the container to another Docker container
+  \item\textbf{{cluster.containers[i].user}} - set the user user id and group id of the executing process running inside the container
+  \item\textbf{{cluster.containers[i].memory}} - restrict the container's memory (in bytes)
+  \item\textbf{{cluster.containers[i].cpuShares}} - restrict the container's cpu share using relative weight compared to other containers
+  \item\textbf{{cluster.containers[i].lxcConf}} - add custom LXC options for the container
+  \item\textbf{{cluster.containers[i].lxcConf.key}} - key (or name) for the custom LXC options for the container
+  \item\textbf{{cluster.containers[i].lxcConf.value}} - value for the custom LXC options for the container
+  \item\textbf{{cluster.containers[i].privileged}} - give extended privileges to the container
+  
   \item\textbf{{cluster.servers}} - specifies the list of servers in the cluster.
   
   \item\textbf{{cluster.servers[i].ip}} - specifies the IP address or hostname of a server in the cluster.
@@ -2554,10 +2670,68 @@ The proxy provides a simple REST API to support dynamically updating the cluster
 \textbf{PUT - /configuration/cluster}
 
 \noindent
-To add a new cluster make a PUT request to \textit{/configuration/cluster}.\bigskip
+To add a new cluster make a PUT request to \textit{/configuration/cluster}.  There are two supported request body formats depending on whether the cluster is using docker containers or pre-existing servers (i.e. IP and port combinations), as follows:\bigskip
 
 \noindent
-\textit{\textbf{Request Body}}
+\textit{\textbf{Request Body - Docker Container Configuration}}
+
+\begin{lstlisting}[language=json]
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "", 
+                "tag": "", 
+                "alwaysPull": false, 
+                "portToProxy": 0, 
+                "name": "", 
+                "workingDir": "", 
+                "entrypoint": [
+                    ""
+                ], 
+                "environment": [
+                    ""
+                ], 
+                "cmd": [
+                    ""
+                ], 
+                "hostname": "", 
+                "volumes": [
+                    ""
+                ], 
+                "volumesFrom": [
+                    ""
+                ], 
+                "portBindings": {
+                    "": [
+                        {
+                            "hostIp": "", 
+                            "hostPort": ""
+                        }
+                    ]
+                }, 
+                "links": [
+                    ""
+                ], 
+                "user": "",
+                "memory": 0,
+                "cpuShares": 0, 
+                "lxcConf": [
+                    {
+                        "key": "", 
+                        "value": ""
+                    }
+                ],
+                "privileged": false,
+            }
+        ], 
+        "version": ""
+    }
+}
+\end{lstlisting}
+
+\noindent
+\textit{\textbf{Request Body - Existing Server Configuration}}
  
 \begin{lstlisting}[language=json]
 {
@@ -2579,9 +2753,224 @@ To add a new cluster make a PUT request to \textit{/configuration/cluster}.\bigs
 \end{lstlisting}
 
 \noindent\\
+\textbf{cluster.containers}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+specifies the list of docker containers in the cluster.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].image}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+name of the image to create each container from.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].tag}
+
+\noindent
+Type: 'String' Default value: 'latest'\smallskip
+
+\noindent 
+the tag for the image, defaulting to `latest`.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].alwaysPull}
+
+\noindent
+Type: 'Boolean' Default value: 'false'\smallskip
+
+\noindent 
+whether to automatically check for new image versions.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].portToProxy}
+
+\noindent
+Type: 'Number' Default value: '0'\smallskip
+
+\noindent 
+the port the proxy routes HTTP request to.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].name}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+the name of the container, defaulting to an auto-generated unique name.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].workingDir}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+the current working directory inside the container's root file system.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].entrypoint}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+the container's entrypoint.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].environment}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+the environment variables that are set in the running container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].cmd}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+the command to be executed when running the container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].hostname}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+the container's hostname.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].volumes}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+mount volumes from either the host or from another docker container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].volumesFrom}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+mount all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].portBindings}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+bind ports from within the container to one or more host port and IP combination, using format <port>/tcp or <port>/udp as the key.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].portBindings[i].hostIp}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+the host ip address to bind the port to.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].portBindings[i].hostPort}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+the host port to bind the port to.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].links}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+link the container to another Docker container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].user}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+set the user user id and group id of the executing process running inside the container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].memory}
+
+\noindent
+Type: 'Number' Default value: '0'\smallskip
+
+\noindent 
+restrict the container's memory (in bytes).\bigskip
+
+\noindent
+\textbf{cluster.containers[i].cpuShares}
+
+\noindent
+Type: 'Number' Default value: '0'\smallskip
+
+\noindent 
+restrict the container's cpu share using relative weight compared to other containers.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].lxcConf}
+
+\noindent
+Type: 'Array' Default value: '[]'\smallskip
+
+\noindent 
+add custom LXC options for the container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].lxcConf.key}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+key (or name) for the custom LXC options for the container.\bigskip
+\noindent
+\textbf{cluster.containers[i].lxcConf.value}
+
+\noindent
+Type: 'String' Default value: 'undefined'\smallskip
+
+\noindent 
+value for the custom LXC options for the container.\bigskip
+
+\noindent
+\textbf{cluster.containers[i].privileged}
+
+\noindent
+Type: 'Boolean' Default value: 'false'\smallskip
+
+\noindent 
+give extended privileges to the container.\bigskip
+
+\noindent
 \textbf{cluster.servers}
 
-	\noindent
+\noindent
 Type: 'Array'  Default value: '[]'\smallskip
 
 \noindent
@@ -2593,7 +2982,7 @@ This value specifies the list of servers in the cluster\bigskip
 \noindent
 Type: 'String' Default value: 'undefined'\smallskip
 
-\noindent
+\noindent 
 This value specifies the ip address or hostname of a server in the cluster\bigskip
 
 \noindent
