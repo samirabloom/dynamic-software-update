@@ -589,41 +589,43 @@ The main objectives of this project were to implement a proxy that adds no signi
 \item being reliable, robust and stable under heavy load
 \end{list}
 
-To 
-
-\section{Dynamic Software Update System}\label{modes} 
-
-Typically different application update situations require different update modes:
-
-Instant Update
-
-Serious bugs such as a critical security flaw requires the application to be updated immediately to reduce the error or security exposure as quickly as possible.  All users should therefore immediately be updated to the most recent version.
-
-Session Update
-
-A new feature may change the behaviour of the system.  Users who are currently interacting with the system should typically not experience the new feature until their current interaction session has completed.  For example a user in the process of purchasing products on an e-commerce site would typically not want the sites behaviour to change during a shopping experience.  In this case the user should not experience the new application version until their next interaction with the site.
-
-Gradual Update
-
-To reduce the risk associated with deploying a new feature application updates are often rolled out gradually.  A gradual update mechanism slowly migrates users from the existing application version to the updated application version in a controlled manner.
-
-Concurrent Update
-
-In the case where an application upgrade does not significantly change the user facing feature set or the shape of the API the old and the new versions can be run in parallel.  All requests are sent to both versions of the application as long as the new application version responds correctly then this response will be returned to the user.  If the new application version fails to respond, crashes or returns a server error then the response from the previous version can be returned to the user.
+\noindent
+Typically different application update situations require different update approaches:
+\begin{list}{-}{}
+\itemsep0em
+\item Serious bugs such as a critical security flaw requires the application to be updated immediately to reduce the error or security exposure as quickly as possible.  All users should therefore immediately be updated to the most recent version.
+\item A new feature may change the behaviour of the system.  Users who are currently interacting with the system should typically not experience the new feature until their current interaction session has completed.  For example a user in the process of purchasing products on an e-commerce site would typically not want the sites behaviour to change during a shopping experience.  In this case the user should not experience the new application version until their next interaction with the site.
+\item To reduce the risk associated with deploying a new feature application updates are often rolled out gradually.  A gradual update mechanism slowly migrates users from the existing application version to the updated application version in a controlled manner.
+\item In the case where an application upgrade does not significantly change the user facing feature set or the shape of the API the old and the new versions can be run in parallel.  All requests are sent to both versions of the application as long as the new application version responds correctly then this response will be returned to the user.  If the new application version fails to respond, crashes or returns a server error then the response from the previous version can be returned to the user.
+\end{list}
 
 
-- a new feature may require users to receive the latest version once they have completed any existing interactions.  For example 
+\section{Dynamic Software Update Proxy} 
 
-To support flexibility in the update usage scenarios 
- a simple lightweight system has been developed suitable for continuous delivery into production. The system runs the updated version concurrently with previous stable versions. The updated version is monitored automatically and if the updated version behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
+The following section describes the high level design an component architecture used to meet the requirements.
 
-Four mechanisms are supported to enable different reliable update strategies depending on the specific software requirements.
+\subsection{Technology Stack} 
+The following technology stack has been chosen for the dynamic software update system:
 
-\noindent\\
-\underline{Instant Update} 
+\begin{list}{-}{}
+  \itemsep0em
+  \item Go\footnote{\url{http://golang.org/}} programming language for building the proxy. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C++ and Java were considered. However, C++ was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go, does not give the programmer control over the memory management and is therefore not likely to be as efficient as Go.
+    
+  \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
+  
+  \item ZeroMQ as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
+  
+  \item HTTP as a protocol for application requests and responses.  HTTP is the most widely adopted application level protocol for distributed network systems In addition the use of headers and cookies in HTTP allow sessions and clients to be easily identify.  HTTP headers also allows the efficient comparison between large responses without the need to buffer the entire response body.
+\end{list}
+  
+\subsection{Upgrade Modes}\label{modes}
+  
+To support the multiple update approaches listed in the requirements (Section \ref{HTTP}) four mechanisms are supported.
+
+\subsubsection*{Instant Update} 
 
 \noindent
-In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. Figure \ref{instant_upgrade} shows a cookie, indicating the application version, is always added to a response.  When an instant upgrade mode is used the proxy routes all requests to the new version and updates their cookie.  When a failure occurs the proxy routes the request to the previous version and removes the failed version from the list of available versions.
    
 \begin{figure}[!ht]
   \centering
@@ -633,11 +635,10 @@ In this mechanism the updated version of software immediately processes all requ
 \end{figure}
 % \vspace{-18pt}
 
-\noindent\\
-\underline{Session Update}
+\subsubsection*{Session Update}
 
 \noindent
-This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Instant Update, the non-updated version however remains running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
+This upgrade mode is useful when a new feature is release which affects the behaviour of the system and therefore only new sessions are switched to the updated version. Figure \ref{session_upgrade} shows that when a request is received the cookie, indicating which version the client was previously using, is examined to determine which version the request should be routed to.  The cookie in the response is updated to add a timeout.  A request with no cookie is only received from clients who have not made a request within the timeout period, therefore, a new session is identified by a request with no cookie.
 
    
 \begin{figure}[!ht]
@@ -648,11 +649,10 @@ This update mechanism only switches new sessions to the updated version. A new s
 \end{figure}
 % \vspace{-18pt}
 
-\noindent\\
-\underline{Gradual Update}
+\subsubsection*{Gradual Update}
 
 \noindent
-This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version incrementally receives a greater percentage of requests.
+This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number clients that are exposed to the new version. Figure \ref{session_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into.  The Figure \ref{session_upgrade} shows in the first upgrade scenario the second cookie gives the request a number of 45.  The bucket for application 1.0.1 is from 0 to 10 therefore the the request does not match the bucket as 45 falls outside the range 0 to 10.  In the second upgrade scenario the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.
 
    
 \begin{figure}[!ht]
@@ -663,12 +663,10 @@ This mechanism switches new sessions gradually to the updated version over multi
 \end{figure}
 % \vspace{-18pt}
 
-\noindent\\
-\underline{Concurrent Update}
+\subsubsection*{Concurrent Update}
 
 \noindent
-In this mechanism the updated and non-updated versions run concurrently and process identical requests.  In this strategy, both the old and the new versions handle all requests and the characteristics of each response is compared to ensure the update is behaving correctly.
-
+In this mechanism the updated and non-updated versions run concurrently and process identical requests.  As shown in Figure \ref{concurrent_upgrade} in this strategy, both the old and the new versions handle all requests.  If the latest version of the application behaves correctly then the client receives the response from the latest version.  The latest version of the application is considered to behave correctly if it accepts a TCP connection, returns a response, and the response has an HTTP status code that is not in the 5xx range, used to indicate server errors.
    
 \begin{figure}[!ht]
   \centering
@@ -678,7 +676,13 @@ In this mechanism the updated and non-updated versions run concurrently and proc
 \end{figure}
 % \vspace{-18pt}
 
-In all four mechanisms the behavior of the updated software is automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system. The focus for the dynamic software update system is on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.
+In all four mechanisms the behaviour of the updated software is automatically monitored to confirm the application is behaving correctly. The ability to receive incoming requests and a response with a non 5xx range status code is used to verify that the updated application is behaving correctly. 
+
+\clearpage
+
+\subsection{Component Architecture}
+
+Figure \ref{proposed_solution} demonstrates the main components and there interactions for the proposed dynamic software update system, which are described below.
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -689,26 +693,44 @@ In all four mechanisms the behavior of the updated software is automatically mon
 \end{figure}
 %\vspace{-18pt}
 
+\subsubsection*{client}
 
-\section{Technology Stack} 
-The following technology stack has been chosen for the dynamic software update system:
+\noindent
+The client indicate the user of the application that is sending requests for the application to process.  It is assumed that the client will correctly interact using the HTTP protocol including correctly handling cookies.
 
-\begin{list}{-}{}
-  \itemsep0em
-  \item Go\footnote{\url{http://golang.org/}} programming language for building the proxy \textit{i.e.} the content switching load balancer. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C++ and Java were considered. However, C++ was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go, does not give the programmer control over the memory management and is therefore not likely to be as efficient as Go.
-    
-  \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
-  
-  \item ZeroMQ as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
+\subsubsection*{upstream}
 
-    \end{list}
+\noindent
+The upstream component encapsulates all the interactions with the client.  This includes accepting incoming TCP connections, reading the request from the socket and writing the response to the socket.
+
+\subsubsection*{routing \& upgrading}
+
+\noindent
+This component is responsible to handling all the upgrade modes and determining which server to route the request is.  This component parses the headers from both the request and response to manage the cookies required for the upgrade modes.  This component is also used to detect when a server is behaving incorrectly by examining the server response.  Load balancing is also performed by this component as it routes requests to the servers within a cluster in a round-robin fashion.
+
+\subsubsection*{downstream}
+
+\noindent
+This component is responsible to making the TCP connection to the server.  Once the connection is established this component will write the request to the socket and will read the response of the socket.
+
+\subsubsection*{Version 1.0.0 Cluster}
+
+\noindent
+Shows two application nodes, both using version 1.0.0 of the application, running in a single cluster.
+
+\subsubsection*{Version 1.0.1 Cluster}
+
+\noindent
+Shows an updated version of the application as two application nodes, using version 1.0.1, of the application running in a single cluster.
+
 \clearpage
 
 \chapter{Implementation} \label{Implementation}
-To produce an efficient and reliable dynamic software update system several versions of a dynamic software update proxy was implemented using Go programming language as described in this section. 
+During the implementation of the proxy three separate approaches were used.  The first approach as described in Section \ref{zeromq_section} was to use ZeroMQ due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added.  The second approach describe in Section \ref{Content-Counting} was to used raw sockets.  To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not pursued.  The final approach described in Section \ref{staged} was to use raw sockets in a staged based proxy.  This version improved encapsulation and separation-of-concerns through the use of multiple stages.  In addition this approach used low level socket errors instead of content counting to determine when to close sockets.  This final approach met all the initial requirements and hence it was developed further to provide the full set of features.
 
-\section{Message Based Proxy Using ZeroMQ}
-The first proxy developed to support dynamic software update was an HTTP reverse proxy based on ZeroMQ messaging system. A custom Dockerfile was written that creates a Docker container running an example web service using Netty\footnote{\url{http://netty.io/}}. The proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
+\section{Message Based Proxy Using ZeroMQ}\label{zeromq_section}
+The first proxy developed to support dynamic software update was an HTTP reverse proxy based on ZeroMQ messaging system. ZeroMQ was chosen due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added as described in this section.
+A custom Dockerfile was written that creates a Docker container running an example web service using Netty\footnote{\url{http://netty.io/}}. The proxy uses different types of ZeroMQ sockets such as STREAM, REQ, REP and it is arranged as shown in Figure \ref{prototype}. Each box is a separate thread, a separate process or a Docker container and performs the following responsibilities:
  
 \begin{list}{-}{}
   \itemsep0em
@@ -736,9 +758,9 @@ In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support
 As it was explained in the previous section using a messaging system was not the correct choice to develop a dynamic software update proxy. This section describes two different approaches using raw Go sockets.   
 
 \subsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. The proxy consists of a listener that listens in an  \textit{Accept} loop for new TCP connections. 
+The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not pursued, as described in this section.
 
-When a new connection is received, a TCP connection between the client and the proxy is created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component creates another connection between the proxy and the server.  The HTTP request is then written to the server inside a \textit{Write} loop.
+To accept new connections this proxy had a listener running in an  \textit{Accept} loop.  When a new connection was received a TCP connection between the client and the proxy was created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component created another connection between the proxy and the server.  The HTTP request was then written to the server inside a \textit{Write} loop.
 
 An identical but opposite set of \textit{Read} and \textit{Write} loops are created to return the response from the server back to the client.
 
@@ -813,12 +835,12 @@ Transfer/sec:     32.58KB
 
 
 \noindent \\
-The above results show that significant socket errors such as read and write errors occur when the requests are sent to the Go server via proxy. The socket errors consequently reduce the number of requests processed by the server (\textit{e.g.} from 7123.93/second to  215.24/second), the amount of data transferred (\textit{e.g.} from 1.05MB/second to 32.58KB/second) and finally increases the time taken for each request to be processed (average time increased from 56.33ms to 381.51ms). Detailed analysis of the proxy showed that the content counting proxy is not consistently detecting the end of messages, therefore, the read and write sockets do not close appropriately which results in socket errors. 
+The above results show that significant socket errors such as read and write errors occur when the requests are sent to the Go server via proxy. The socket errors consequently reduce the number of requests processed by the server (\textit{e.g.} from 7123.93/second to  215.24/second), the amount of data transferred (\textit{e.g.} from 1.05MB/second to 32.58KB/second) and finally increases the time taken for each request to be processed (average time increased from 56.33ms to 381.51ms). Detailed analysis of the proxy showed that the content counting proxy is not consistently detecting the end of messages, therefore, the read and write sockets do not close appropriately which results in socket errors.  This was caused by the complexity in counting all the bytes in each chunk and detecting the terminating chunk given that not all servers used a consistent approach.  When the proxy was tested against public servers on the internet several servers sent incorrectly formatted terminating chunks with one or more /r or /n characters missing, other servers had a large delay before responding with the terminating chunk and some servers sent multiple terminating chunks.
 
 In conclusion, the significant overhead and socket errors associated with the implemented proxy lead to the conclusion that a proxy with content counting is not suitable for supporting reliable and efficient dynamic software updates. Therefore, another version of the socket based proxy was developed as described in the next section.
 
 \subsection{Socket Based Staged Proxy With End Of File Signal}\label{staged}
-The final version of the socket based proxy was implemented using a Stage Based Design (SBD) as demonstrated in Figure \ref{proxy}. The SBD approach was used to improve the code design, simplicity and to support good test coverage. Additionally, the SBD also promoted encapsulation, separation-of-concerns and allowed inversion-of-control and dependency-injection which resulted in the following benefits:
+The final version of the proxy was implemented using raw sockets in a stage based design as demonstrated in Figure \ref{proxy}. This final approach met all the initial requirements and hence it was developed further to provide the full set of features.  This approach was used to improve the code design, simplicity and to support high test coverage by promoting encapsulation, separation-of-concerns and allowing inversion-of-control and dependency-injection.  This resulted in the following benefits:
 
 \begin{list}{-}{}
   \itemsep0em
