@@ -11,7 +11,11 @@
 \usepackage{caption}
 \captionsetup[table]{skip=0pt}
 
+% for setting the space between caption
 \usepackage{lipsum}
+
+% for highlighting a text
+\usepackage{soul}
 
 
 % for adding space between paragraphs
@@ -133,25 +137,25 @@
         \vspace*{2cm}
         
         \large
-        {Imperial College London}\\
+        {\Large Imperial College London}\\
         \large
          \vspace*{0.2cm}
-        {Department of Computing}
+        {\Large Department of Computing}
         
         \vspace{4.5 cm}
         \large
         {\huge \textbf{Highly Reliable Upgrading of Software Containers}}\\
         \vspace{1.0 cm}
-        {by}\\
-        {Samira Rabbanian (sr1213)}
+        {\Large by}\\
+        {\Large Samira Rabbanian (sr1213)}
         
         \vspace{10cm}
         
 
-  	\large {Submitted in partial fulfilment of the requirements for the MSc Degree in Computing Science of Imperial College London }\\
+  	\large {\Large Submitted in partial fulfilment of the requirements for the MSc Degree in Computing Science of Imperial College London }\\
   	
 \vspace*{1 cm}  	
-  \large{September 2014}\\ 
+  \large{\Large September 2014}\\ 
            
     \end{center}
 \end{titlepage}
@@ -185,9 +189,18 @@ All companies and organizations use software applications to run their business,
 
 Recent studies have demonstrated that 14.8\% to 25\% of software upgrades are incorrect and have made impacts on end-users \cite{bugs}. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive.\medskip 
 
-\noindent \textbf{Reducing Cost of Software Development and Support} - studies have shown that fixing software errors and bugs after delivery is often 100 times more expensive than finding and fixing them during the development process. Moreover, fast feedback is critical in reducing the cost of bugs in all phases (\cite{Boehm_a}, \cite{Boehm_b}). Figure xxxxxxxxx shows that as the feature development lifecycle progresses the cost of bugs significantly increases. 
+\noindent \textbf{Reducing Cost of Software Development and Support} - studies have shown that fixing software errors and bugs after delivery is often 100 times more expensive than finding and fixing them during the development process. Moreover, fast feedback is critical in reducing the cost of bugs in all phases (\cite{Boehm_a}, \cite{Boehm_b}). Figure \ref{cost} shows that as the feature development lifecycle progresses the cost of bugs significantly increases. 
+
 
 Thus, there has been a continuous introduction of new techniques to reduce the feedback cycle.  Initially code review, pair programming and continuous integration were adopted.  More recently these approaches have been further developed into new techniques such as continuous delivery and immutable infrastructures.  However, these more recent techniques are challenging to adopt.  In a typical software development team testing is performed both by developers and software testers on a testing environment that mirrors production.  For continuous delivery and immutable infrastructures to be adopted this testing environment should be updated with the latest software changes on a regular cycle, however, each update takes a long time and prevents any testing on the testing environment.  The frequency of update is therefor in conflict with the availability of the testing environment.  Also the extent to which the infrastructure is immutable is also in conflict as more immutable an infrastructures is the longer the deployment typically takes as more activities are performed during the deployment. 
+
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.25]{cost_of_bugs}
+  \caption{Cost of bugs during  feature Development Life Cycle}
+  \label{cost}
+\end{figure}
+% \vspace{-18pt}
 
 \setlength{\leftskip}{0pt}
 \setlength{\rightskip}{0pt}
@@ -465,9 +478,6 @@ ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging l
 
 ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
 
-More recently, a ZeroMQ alternative, called nanomsg, has been proposed by the same team who developed ZeroMQ\footnote{\label{nanomsg} \url{http://nanomsg.org/}}. Similar to ZeroMQ, nanomsg is aimed to make the networking layer fast, scalable, and easy to use; however, it has been reported to be more lightweight than ZerMQ. In addition, in ZeroMQ each individual object is managed exclusively by a single thread. This strategy can cause issues such as inability to implement request resending in REQ/REP protocol and PUB/SUB subscriptions not being applied while application is doing other work. However, in nanomsg the objects are not tightly bound to particular threads as a result the aforementioned issues do not exist. 
-
-
 \section{Hypertext Transfer Protocol} \label{HTTP}
 The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed hypertext and hypermedia information systems supporting the interlinking of text and multimedia.  Hypertext, a term coined by Ted Nelson \cite{hypertext}, is text which is not constrained to be linear and contains links to other texts.  Hypermedia is an extension to hypertext adding support for multimedia, such as images, video and sound.
 
@@ -588,7 +598,7 @@ In this mechanism the updated version of software immediately processes all requ
   \centering
      \includegraphics[scale=0.30]{instant_upgrade}
   \caption{Instant Upgrade and Failure Rollback}
-  \label{proxy}
+  \label{instant_upgrade}
 \end{figure}
 % \vspace{-18pt}
 
@@ -603,7 +613,7 @@ This update mechanism only switches new sessions to the updated version. A new s
   \centering
      \includegraphics[scale=0.30]{session_upgrade}
   \caption{Session Upgrade}
-  \label{proxy}
+  \label{session_upgrade}
 \end{figure}
 % \vspace{-18pt}
 
@@ -618,7 +628,7 @@ This mechanism switches new sessions gradually to the updated version over multi
   \centering
      \includegraphics[scale=0.30]{gradual_upgrade}
   \caption{Gradual Upgrade}
-  \label{proxy}
+  \label{gradual_upgrade}
 \end{figure}
 % \vspace{-18pt}
 
@@ -633,7 +643,7 @@ In this mechanism the updated and non-updated versions run concurrently and proc
   \centering
      \includegraphics[scale=0.30]{concurrent_upgrade}
   \caption{Concurrent Upgrade}
-  \label{proxy}
+  \label{concurrent_upgrade}
 \end{figure}
 % \vspace{-18pt}
 
@@ -658,7 +668,7 @@ The following technology stack has been chosen for the dynamic software update s
     
   \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
   
-  \item ZeroMQ or nanomsg as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
+  \item ZeroMQ as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
 
     \end{list}
 \clearpage
@@ -687,7 +697,7 @@ The first proxy developed to support dynamic software update was an HTTP reverse
 \end{figure}
 
 \subsection{Performance Evaluation}
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chunked HTTP requests and a simpler approach would be to use raw Go sockets directly. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems such as nanomsg were not explored for developing a content switching load balancer. 
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chunked HTTP requests and a simpler approach would be to use raw Go sockets directly. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems were not explored for developing a content switching load balancer. 
 
 In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update instead an alternative approach using raw sockets was developed. 
 
@@ -792,7 +802,7 @@ To prevent the socket errors that occurred in the content counting proxy \ref{Co
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.30]{proxy}
-  \caption{Socket Based Staged Proxy Design Supporting Dynamic Software Update}
+  \caption{Staged Socket Based Staged Proxy Design Supporting Dynamic Software Update}
   \label{proxy}
 \end{figure}
 % \vspace{-18pt}
@@ -1056,18 +1066,24 @@ The aim of these tests is to check that all components of the dynamic software u
 
 \clearpage
 
-\chapter{xxxxx   xxxxx    xxx  Evaluation add one sentence for recovery speed test}
-This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy and while qualitative analysis focused on the functional correctness and robustness of the proxy. 
+\chapter{Evaluation}
+This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy; the speed that proxy applies an upgrade and rolls back to an older version when an upgraded version does not behave correctly. The qualitative analysis focused on the functional correctness and robustness of the proxy. 
 
 Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populate web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
 
-\section{xxx xxxxx   xxxx Quantitative Analysis add one sentence for recovery speed test}\label{Quantitative_Analysis}
-This section summarizes the load and saturation tests performed on the dynamic software update proxy. The aim of these tests were to evaluate the performance and stability of the proxy. Saturation tests focused on stability of the proxy by sending over 400 simultaneous HTTP requests per second to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses.
+\section{Quantitative Analysis add one sentence for recovery speed test}\label{Quantitative_Analysis}
+This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy. Saturation tests focused on stability of the proxy by sending over 400 simultaneous HTTP requests per second to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses.
+
+
 
 \subsection{xxxx Load Performance and Saturation Tests}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
 
+
+
+
+
 \noindent\\
-\textbf{xxx do i need to also show synatc for running mysql xxxx}
+\hl{\textbf{replace this with proxy's config for running wordpress containers}}
 \begin{lstlisting}[language=terminal]
 <@\textcolor{blue}{\# run WordPress version 3.9.1 container}@>
 docker run --name some-wordpress --link some-mysql:mysql \
@@ -1111,6 +1127,11 @@ docker run --name some-wordpress --link some-mysql:mysql
 
 
 \subsection{xxx xxxx Dynamic Upgrade and Recovery Speed}\label{Recovery}
+The aim of this evaluation was to measure how rapidly the proxy applies an upgrade and rolls back to an older version of the application when the new version does not behave correctly.   
+
+
+
+
 \noindent
 \underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
 
@@ -1281,7 +1302,7 @@ Cache-Control: no-cache
 \subsection{Real Software Upgrades}
 The main feature of the implemented proxy described in Chapter \ref{Implementation} is its ability to support dynamic software update for continues delivery into production. The proxy is able to dynamically update an application to a new version. It then runs different versions of an application concurrently and it automatically monitors the behavior of the most updated version. If the updated version behaves incorrectly, the proxy seamlessly removes that version of the application and routes all requests to the previous stable version with no downtime. This section evaluates the aforementioned functionality of the proxy in details using real applications.
 
-Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine as demonstrated in section \ref{load}.
+Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in section \ref{load}.
 
 For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the following actions were executed sequentially:
 
@@ -2078,23 +2099,8 @@ Content-Type: text/html; charset=UTF-8
  
 
 
-
-
-
-
-
-   
-
-  
-   
-
-   
-
-
-
-
-\subsection{Handling Incorrect Behavior} 
-To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
+\subsection{xxxxx Handling Incorrect Behavior} 
+\hl{ To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
 
 
 
@@ -2153,7 +2159,7 @@ parallel with the old one. As the two versions execute:
 • As long as the two versions have the same external
 behaviour (e.g. they write the same values into the same
 files, or send the same data over the network), they are
-run side-by-side and MX ensures t
+run side-by-side and MX ensures t}
 
 \clearpage
 
