@@ -194,6 +194,7 @@ Recent studies have demonstrated that 14.8\% to 25\% of software upgrades are in
 
 Thus, there has been a continuous introduction of new techniques to reduce the feedback cycle.  Initially code review, pair programming and continuous integration were adopted.  More recently these approaches have been further developed into new techniques such as continuous delivery and immutable infrastructures.  However, these more recent techniques are challenging to adopt.  In a typical software development team testing is performed both by developers and software testers on a testing environment that mirrors production.  For continuous delivery and immutable infrastructures to be adopted this testing environment should be updated with the latest software changes on a regular cycle, however, each update takes a long time and prevents any testing on the testing environment.  The frequency of update is therefor in conflict with the availability of the testing environment.  Also the extent to which the infrastructure is immutable is also in conflict as more immutable an infrastructures is the longer the deployment typically takes as more activities are performed during the deployment. 
 
+\hl{xxx correct the figure} 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.25]{cost_of_bugs}
@@ -1126,26 +1127,23 @@ docker run --name some-wordpress --link some-mysql:mysql
 \underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
 
 
-\subsection{xxx xxxx Dynamic Upgrade and Recovery Speed}\label{Recovery}
-The aim of this evaluation was to measure how rapidly the proxy applies an upgrade and rolls back to an older version of the application when the new version does not behave correctly.   
+\subsection{Latency in Response to Updated Version Failure}\label{Recovery}
+The aim of this evaluation was to measure how rapidly the proxy applies an upgrade and rolls back to an older version of the application when the new version does not behave correctly. 
 
+INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in section \ref{load}.    
 
+The proxy was initially configured to forward responses to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP request by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed. The failure was stimulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION mode and GRADUAL mode were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
-
-\noindent
-\underline{Update Speed} -Rapid Updates will be performed to measure how quickly the requests will be transferred to the updated version of the software. 
-
-\noindent
-\underline{Software Recovery} - Bugs will be introduced to the new version of the software to calculate the speed of switching to the non-updated version. 
-
-\begin{table}
+As shown in Table  {\ref{upgrade-speed}}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
+ 
+\begin{table}\label{upgrade-speed}
 \caption {Proxy Latency for dynamic upgrade and error recovery}
 \begin{center}
     \begin{tabular}{ | l | l | l | p{5cm} |}
     \hline
    \textbf{Upgrade Scenarios} & \textbf{Latency (ms)} & \textbf{+\textbackslash }\textbf{- SD (ms)} \\ \hline
-    INSATNT Upgrade & 44 &1.36 \\ \hline
-    INSTANT Upgrade Failure & 45 & 0.75\\ \hline
+    INSATNT Upgrade & 44.00 &1.36 \\ \hline
+    INSTANT Upgrade Failure & 45.00 & 0.75\\ \hline
     CONCURRENT Upgrade & 44.00 & 0.50\\ \hline
     CONCURRENT Upgrade Failure & 44.00 & 0.49\\
     \hline
