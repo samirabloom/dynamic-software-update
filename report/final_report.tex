@@ -330,11 +330,8 @@ Continuous delivery is a software development approach that ensures application 
 
 Furthermore, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
 
-
 \subsection{Immutable Infrastructure}
-\hl{xxxxxxx xxxxxxxxxxxxxxxxxxxxx}
-
-
+ A common problem in infrastructures is that manual changes introduce state into servers and network components.  This state is unrecorded, unknown and often unreproducible causing issues when resolving problems or attempting to rebuild the environment, for example, after a critical failure.  An immutable infrastructure is an infrastructure that is made of components that are replaced (or completely rebuilt) on every deployment.  The advantage of using the immutable infrastructure technique is that state is siloed and can not leak through out the entire infrastructure.  The boundaries between layers storing state and the layers that are ephemeral, which may not be running the next minute, are clearly drawn and no leakage can possibly happen between those layers. State is stored in the database or in deployment scripts (also called infrastructure-as-code) and it is not scattered through out the architecture. 
 
 \section{Dynamic Software Update Systems} \label{DSU}
 Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. In the past decades several systems have been developed to support highly reliable dynamic software upgrades. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
@@ -857,7 +854,7 @@ To prevent the socket errors that occurred in the content counting proxy \ref{Co
 \subsubsection*{Forward Pipe} 
 \textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \bigskip  
 
-\begin{lstlisting}[language=terminal, xleftmargin= .5in, xrightmargin= 1.75in]
+\begin{lstlisting}[language=terminal]
 type ChunkContext struct {
 	Data                   []byte
 	To                     tcp.TCPConnection
@@ -869,6 +866,12 @@ type ChunkContext struct {
 	FirstChunk             bool
 	RoutingContext         *RoutingContext
 	Direction              Direction
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=terminal]
+type RoutingContext struct {
+	Headers []string
 }
 \end{lstlisting} 
 
@@ -907,9 +910,20 @@ If the latest cluster version is deleted using the REST API or an error occurs w
 \subsubsection*{Back Pipe}
 \textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for responses and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
-\section{Docker Integration}
+\subsubsection*{Configuration Service}
+\textit{Configuration Service} is responsible for managing the configuration for how the proxy routes to different servers or containers.  In addition the configuration service configures the ports exposed by the proxy for both the configuration service its self and for incoming HTTP requests that are being proxied.  The configuration service is made up of multiple separate components, including File Parser, REST API, Cluster \& Container Management and the Docker Client.
 
-Extensive support for managing Docker containers and images, including support for the following features:
+\subsubsection*{File Parser}
+\textit{File Parser} is responsible for parsing loading the configuration file provided to the proxy when it initially starts.  The file parser reads the configuration in JSON format and validates it strickly ensuring to output any necessary errors as required.
+
+\subsubsection*{REST API}
+\textit{REST API} exposes a REST service API that can be used to query and update the configuration once the proxy has started.  The REST API can be used to add new server or container clusters.  When a new container cluster is added the configuration service uses the Docker Client to ensure that the necessary containers are created by the Docker Daemon.  The REST API also supports deleting server or container configuration, if the configuration is deleted then the proxy will not longer send requests to the deleted servers or containers.  In addition if the container configuration is deleted then the proxy will stop and remove then relevant containers by communicating with the Docker Daemon.
+
+\subsubsection*{Docker Client}
+\textit{Docker Client} manages all the interactions with the Docker Daemon including pulling images, creating containers, starting containers, querying container status, stopping containers, and removing containers.  The Docker Client is also responsible for stream the response from the Docker Daemon to console output when the proxy starts or to the response of a REST API request.  This ensures that any failure while performing any Docker action is clearly indicated to the user.  To ensure that it is quick and simple for the user to resolve any issues with docker containers the Docker Client also attaches to each new container for the first 3 second of its initial start up and returns the log (standard out and standard error) to the user.  This is particularly helpful when triaging why a container has not started.
+
+\noindent
+The Docker Client enables support for the following Docker configurations:
 	\begin{list}{-}{}
 		\itemsep0em	
 		\item name of the image to create each container from
@@ -931,6 +945,56 @@ Extensive support for managing Docker containers and images, including support f
 		\item adding custom LXC options for the container
 		\item giving extended privileges to the container
 	\end{list}
+	
+\subsubsection*{Cluster \& Container Management}
+\textit{Cluster \& Container Management} is the bridge between the File Parser, REST API, Docker Client and the routing stage of the proxy.  This component manages the list of all server and container configurations and which configuration are grouped into a cluster.  All persistent data is stored in this component to support routing decisions, such as, for example information to support the gradual upgrade mode, as follows: \bigskip  
+
+\begin{lstlisting}[language=terminal]
+type Clusters  struct {
+	ContextsByVersion    *list.List
+	ContextsByID         map[string]*Cluster
+	DockerHostEndpoint   string
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=terminal]
+type Cluster struct {
+	BackendAddresses                []*BackendAddress
+	DockerConfigurations            []*docker_client.DockerConfig
+	RequestCounter                  int64
+	TransitionCounter               float64
+	PercentageTransitionPerRequest  float64
+	Uuid                            uuid.UUID
+	SessionTimeout                  int64
+	Mode                            TransitionMode
+	Version                         string
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=terminal]
+type DockerConfig struct {
+	Image           string `json:"image,omitempty"`
+	Tag             string `json:"tag,omitempty"`
+	AlwaysPull      bool `json:"alwaysPull,omitempty"`
+	PortToProxy     int64 `json:"portToProxy,omitempty"`
+	Name            string `json:"name,omitempty"`
+	WorkingDir      string `json:"workingDir,omitempty"`
+	Entrypoint      []string `json:"entrypoint,omitempty"`
+	Environment     []string `json:"environment,omitempty"`
+	Cmd             []string `json:"cmd,omitempty"`
+	Hostname        string `json:"hostname,omitempty"`
+	Volumes         []string `json:"volumes,omitempty"`
+	VolumesFrom     []string `json:"volumesFrom,omitempty"`
+	PortBindings    map[Port][]PortBinding `json:"portBindings,omitempty"`
+	Links           []string `json:"links,omitempty"`
+	User            string `json:"user,omitempty"`
+	Memory          int64 `json:"memory,omitempty"`
+	CpuShares       int64 `json:"cpuShares,omitempty"`
+	LxcConf         []KeyValuePair `json:"lxcConf,omitempty"`
+	Privileged      bool `json:"privileged,omitempty"`
+}
+\end{lstlisting} 
+
 
 \section{Proxy Installation}
 The proxy can be installed in two simple steps as follows:
@@ -1199,14 +1263,6 @@ GET requests to \textit{/configuration/cluster/\{clusterId\}} gets a single clus
 
 \subsection{DELETE - /configuration/cluster/\{clusterId\}}
 DELETE requests to \textit{/configuration/cluster/\{clusterId\}} deletes a single cluster configuration. No request body and response body is defined for the DELETE request. Appendix \ref{Appendix I} shows an example of a DELETE request and the response received from the proxy.
-
-
-\section{Dockerising the proxy}
-xxxxxx
-Talk about how I dockerised the proxy \bigskip
-xxxxxx
-why didn't use fleet system and coreOS? \bigskip
-xxxx
 
 \section{Testing}
 As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\bigskip
