@@ -198,7 +198,7 @@ Thus, there has been a continuous introduction of new techniques to reduce the f
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.25]{cost_of_bugs}
-  \caption{Cost of bugs during  feature Development Life Cycle}
+  \caption{Cost of bugs during  feature development life Cycle}
   \label{cost}
 \end{figure}
 % \vspace{-18pt}
@@ -244,26 +244,25 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \end{list}
 
 \section{Outline of the Report}
-\textbf{Chapter 2} - 
+\textbf{Related Work Chapter} - Presents different approaches and technologies used in the past decades to achieve and maintain highly available software and reliable dynamic software updates. 
 
 \noindent \\
-\textbf{Chapter 3} -
+\textbf{Technical Background Chapter} -Explains and justifies the technologies used to implement the dynamic software update proxy.
 
 \noindent \\
-\textbf{Chapter 4} -
+\textbf{ Design Chapter} - DESIGN
 
 \noindent \\
-\textbf{Chapter 5} -
+\textbf{Implementation Chapter} - IMPLEMENTATION
 
 \noindent \\
-\textbf{Chapter 6} -
+\textbf{Evaluation Chapter} - Presents the evaluations of the dynamic software update proxy to test its performance, functional correctness and robustness while proxying requests to real applications. 
 
 \noindent \\
-\textbf{Chapter 7} -
+\textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project. \hl{The limitations of the system are also presented}. Finally, possible future work for extensions of the dynamic software upgrade proxy. 
 
 \noindent \\
-\textbf{Chapter 8} -
-
+\textbf{Appendices} - Appendices
 
 \chapter{Related Work}
 Software reliability is compromised of the following main activities:
@@ -334,8 +333,7 @@ Furthermore, continuous delivery promotes small incremental updates that are dep
 
 
 \subsection{Immutable Infrastructure}
-
-xxxxxxx
+\hl{xxxxxxx xxxxxxxxxxxxxxxxxxxxx}
 
 
 
@@ -365,119 +363,7 @@ More recently, Hosek \textit{et al.} proposed a novel framework called Mx, which
 \clearpage
 
 \chapter{Technical Background}
-This chapter explains and justifies the technologies that will be used in the implementation of the dynamic software update system proposed in chapter \ref{Implementation}.
- 
-\section{Efficient Cluster Management} 
-As described in Section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
-
-\subsection{Virtualization} 
-Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system\footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
-
-The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.
-
-\subsubsection*{Hypervisor Virtualization}
-Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware\footnote{\url{http://www.vmware.com/}} or VirtualBox\footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor}).\bigskip
-
-
-%\vspace{-8pt}
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=1]{Hypervisor}
-  \caption{Hypervisor Type 1 vs. Type 2 \cite{Hypervisors}}
-  \label{Hypervisor}
-\end{figure}
-%\vspace{-15pt}
-
-\subsubsection*{Container Virtualization} 
-Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2)\footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \bigskip
-
-
-%\vspace{-8pt}
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=1]{containervsvm}
-  \caption{Containers vs. Traditional Virtual Machines \textsuperscript{\ref{AAA}}}%\footnotemark %\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
-  \label{vm vs container}  
-\end{figure}
-\vspace{-18pt}
-
-\footnotetext{ \label{AAA}\url{https://www.docker.io/the_whole_story/}} 
-
-\noindent
-\\\textbf{\textit{Linux Containers}}
-
-\noindent
-Container virtualization has been developed independently for different operating systems such as Linux OpenVZ\footnote{\url{http://openvz.org/Main_Page}}, Solaris Containers\footnote{\url{http://www.oracle.com/technetwork/server-storage/solaris/containers-169727.html}}, FreeBSD Jails\footnote{\url{http://www.freebsd.org/cgi/man.cgi?jail}}. A popular example is Linux Containers (LXC)\footnote{\label{LCX} \url{https://linuxcontainers.org/}} that allows a complete copy of the Linux OS to run in a container without the overhead of running a type-2 hypervisor. LXC uses kernel namespaces, AppArmor\footnote{\url{https://wiki.ubuntu.com/AppArmor}}, SELinux\footnote{\url{http://selinuxproject.org/page/Main_Page}}, chroots, and Control groups to provide container virtualization. 
-
-\noindent
-Kernel namespaces is used for virtualization of:
-
-\begin{list}{-}{}
-  \itemsep0em
-  \item Process identifiers
-  \item Network interface controllers, firewall rules and routing tables
-  \item Hostname
-  \item Filesystem layouts 
-  \item Interprocess communication
-  \end{list}
-
-\noindent 
-Control groups is used to provide:
-
-\begin{list}{-}{}
-  \itemsep0em
-  \item Resource limiting to control use of resources such as memory
-  \item Prioritization to control the share of the CPU being used
-  \item Accounting to measure how much resources are being used
-  \end{list}
-
-\noindent
-Chroots, also know as "chroot jails", are used to change the apparent root directory in the filesystem ensuring applications cannot view files and folders outside of the chroot.
-
-AppArmor and SELinux are used to improve security and ensure that applications cannot break out of the LXC \cite{security}.
-
-LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system\footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \bigskip
-
-%\textsuperscript{\ref{LCX}}
-
-\noindent
-\textbf{\textit{Docker}}
-
-\noindent
-Docker is an open source application (or framework) that extend and simplifies LXC to provide Linux Containers. Docker allows easy creation of lightweight, portable, self-sufficient containers. Docker extends LXC by providing many features that make it is easier to develop, deploy, automate and share containers\footnote{\label{dockerB} \url{https://www.docker.io/the_whole_story/}}. Docker simplifies containerization supporting techniques such as Continuous Delivery by allowing a Docker container built and tested on a developer's laptop to be run anywhere. Docker containers can run on bare metal servers, virtual machines, OpenStack\footnote{\url{https://www.openstack.org/}} clusters or on a service provider's infrastructure such as Digital Ocean\footnote{\url{https://www.digitalocean.com/}}. 
-
-Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems (Figure \ref{docker-filesystem}). A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git\footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another. \bigskip
-
-\begin{figure}[!ht]
-  \centering
-     \includegraphics[scale=0.55]{docker-filesystem}
-  \caption{Docker Filesystem\textsuperscript{\ref{filesystem}}} %\footnotemark
-  \label{docker-filesystem}
-\end{figure}
-\footnotetext{ \label{filesystem}\url{https://docs.docker.com/terms/layer/}} 
-
-
-In addition,  Docker provides a scripting language for creating containers and images based on other images. The script, called a Dockerfile, defines the differences between the new image and the previous base image. Dockerfiles allow the execution of shell commands, the configuration of processes to run when the container is started and control over the public interface of the container including exposed ports and directories. 
-
-Docker also provides a registry of containers called the Docker Index. It allows containers to be publicly shared. The index contains images created by committing a filesystem layer and images created by the Docker Index build system using a Dockerfile \cite{docker2}.
-   
-With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately\footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \bigskip
-
-\noindent
-\section{Messaging Systems} \label{MOM}
-Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ)\footnote{\label{ZeroMQ_1} \url{http://zeromq.org/}} are the most common messaging standards. 
-
-\subsection{Broker-Based Messaging Systems} 
-AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. 
-
-In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
-
-\subsection{Zero Broker Messaging Systems} 
-In a broker-less messaging system each application directly talks to other applications without any middleware, hence, there are no bottlenecks associated with these systems. The application can manage and maintain its own messaging infrastructure and so encapsulation and separation of concerns are increased.
-
-ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications\footnote{\label{ZeroMQ_2} \url{http://zeromq.org/}}. 
-
-ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
+This chapter explains and justifies the technologies used to implement the dynamic software update proxy described in Chapter \ref{Design}.
 
 \section{Hypertext Transfer Protocol} \label{HTTP}
 The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed hypertext and hypermedia information systems supporting the interlinking of text and multimedia.  Hypertext, a term coined by Ted Nelson \cite{hypertext}, is text which is not constrained to be linear and contains links to other texts.  Hypermedia is an extension to hypertext adding support for multimedia, such as images, video and sound.
@@ -577,6 +463,118 @@ Content-Type: text/html; charset=UTF-8
 
 <!DOCTYPE html> ... </html>
 \end{lstlisting} 
+
+\section{Messaging Systems} \label{MOM}
+Messaging systems allow two or more applications to exchange information in the form of messaging. Advanced Message Queuing Protocol (AMQP) \cite{AMPQ}, Java Message Service (JMS) \cite{JMS} and Zero Message Queuing (ZeroMQ)\footnote{\label{ZeroMQ_1} \url{http://zeromq.org/}} are the most common messaging standards. 
+
+\subsection{Broker-Based Messaging Systems} 
+AMPQ and JMS are popular examples of broker-based messing systems. A message broker (also called Message Oriented Middleware) is a physical component that handles the communications between different applications. Hence, in a broker-based messaging system instead of applications directly communicating with each other, they communicate with the message broker \cite{broker}. The advantage of using this architecture is that the applications do not need to know the location of other applications. They only need to be aware of the network address of the broker. The broker then routes the messages to the correct applications based on the business requirements using the message properties, queue name or routing key \cite{AMPQ}. 
+
+In addition, a broker-based messaging system is more resistant to the application failure. This is because if an application fails, messages that are already in the broker will be retained. However, broker-based messaging systems require excessive amount of network communication. Moreover, since all the messages have to be passed through the broker, the broker can turn out to be a bottleneck in the system. Therefore, the broker can be utilized to 100\% while other components of the system are under-utilized or even idle. Finally, the broker has to be managed and maintained separately to the applications sending and receiving messages. This breaks encapsulation and separation of concerns because the broker contains application specific configuration and logic. Therefore, if the application requirements change, both the broker and the application must be updated in a coordinated way. In addition, one broker often contains logic and queues for several different applications.
+
+\subsection{Zero Broker Messaging Systems} 
+In a broker-less messaging system each application directly talks to other applications without any middleware, hence, there are no bottlenecks associated with these systems. The application can manage and maintain its own messaging infrastructure and so encapsulation and separation of concerns are increased.
+
+ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging library. Asynchronous I/O model of ZeroMQ asynchronous message-processing required for scalable multi-core applications\footnote{\label{ZeroMQ_2} \url{http://zeromq.org/}}. 
+
+ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
+
+
+\section{Efficient Cluster Management} 
+As described in Section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
+
+\subsection{Virtualization} 
+Virtualization is the separation of a resource or service from the underlying physical delivery of that resource or service. Virtualization can occur on multiple different infrastructure layers such as network, storage, server hardware, operating systems or applications. Virtual memory, for example, simulates additional memory above the memory that is physically available by using a swap file on hard disk \cite{virtualization}. Filesystems are also virtualized; for example, a Logical Volume Manager (LVM) maps multiple physical disks to logical pools of storage (volume groups). A filesystem can then be created on top of the logical volume within a logical pool (volume group). The filesystem can therefore be spread across multiple physical disks, be re-sized and or moved from one physical disk to another while I/O is happening to the file system\footnote{ \url {http://www.markus-gattol.name/ws/lvm.html}}. 
+
+The main advantage of virtualization is separation between the virtualized infrastructure and the physical infrastructure. This means that applications can continue to execute with no downtime even when physical hardware is replaced, fails or any other hardware maintenance is performed. In addition, physical resources can be pooled and combined then redistributed as required.
+
+\subsubsection*{Hypervisor Virtualization}
+Operating system virtualization that is called hypervisor virtualization allows multiple guest operating systems to run on a single host system at the same time \cite{Hypervisors2}. This type of virtualization can be either native based (type 1) or hosted based (type 2) \cite{Hypervisors}. Hosted based hypervisor virtualization uses an application that is installed on an OS such as VMware\footnote{\url{http://www.vmware.com/}} or VirtualBox\footnote{\url {https://www.virtualbox.org/}}. Native hypervisor based virtualization in contrast avoids the overhead of the host OS by running the virtualization layer directly on the host machine (bare-metal). The guest OS shares the hardware of the host computer such that each OS appears to have its own processor, memory and other hardware resources. Since hypervisor has direct access to the hardware resources, it is efficient and enables greater scalability, robustness and performance. In addition, a hypervisor can run the virtualization layer across multiple physical machines \cite{Hypervisors}. This allows new physical machines to be added or maintenance to be performed against existing physical machines transparently without affecting the host operating systems. (Figure \ref{Hypervisor}).\bigskip
+
+%\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=1]{Hypervisor}
+  \caption{Hypervisor type 1 vs. type 2 \cite{Hypervisors}}
+  \label{Hypervisor}
+\end{figure}
+%\vspace{-15pt}
+
+\subsubsection*{Container Virtualization} 
+Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2)\footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \bigskip
+
+
+%\vspace{-8pt}
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=1]{containervsvm}
+  \caption{Containers vs. traditional virtual machines\textsuperscript{\ref{AAA}}}%\footnotemark %\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
+  \label{vm vs container}  
+\end{figure}
+\vspace{-18pt}
+
+\footnotetext{ \label{AAA}\url{https://www.docker.io/the_whole_story/}} 
+
+\noindent
+\\\textbf{\textit{Linux Containers}}
+
+\noindent
+Container virtualization has been developed independently for different operating systems such as Linux OpenVZ\footnote{\url{http://openvz.org/Main_Page}}, Solaris Containers\footnote{\url{http://www.oracle.com/technetwork/server-storage/solaris/containers-169727.html}}, FreeBSD Jails\footnote{\url{http://www.freebsd.org/cgi/man.cgi?jail}}. A popular example is Linux Containers (LXC)\footnote{\label{LCX} \url{https://linuxcontainers.org/}} that allows a complete copy of the Linux OS to run in a container without the overhead of running a type-2 hypervisor. LXC uses kernel namespaces, AppArmor\footnote{\url{https://wiki.ubuntu.com/AppArmor}}, SELinux\footnote{\url{http://selinuxproject.org/page/Main_Page}}, chroots, and Control groups to provide container virtualization. 
+
+\noindent
+Kernel namespaces is used for virtualization of:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item Process identifiers
+  \item Network interface controllers, firewall rules and routing tables
+  \item Hostname
+  \item Filesystem layouts 
+  \item Interprocess communication
+  \end{list}
+
+\noindent 
+Control groups is used to provide:
+
+\begin{list}{-}{}
+  \itemsep0em
+  \item Resource limiting to control use of resources such as memory
+  \item Prioritization to control the share of the CPU being used
+  \item Accounting to measure how much resources are being used
+  \end{list}
+
+\noindent
+Chroots, also know as "chroot jails", are used to change the apparent root directory in the filesystem ensuring applications cannot view files and folders outside of the chroot.
+
+AppArmor and SELinux are used to improve security and ensure that applications cannot break out of the LXC \cite{security}.
+
+LXC provides user environments whose resources can be tightly controlled, without the need to virtualize the hardware resources. It also allows running many copies of application configurations on the same system\footnote{\url{https://linuxcontainers.org/}}. This has proven to be a significantly useful feature of these containers for seamless software upgrade (Section \ref{upgrade1}). Furthermore, since the LXC is sharing the kernel with the host system, its processes and filesystem are completely visible from the host; however, this means that the user is limited to the modules and drivers that the container has loaded. \bigskip
+
+%\textsuperscript{\ref{LCX}}
+
+\noindent
+\textbf{\textit{Docker}}
+
+\noindent
+Docker is an open source application (or framework) that extend and simplifies LXC to provide Linux Containers. Docker allows easy creation of lightweight, portable, self-sufficient containers. Docker extends LXC by providing many features that make it is easier to develop, deploy, automate and share containers\footnote{\label{dockerB} \url{https://www.docker.io/the_whole_story/}}. Docker simplifies containerization supporting techniques such as Continuous Delivery by allowing a Docker container built and tested on a developer's laptop to be run anywhere. Docker containers can run on bare metal servers, virtual machines, OpenStack\footnote{\url{https://www.openstack.org/}} clusters or on a service provider's infrastructure such as Digital Ocean\footnote{\url{https://www.digitalocean.com/}}. 
+
+Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems (Figure \ref{docker-filesystem}). A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git\footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another. \bigskip
+
+\begin{figure}
+  \centering
+     \includegraphics[scale=0.5]{docker-filesystem}
+  \caption{Docker filesystem\textsuperscript{\ref{filesystem}}} %\footnotemark
+  \label{docker-filesystem}
+\end{figure}
+\footnotetext{ \label{filesystem}\url{https://docs.docker.com/terms/layer/}} 
+
+
+In addition,  Docker provides a scripting language for creating containers and images based on other images. The script, called a Dockerfile, defines the differences between the new image and the previous base image. Dockerfiles allow the execution of shell commands, the configuration of processes to run when the container is started and control over the public interface of the container including exposed ports and directories. 
+
+Docker also provides a registry of containers called the Docker Index. It allows containers to be publicly shared. The index contains images created by committing a filesystem layer and images created by the Docker Index build system using a Dockerfile \cite{docker2}.
+   
+With Docker, a new application on a host only needs its binaries or libraries but not a new guest OS. In addition, the same application binaries can be shared between multiple running copies of the application using a shared Docker image. If modifications are made between different versions of the application only the differences need to be maintained separately\footnote{\label{dockerC} \url{https://www.docker.io/the_whole_story/}}. \bigskip
+
 \clearpage
 
 \chapter{Design}\label{Design}
@@ -598,7 +596,7 @@ In this mechanism the updated version of software immediately processes all requ
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.30]{instant_upgrade}
-  \caption{Instant Upgrade and Failure Rollback}
+  \caption{Instant upgrade and failure rollback}
   \label{instant_upgrade}
 \end{figure}
 % \vspace{-18pt}
@@ -613,7 +611,7 @@ This update mechanism only switches new sessions to the updated version. A new s
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.30]{session_upgrade}
-  \caption{Session Upgrade}
+  \caption{Session upgrade}
   \label{session_upgrade}
 \end{figure}
 % \vspace{-18pt}
@@ -628,7 +626,7 @@ This mechanism switches new sessions gradually to the updated version over multi
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.30]{gradual_upgrade}
-  \caption{Gradual Upgrade}
+  \caption{Gradual upgrade}
   \label{gradual_upgrade}
 \end{figure}
 % \vspace{-18pt}
@@ -643,7 +641,7 @@ In this mechanism the updated and non-updated versions run concurrently and proc
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.30]{concurrent_upgrade}
-  \caption{Concurrent Upgrade}
+  \caption{Concurrent upgrade}
   \label{concurrent_upgrade}
 \end{figure}
 % \vspace{-18pt}
@@ -693,7 +691,7 @@ The first proxy developed to support dynamic software update was an HTTP reverse
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.31]{prototype}
-  \caption{Message Based Proxy Using ZeroMQ}
+  \caption{Message based proxy using ZeroMQ}
   \label{prototype}
 \end{figure}
 
@@ -716,7 +714,7 @@ An identical but opposite set of \textit{Read} and \textit{Write} loops are crea
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.31]{content_counting_proxy}
-  \caption{Socket Based Proxy With Content Counting}
+  \caption{Socket based proxy with content counting}
   \label{content_counting_proxy}
 \end{figure}
 
@@ -803,7 +801,7 @@ To prevent the socket errors that occurred in the content counting proxy \ref{Co
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.30]{proxy}
-  \caption{Staged Socket Based Staged Proxy Design Supporting Dynamic Software Update}
+  \caption{Socket based staged proxy design supporting dynamic software update}
   \label{proxy}
 \end{figure}
 % \vspace{-18pt}
@@ -1130,14 +1128,15 @@ docker run --name some-wordpress --link some-mysql:mysql
 \subsection{Latency in Response to Updated Version Failure}\label{Recovery}
 The aim of this evaluation was to measure how rapidly the proxy applies an upgrade and rolls back to an older version of the application when the new version does not behave correctly. 
 
-INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in section \ref{load}.    
+INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Section \ref{load}.    
 
-The proxy was initially configured to forward responses to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP request by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed. The failure was stimulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION mode and GRADUAL mode were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
+The proxy was initially configured to forward responses to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was stimulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
 As shown in Table  {\ref{upgrade-speed}}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
  
-\begin{table}\label{upgrade-speed}
+\begin{table}
 \caption {Proxy Latency for dynamic upgrade and error recovery}
+\label{upgrade-speed}
 \begin{center}
     \begin{tabular}{ | l | l | l | p{5cm} |}
     \hline
@@ -1169,7 +1168,7 @@ The dynamic software update proxy is designed to behave as a load balancer and d
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.40]{couchbase_cluster}
-  \caption{Couchbase Cluster With Three Servers}
+  \caption{Couchbase cluster with three servers}
   \label{couchbase_cluster}
 \end{figure} 
 
@@ -1300,7 +1299,7 @@ Cache-Control: no-cache
 \subsection{Real Software Upgrades}
 The main feature of the implemented proxy described in Chapter \ref{Implementation} is its ability to support dynamic software update for continues delivery into production. The proxy is able to dynamically update an application to a new version. It then runs different versions of an application concurrently and it automatically monitors the behavior of the most updated version. If the updated version behaves incorrectly, the proxy seamlessly removes that version of the application and routes all requests to the previous stable version with no downtime. This section evaluates the aforementioned functionality of the proxy in details using real applications.
 
-Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in section \ref{load}.
+Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Section \ref{load}.
 
 For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the following actions were executed sequentially:
 
