@@ -209,13 +209,13 @@ Thus, there has been a continuous introduction of new techniques to reduce the f
 To date, there is no existing system considered robust enough to be used widely for fully automated continuous delivery and reliable software upgrades from development into production.
  
 \section{Objectives}
-The main objective of this project was to implement a proxy that:
-
+The main objectives of this project were to implement a proxy that adds no significant overhead while:
 \begin{list}{-}{}
 \itemsep0em
-\item Support reliable dynamic software update
-
-\item Support seamless rollback to the old version of the application when the upgraded version behaves incorrectly  
+\item supporting reliable dynamic software update by seamlessly routing requests to the latest application version
+\item supporting seamless rollback to the previous version of the application when the upgraded version behaves incorrectly  
+\item managing application clusters using container virtualization
+\item being reliable, robust and stable under heavy load
 \end{list}
  
 \section{Contributions}
@@ -578,12 +578,44 @@ With Docker, a new application on a host only needs its binaries or libraries bu
 \clearpage
 
 \chapter{Design}\label{Design}
-To manage the ever-increasing size of E-commerce and web related services large-scale clusters are deployed to virtualized operating systems running on hypervisors. However, hypervisors have a significant overhead when all that is required is a simple way to run clustered instances of applications. Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon EC2\footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}.
+\section{Requirements}\label{requirements} 
 
-In addition to the use of virtualization, continuous delivery and automated deployments are critical to reduce the cost of maintaining large clusters of software that require regular updates and feature releases. Although many companies use automated deployment tools, continuous delivery all the way into production is extremely rare due to the significant risk imposed by applying automated updates directly into production.
+The main objectives of this project were to implement a proxy that adds no significant overhead while:
+\begin{list}{-}{}
+\itemsep0em
+\item supporting reliable dynamic software update by seamlessly routing requests to the latest application version
+\item supporting seamless rollback to the previous version of the application when the upgraded version behaves incorrectly  
+\item managing application clusters using container virtualization
+\item being reliable, robust and stable under heavy load
+\end{list}
+
+To 
 
 \section{Dynamic Software Update System}\label{modes} 
-To support reliable dynamic software updates a simple lightweight system has been developed suitable for continuous delivery into production. The system runs the updated version concurrently with previous stable versions. The updated version is monitored automatically and if the updated version behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
+
+Typically different application update situations require different update modes:
+
+Instant Update
+
+Serious bugs such as a critical security flaw requires the application to be updated immediately to reduce the error or security exposure as quickly as possible.  All users should therefore immediately be updated to the most recent version.
+
+Session Update
+
+A new feature may change the behaviour of the system.  Users who are currently interacting with the system should typically not experience the new feature until their current interaction session has completed.  For example a user in the process of purchasing products on an e-commerce site would typically not want the sites behaviour to change during a shopping experience.  In this case the user should not experience the new application version until their next interaction with the site.
+
+Gradual Update
+
+To reduce the risk associated with deploying a new feature application updates are often rolled out gradually.  A gradual update mechanism slowly migrates users from the existing application version to the updated application version in a controlled manner.
+
+Concurrent Update
+
+In the case where an application upgrade does not significantly change the user facing feature set or the shape of the API the old and the new versions can be run in parallel.  All requests are sent to both versions of the application as long as the new application version responds correctly then this response will be returned to the user.  If the new application version fails to respond, crashes or returns a server error then the response from the previous version can be returned to the user.
+
+
+- a new feature may require users to receive the latest version once they have completed any existing interactions.  For example 
+
+To support flexibility in the update usage scenarios 
+ a simple lightweight system has been developed suitable for continuous delivery into production. The system runs the updated version concurrently with previous stable versions. The updated version is monitored automatically and if the updated version behaves incorrectly, all requests will be seamlessly routed to the previous stable version with no downtime.
 
 Four mechanisms are supported to enable different reliable update strategies depending on the specific software requirements.
 
