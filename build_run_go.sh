@@ -26,8 +26,8 @@ echo "Building project"
 make
 
 echo "Running proxy with logLevel ${logLevel}"
-proxy -logLevel="${logLevel}" -configFile="config/config_script.json" &
-#proxy -logLevel="${logLevel}" -configFile="config/config_docker_wordpress.json" &
+#proxy -logLevel="${logLevel}" -configFile="config/config_script.json" &
+proxy -logLevel="${logLevel}" -configFile="config/config_lighttpd.json" &
 
 trap "pkill proxy; pkill example_server" exit INT TERM
 

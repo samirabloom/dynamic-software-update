@@ -1,0 +1,363 @@
+// build the docker images for both normal and buggy server 
+docker build -t lighttpd:2147 .
+docker build -t lighttpd:2348 .
+
+// start proxy with following initial config running the healthy server
+
+2014/09/01 00:53:51.457950 config_parse.go:64:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "lighttpd",
+                "tag": "2147",
+                "portToProxy": 8080,
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8080"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "1.4"
+    }
+}
+
+as:
+Proxy{
+	Proxy Address:      0.0.0.0:1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 1.4 [192.168.50.5:8080]
+}
+
+
+/// first request with the response
+curl -v http://127.0.0.1:1235
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+ 
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=0d151a53-316a-11e4-bb0e-600308a8245e;
+Vary: Accept-Encoding
+Content-Type: text/html
+Accept-Ranges: bytes
+Last-Modified: Sun, 31 Aug 2014 23:45:51 GMT
+Content-Length: 177
+Date: Sun, 31 Aug 2014 23:54:57 GMT
+Server: lighttpd/1.4.20
+ 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server With NO Bug</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+Lighttpd server with a NO bug running on port 8080
+
+</body>
+* Connection #0 to host 127.0.0.1 left intact
+</html>
+
+/// proxy's response to first HTTP request
+
+2014/09/01 00:54:58.458009 proxy_context_cluster.go:151:     INFO - Serving response 0 from ip: [192.168.50.5] port: [8080] version: [1.4] mode: [INSTANT]
+
+// Concurrent upgrade with the buggy server 
+
+curl -v -X PUT 'http://127.0.0.1:9090/configuration/cluster' -H 'Content-Type: application/json' -d @config_for_curl/config_curl_ligttpd_bug.json
+
+// with following config file 
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "lighttpd",
+                "portToProxy": 8081,
+                "tag": "2438",
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8081"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "1.4.2",
+        "upgradeTransition": {
+            "mode": "CONCURRENT"
+        }
+    }
+}
+
+// the response to the upgrade 
+
+samiras-mbp:dynamic-software-update samirarabbanian$ curl -v -X PUT 'http://127.0.0.1:9090/configuration/cluster' -H 'Content-Type: application/json' -d @config_for_curl/config_curl_ligttpd_bug.json
+* About to connect() to 127.0.0.1 port 9090 (#0)
+*   Trying 127.0.0.1...
+* Adding handle: conn: 0x7ff4d9004000
+* Adding handle: send: 0
+* Adding handle: recv: 0
+* Curl_addHandleToPipeline: length: 1
+* - Conn 0 (0x7ff4d9004000) send_pipe: 1, recv_pipe: 0
+* Connected to 127.0.0.1 (127.0.0.1) port 9090 (#0)
+> PUT /configuration/cluster HTTP/1.1
+> User-Agent: curl/7.30.0
+> Host: 127.0.0.1:9090
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 528
+> 
+* upload completely sent off: 528 out of 528 bytes
+< HTTP/1.1 200 OK
+< Date: Sun, 31 Aug 2014 23:58:53 GMT
+< Content-Type: text/plain; charset=utf-8
+< Transfer-Encoding: chunked
+< 
+Created container [lighttpd_c3031c1b-316a-11e4-bb0e-600308a8245e] for image [lighttpd:2438]
+
+======================================
+==========CONTAINER DETAILS===========
+======================================
+{
+   "ID": "6d0352d6d606f352a2f0d2657c0a0953bbbe45ae7b08c7c9261c8b530f918373",
+   "Created": "2014-08-31T23:58:53.854955165Z",
+   "Path": "lighttpd",
+   "Args": [
+      "-D",
+      "-f",
+      "/etc/lighttpd.conf"
+   ],
+   "Config": {
+      "Hostname": "6d0352d6d606",
+      "Domainname": "",
+      "User": "",
+      "Memory": 0,
+      "MemorySwap": 0,
+      "CpuShares": 0,
+      "AttachStdin": false,
+      "AttachStdout": false,
+      "AttachStderr": false,
+      "PortSpecs": null,
+      "ExposedPorts": {
+         "80/tcp": {}
+      },
+      "Tty": false,
+      "OpenStdin": false,
+      "StdinOnce": false,
+      "Env": [
+         "HOME=/",
+         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ],
+      "Cmd": [
+         "lighttpd",
+         "-D",
+         "-f",
+         "/etc/lighttpd.conf"
+      ],
+      "Dns": null,
+      "Image": "lighttpd:2438",
+      "Volumes": null,
+      "VolumesFrom": "",
+      "WorkingDir": "/var/www/html",
+      "Entrypoint": null,
+      "NetworkDisabled": false
+   },
+   "State": {
+      "Running": true,
+      "Paused": false,
+      "Pid": 31527,
+      "ExitCode": 0,
+      "StartedAt": "2014-08-31T23:58:53.903896383Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+   },
+   "Image": "b631a74cc3a579a48acba04db8511c3c6dafdf2d3170d7f5ca43900abe01a6f7",
+   "NetworkSettings": {
+      "IPAddress": "172.17.0.3",
+      "IPPrefixLen": 16,
+      "Gateway": "172.17.42.1",
+      "Bridge": "docker0",
+      "PortMapping": null,
+      "Ports": {
+         "80/tcp": [
+            {
+               "HostIp": "0.0.0.0",
+               "HostPort": "8081"
+            }
+         ]
+      }
+   },
+   "SysInitPath": "",
+   "ResolvConfPath": "/etc/resolv.conf",
+   "HostnamePath": "/var/lib/docker/containers/6d0352d6d606f352a2f0d2657c0a0953bbbe45ae7b08c7c9261c8b530f918373/hostname",
+   "HostsPath": "/var/lib/docker/containers/6d0352d6d606f352a2f0d2657c0a0953bbbe45ae7b08c7c9261c8b530f918373/hosts",
+   "Name": "/lighttpd_c3031c1b-316a-11e4-bb0e-600308a8245e",
+   "Driver": "aufs",
+   "Volumes": {},
+   "VolumesRW": {},
+   "HostConfig": {
+      "Binds": null,
+      "ContainerIDFile": "",
+      "LxcConf": [],
+      "Privileged": false,
+      "PortBindings": {
+         "80/tcp": [
+            {
+               "HostIp": "0.0.0.0",
+               "HostPort": "8081"
+            }
+         ]
+      },
+      "Links": null,
+      "PublishAllPorts": false,
+      "Dns": null,
+      "DnsSearch": null,
+      "VolumesFrom": null,
+      "NetworkMode": "",
+      "RestartPolicy": {
+         "Name": "",
+         "MaximumRetryCount": 0
+      }
+   }
+}
+======================================
+
+Container Log (first 3 seconds):
+2014-08-31 23:58:53: (log.c.97) server started 
+
+* Connection #0 to host 127.0.0.1 left intact
+c302f867-316a-11e4-bb0e-600308a8245e
+
+// proxy's response to the upgrade 
+
+2014/09/01 00:58:56.672931 config_service.go:82:     INFO - Received new cluster configuration:
+{
+   "cluster": {
+      "containers": [
+         {
+            "image": "lighttpd",
+            "portBindings": {
+               "80/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "8081"
+                  }
+               ]
+            },
+            "portToProxy": 8081,
+            "tag": "2438"
+         }
+      ],
+      "upgradeTransition": {
+         "mode": "CONCURRENT"
+      },
+      "version": "1.4.2"
+   }
+}
+
+
+
+
+
+\\\ HTTP requests after concurrent upgrade with no compression
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+ 
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=c302f867-316a-11e4-bb0e-600308a8245e;
+Vary: Accept-Encoding
+Content-Type: text/html
+Accept-Ranges: bytes
+Last-Modified: Sun, 31 Aug 2014 23:45:51 GMT
+Content-Length: 182
+Date: Mon, 01 Sep 2014 00:01:23 GMT
+Server: lighttpd/1.4.23
+ 
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Server With Bug</title>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+  Lighttpd server with a bug running on port 8081
+
+  </body>
+</html>
+
+// proxy's response to first HTTP request after upgrade with no crashing
+
+2014/09/01 01:01:23.255726 proxy_context_cluster.go:151:     INFO - Serving response 0 from ip: [192.168.50.5] port: [8081] version: [1.4.2] mode: [CONCURRENT]
+2014/09/01 01:01:23.256264 proxy_context_cluster.go:151:     INFO - Serving response 1 from ip: [192.168.50.5] port: [8080] version: [1.4] mode: [INSTANT]
+
+// HTTP request and response with crash
+curl -v --compressed http://127.0.0.1:1235
+
+GET / HTTP/1.1
+User-Agent: curl/7.30.0
+Host: 127.0.0.1:1235
+Accept: */*
+Accept-Encoding: deflate, gzip
+
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=c302f867-316a-11e4-bb0e-600308a8245e;
+Vary: Accept-Encoding
+Content-Encoding: gzip
+Last-Modified: Sun, 31 Aug 2014 23:45:51 GMT
+ETag: "0"
+Content-Type: text/html
+Accept-Ranges: bytes
+Content-Length: 157
+Date: Mon, 01 Sep 2014 00:04:22 GMT
+Server: lighttpd/1.4.20
+ 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server With NO Bug</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+Lighttpd server with a NO bug running on port 8080
+
+</body>
+</html>
+
+// proxy after crash
+
+2014/09/01 01:04:22.712415 proxy_context_cluster.go:151:     INFO - Serving response 1 from ip: [192.168.50.5] port: [8081] version: [1.4.2] mode: [CONCURRENT]
+2014/09/01 01:04:22.712945 proxy_context_cluster.go:151:     INFO - Serving response 2 from ip: [192.168.50.5] port: [8080] version: [1.4] mode: [INSTANT]
+
+
+
+
+
+
+
+
+
+
+
+
+

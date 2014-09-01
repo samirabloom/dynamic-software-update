@@ -1,0 +1,23 @@
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "lighttpd",
+                "portToProxy": 8081,
+                "tag": "2438",
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8081"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "1.4.2",
+        "upgradeTransition": {
+            "mode": "CONCURRENT"
+        }
+    }
+}
