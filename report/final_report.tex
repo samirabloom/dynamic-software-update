@@ -583,6 +583,14 @@ Four mechanisms are supported to enable different reliable update strategies dep
 
 \noindent
 In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.
+   
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.30]{instant_upgrade}
+  \caption{Instant Upgrade and Failure Rollback}
+  \label{proxy}
+\end{figure}
+% \vspace{-18pt}
 
 \noindent\\
 \underline{Session Update}
@@ -590,17 +598,44 @@ In this mechanism the updated version of software immediately processes all requ
 \noindent
 This update mechanism only switches new sessions to the updated version. A new session is identified by no requests being received from a client within a configured time period. As with Instant Update, the non-updated version however remains running and will be immediately available to process requests if the updated system does not behave correctly. This approach is useful when a low risk update is being made that provides features, which are important to make available to users as rapidly as possible. For example, a low risk update that is providing a new profit making service.
 
+   
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.30]{session_upgrade}
+  \caption{Session Upgrade}
+  \label{proxy}
+\end{figure}
+% \vspace{-18pt}
+
 \noindent\\
 \underline{Gradual Update}
 
 \noindent
 This mechanism switches new sessions gradually to the updated version over multiple days or weeks. This approach is particularly useful for risky or complex updates that have a high potential to introduce system instability. This technique is also less risky since the new software version incrementally receives a greater percentage of requests.
 
+   
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.30]{gradual_upgrade}
+  \caption{Gradual Upgrade}
+  \label{proxy}
+\end{figure}
+% \vspace{-18pt}
+
 \noindent\\
 \underline{Concurrent Update}
 
 \noindent
 In this mechanism the updated and non-updated versions run concurrently and process identical requests.  In this strategy, both the old and the new versions handle all requests and the characteristics of each response is compared to ensure the update is behaving correctly.
+
+   
+\begin{figure}[!ht]
+  \centering
+     \includegraphics[scale=0.30]{concurrent_upgrade}
+  \caption{Concurrent Upgrade}
+  \label{proxy}
+\end{figure}
+% \vspace{-18pt}
 
 In all four mechanisms the behavior of the updated software is automatically monitored to confirm the application is behaving correctly. The status code and ability to receive incoming requests is used to verify that the updated application is behaving correctly. Figure \ref{proposed_solution} demonstrates the component interactions within the proposed dynamic software update system. The focus for the dynamic software update system is on HTTP requests and responses.  This focus allows the use of HTTP headers to identify user sessions.  In addition, it allows efficient comparison between large responses without the need to buffer the entire response body.
 
@@ -799,7 +834,8 @@ type ChunkContext struct {
   
    \item{\textbf{GRADUAL}} - an additional transition cookie is used to control GRADUAL mode routing.  The transition cookies is added to each response but as it does not have an expiry time, each client should keep the same cookie. The transition cookie is used to randomly allocate each client a number between 0 and 100. This number is then used to determine which clients should be routed to the latest cluster version.   If the randomly allocated value is <= to a defined threshold then it will be routed to the latest cluster version. As more requests are correctly processed by the latest cluster version, the threshold continually increases.  This results in a gradual increase in the percentage of clients being forwarded to the latest cluster version.  As an example, if the threshold is 15 then 15\% of random clients will use the latest cluster version.  Once a client is assigned a random value, the client will keep that value. Therefore when clients start using the latest cluster, they will remain on that cluster.  However, if the latest cluster fails, it will be removed from the set of available clusters resulting in requests being routed to the previous version. \medskip
    
-   \item{\textbf{CONCURRENT}} - for CONCURRENT mode, the \textit{Route} stage forwards requests concurrently to a configurable number of the most updated cluster versions.  If the latest cluster version correctly accepts a new TCP connection and responds with an HTTP status code that is not in the 5xx range, for server errors, then the client will receive a response from the latest cluster.  If the latest cluster does not accept a new TCP connection or responds with an HTTP status code in the 5xx range then the client will receive a response from the previous cluster version.
+   \item{\textbf{CONCURRENT}} - for CONCURRENT mode, the \textit{Route} stage forwards requests concurrently to a configurable number of the most updated cluster versions.  If the latest cluster version correctly accepts a new TCP connection and responds with an HTTP status code that is not in the 5xx range, for server errors, then the client will receive a response from the latest cluster.  If the latest cluster does not accept a new TCP connection or responds with an HTTP status code in the 5xx range then the client will receive a response from the previous cluster version.  
+   
 \end{list}
 
 \noindent
