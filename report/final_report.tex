@@ -622,9 +622,7 @@ The following technology stack has been chosen for the dynamic software update s
   
 To support the multiple update approaches listed in the requirements (Section \ref{HTTP}) four mechanisms are supported.
 
-\subsubsection*{Instant Update} 
-
-\noindent
+\subsubsection*{Instant Upgrade} 
 This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. Figure \ref{instant_upgrade} shows a cookie, indicating the application version, is always added to a response.  When an instant upgrade mode is used the proxy routes all requests to the new version and updates their cookie.  When a failure occurs the proxy routes the request to the previous version and removes the failed version from the list of available versions.
    
 \begin{figure}[!ht]
@@ -635,9 +633,7 @@ This mechanism is useful when an update must be applied urgently, such as a crit
 \end{figure}
 % \vspace{-18pt}
 
-\subsubsection*{Session Update}
-
-\noindent
+\subsubsection*{Session Upgrade}
 This upgrade mode is useful when a new feature is release which affects the behaviour of the system and therefore only new sessions are switched to the updated version. Figure \ref{session_upgrade} shows that when a request is received the cookie, indicating which version the client was previously using, is examined to determine which version the request should be routed to.  The cookie in the response is updated to add a timeout.  A request with no cookie is only received from clients who have not made a request within the timeout period, therefore, a new session is identified by a request with no cookie.
 
    
@@ -649,9 +645,7 @@ This upgrade mode is useful when a new feature is release which affects the beha
 \end{figure}
 % \vspace{-18pt}
 
-\subsubsection*{Gradual Update}
-
-\noindent
+\subsubsection*{Gradual Upgrade}
 This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number clients that are exposed to the new version. Figure \ref{session_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into.  The Figure \ref{session_upgrade} shows in the first upgrade scenario the second cookie gives the request a number of 45.  The bucket for application 1.0.1 is from 0 to 10 therefore the the request does not match the bucket as 45 falls outside the range 0 to 10.  In the second upgrade scenario the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.
 
    
@@ -663,9 +657,7 @@ This mechanism switches new sessions gradually to the updated version over multi
 \end{figure}
 % \vspace{-18pt}
 
-\subsubsection*{Concurrent Update}
-
-\noindent
+\subsubsection*{Concurrent Upgrade}
 In this mechanism the updated and non-updated versions run concurrently and process identical requests.  As shown in Figure \ref{concurrent_upgrade} in this strategy, both the old and the new versions handle all requests.  If the latest version of the application behaves correctly then the client receives the response from the latest version.  The latest version of the application is considered to behave correctly if it accepts a TCP connection, returns a response, and the response has an HTTP status code that is not in the 5xx range, used to indicate server errors.
    
 \begin{figure}[!ht]
@@ -1129,7 +1121,7 @@ Real applications including Couchbase\footnote{\label{couchbase} \url{http://www
 This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy.
 
 \subsection{Load Performance and Saturation Tests}\label{load} 
-The objectives of these evaluations were to test the performance of the proxy for forwarding requests to different applications. Both saturation and load tests were performed on Coachbase and WordPress applications running within Docker containers inside a virtual machine by the proxy. The following proxy configurations were used to run WordPress and Coachbase Docker containers.\medskip
+The objectives of these evaluations were to test performance of the proxy for forwarding requests to different applications. Both saturation and load tests were performed on Coachbase and WordPress applications running within Docker containers inside a virtual machine by the proxy. The following proxy configurations were used to run WordPress and Coachbase Docker containers.\medskip
 
 \noindent
 \textit{Proxy Configuration Running WordPress Docker Container}
@@ -1223,11 +1215,11 @@ The objectives of these evaluations were to test the performance of the proxy fo
 \end{lstlisting}
 
 \noindent\\
-Saturation tests focused on stability of the proxy by sending HTTP requests (> 150 req/sec for WordPress and 400 req/sec for Couchbase) to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses for 10 seconds, 10 minutes and one hour. 
+Saturation tests focused on stability of the proxy by sending HTTP requests (> 150 req/sec for WordPress and > 400 req/sec for Couchbase) to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses for 10 seconds, 10 minutes and one hour. 
 
-For both saturation and load tests, requests were sent to WordPress and Couchbase directly and via the proxy. Figure \ref{absoloute-wordpress} and \ref{absoloute-couchbase} show the latency in milliseconds added when sending requests via the proxy in comparison to sending requests directly to either application.  Figure \ref{percentage-wordpress} and \ref{percentage-couchbase} show the latency added when sending requests via the proxy as a percentage of the latency when sending requests directly to the applications. All performance figures show the latency using a percentile distribution; the percentage indicates the proportion of the requests that have the recorded latency or lower. For example, a latency of 40 milliseconds at the 99th percentile indicates that 99\% of the requests have a 40 milliseconds latency or less.   
+For both saturation and load tests, requests were sent to WordPress and Couchbase directly and via the proxy. Figure \ref{absoloute-wordpress} and Figure \ref{absoloute-couchbase} show the latency in milliseconds added when sending requests to the applications via the proxy in comparison to sending requests directly.  Figure \ref{percentage-wordpress} and Figure \ref{percentage-couchbase} show the latency added when sending requests via the proxy as a percentage of the latency when sending requests directly to the applications. All performance figures show the latency using a percentile distribution; the percentage indicates the proportion of the requests that have the recorded latency or lower. For example, a latency of 40 milliseconds at the 99\textsuperscript{th} percentile indicates that 99\% of the requests have a 40 milliseconds latency or less.   
 
-The evaluation results from WordPress application indicated that in the majority of the time processing requests via proxy was significantly more efficient. It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, one hypothesis is that the proxy manages connections more efficiently than the WordPress application using Apache HTTP Server. This is because the proxy is written in Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle multiple requests where each requests is processed in two goroutines. One goroutine is used for the request and one goroutine is used for the response. Goroutines are executed on thread pools and therefore are not one to one with a thread. This means that when a new connection comes into a proxy generally a new thread will not be created and instead an existing thread will be used from the thread pool. Therefore, the proxy does not close connections as aggressively as Apache HTTP Server and it sends multiple requests down the same connection, which is more efficient, if the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
+The evaluation results from WordPress indicated that in the majority of the time processing requests via proxy was significantly more efficient (Figure \ref{absoloute-wordpress} and Figure \ref{absoloute-wordpress}). It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, a hypothesis is that the proxy manages connections more efficiently than WordPress using Apache HTTP Server. This is because the proxy is written in the Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle each requests.  The proxy uses two goroutines per request and response; one goroutine is used for the request and one goroutine is used for the response. However when serving a PHP page, Apache HTTP Server uses a separate thread to handle each request \footnote{\label{apache_thread_per_req}\url{http://httpd.apache.org/docs/current/mod/mpm_common.html}}.  Goroutines are executed using a thread pool and therefore are not one to one with a thread. This means that the proxy will generally not create a new thread for each request instead an existing thread will be used from the thread pool. As a result the proxy does not close connections as aggressively as Apache HTTP Server.  In addition, Apache HTTP Server uses a separate thread per request and therefore cannot maintain as many open connections.  The proxy therefor can send more requests from the same client down the same connection, as long as the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
 
 \begin{figure}[!ht]
   \centering
@@ -1243,11 +1235,11 @@ The evaluation results from WordPress application indicated that in the majority
   \label{percentage-wordpress}
 \end{figure} 
 
-Moreover, figure xx  and xx shows that the proxy has a greater standard deviation for response times because as the percentile increases up to 99\%, the overhead added by the proxy becomes greater. Go garbage collector and other sporadic activities happening at a low level inside the Go runtime could be an explanation for these findings.
+Moreover, figure \ref{absoloute-wordpress} and Figure \ref{percentage-wordpress} shows that the proxy has a greater standard deviation for response times, because as the percentile increases up to 99\%, the overhead added by the proxy becomes greater. Go garbage collector and other sporadic activities happening at a low level which may increase the latency inside the Go application could be an explanation for these findings.
 
-Similar to the WordPress, Couchbase results also showed that processing request via the proxy was mainly more efficient than processing them directly by Couchbase or if any overhead was added by the proxy it was insignificant.
+Similar to WordPress, Couchbase results also showed that processing requests via the proxy was mainly more efficient than processing them directly by Couchbase, or if any overhead was added by the proxy it was insignificant.
 
-Couchbase performance and saturation tests showed that the proxy add a small over head (<6\%) when it is run for shorter period of time, however, it is significantly increases the performance of the couchbase when it is run for medium and long periods (Figure xx, yy). Although further analysis is required to justify these findings, one hypothesis could be that Couchbase is more efficient at managing request for a short period because it is holding all the connection open. However after a period of time (>10 seconds) it runs out of resources and has to start closing connections more aggressively, therefore, its efficiency at handling connections reduces.
+Couchbase performance and saturation tests showed that the proxy added a small over head (<6\%) when it was run for shorter periods of time.  However, the proxy significantly increased the performance of Couchbase when it was run for medium and long periods of time (Figure \ref{absoloute-couchbase} and Figure \ref{percentage-couchbase}). Although further analysis is required to justify these findings, one hypothesis could be that Couchbase is more efficient at managing requests for a short period because it is keeping connections open. However after a period of time (>10 seconds), it runs out of resources and has to start closing connections more aggressively, therefore, its efficiency at handling connections reduces.
 
 
 \begin{figure}[!ht]
