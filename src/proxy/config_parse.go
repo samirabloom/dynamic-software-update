@@ -16,7 +16,7 @@ import (
 
 // ==== PARSE CONFIG - START
 
-func loadConfig(configFile string, outputStream io.Writer) (*Proxy, error) {
+func LoadConfig(configFile string, outputStream io.Writer) (*Proxy, error) {
 	jsonData, err := readConfigFile(configFile)
 	if err == nil {
 		return parseConfigFile(jsonData, parseProxy, parseConfigService, parseDockerHost, parseClusters(func() uuid.UUID { return uuid.NewUUID() }, true), outputStream)

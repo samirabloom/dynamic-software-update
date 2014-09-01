@@ -40,7 +40,7 @@ type DockerHost struct {
 }
 
 func NewProxy(configFile string) *Proxy {
-	proxy, err := loadConfig(configFile, os.Stdout)
+	proxy, err := LoadConfig(configFile, os.Stdout)
 	if err != nil {
 		log.LoggerFactory().Error("%s", err.Error())
 		os.Exit(1)

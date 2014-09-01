@@ -48,94 +48,6 @@ func (dc *DockerClient) PullImage(repository, tag string, outputStream io.Writer
 	return err
 }
 
-/*
-
-type Config struct {
-	Hostname        string              // Container host name
-	Domainname      string
-	User            string              // Username or UID
-	Memory          int64               // Memory limit (format: <number><optional unit>, where unit = b, k, m or g)
-	MemorySwap      int64
-	CpuShares       int64               // CPU shares (relative weight)
-	AttachStdin     bool
-	AttachStdout    bool
-	AttachStderr    bool
-	PortSpecs       []string
-	ExposedPorts    map[Port]struct{} 	// Expose a port from the container without publishing it to your host
-	Tty             bool                // Allocate a pseudo-TTY
-	OpenStdin       bool
-	StdinOnce       bool
-	Environment             []string            // Set environment variables
-	Cmd             []string
-	Image           string
-	Volumes         map[string]struct{} // Bind mount a volume (e.g., from the host: -v /host:/container, from Docker: -v /container)
-	VolumesFrom     string              // Mount volumes from the specified container(s)
-	WorkingDir      string              // Working directory inside the container
-	Entrypoint      []string 			// Overwrite the default ENTRYPOINT of the image
-	NetworkDisabled bool
-}
-
-type CreateContainerOptions struct {
-	Name   string                       // Assign a name to the container
-	Config *Config `qs:"-"`
-}
-
-type HostConfig struct {
-	Binds           []string            // Bind mount a volume (e.g., from the host: -v /host:/container, from Docker: -v /container)
-	ContainerIDFile string
-	LxcConf         []KeyValuePair      // (lxc exec-driver only) Add custom lxc options --lxc-conf="lxc.cgroup.cpuset.cpus = 0,1"
-	Privileged      bool                // Give extended privileges to this container
-	PortBindings    map[Port][]PortBinding
-	Links           []string            // Add link to another container in the form of name:alias
-	PublishAllPorts bool                // Publish all exposed ports to the host interfaces
-	Dns             []string            // Set custom DNS servers
-	DnsSearch       []string
-	VolumesFrom     []string            // Mount volumes from the specified container(s)
-	NetworkMode     string              // Set the Network mode for the container
-                                               'bridge': creates a new network stack for the container on the docker bridge
-                                               'none': no networking for this container
-                                               'container:<name|id>': reuses another container network stack
-                                               'host': use the host network stack inside the container.  Note: the host mode gives the container full access to local system services such as D-bus and is therefore considered insecure.
-	RestartPolicy   RestartPolicy       //  Restart policy to apply when a container exits (no, on-failure, always)
-}
-
-
-{
-*	"Image":"",                         // Image for container
-
-	"WorkingDir":"",  					// Working directory inside the container
-	"Entrypoint":"",  					// Overwrite the default ENTRYPOINT of the image
-	"Environment":null,       					// Set environment variables
-	"Cmd":[                             // Set command executed when the container runs
-		 ""
-	],
-
-	"Hostname":"",   					// Container host name
-	"Volumes":{       					// Bind mount a volume (e.g., from the host: -v /host:/container, from Docker: -v /container)
-		 "/tmp": {}
-	},
-	"VolumesFrom":[                 	// Mount volumes from the specified container(s)
-		 "parent",
-		 "other:ro"
-	],
-	"ExposedPorts":{  					// Expose a port from the container without publishing it to your host
-		 "22/tcp": {}
-	},
-	"PublishAllPorts":false,            // Publish all exposed ports to the host interfaces
-*	"PortBindings":{ "22/tcp": [{ "HostPort": "11022" }] },
-*   "PortToProxy":
-	"Links":["redis3:redis"],       	// Add link to another container in the form of name:alias
-
-	"User":"",       					// Username or UID
-	"Memory":0,      					// Memory limit (format: <number><optional unit>, where unit = b, k, m or g)
-	"CpuShares":0                   	// CPU shares (relative weight)
-	"LxcConf":{"lxc.utsname":"docker"}  // (lxc exec-driver only) Add custom lxc options --lxc-conf="lxc.cgroup.cpuset.cpus = 0,1"
-	"Privileged":false,                 // Give extended privileges to this container
-	"CapAdd: [""],             			// Add Linux capabilities
-	"CapDrop: [""]                 		// Drop Linux capabilities
-}
- */
-
 func (dc *DockerClient) CreateContainer(config *docker.Config, containerName string, outputStream io.Writer) (container *docker.Container, err error) {
 	container, err = dc.client.CreateContainer(docker.CreateContainerOptions{Name: containerName, Config: config})
 	if err != nil {
@@ -348,6 +260,12 @@ func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputSt
 		}
 		container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)
 		Flush(outputStream)
+		if err == ErrNoSuchImage {
+			err = dc.PullImage(config.Image, config.Tag, outputStream)
+			Flush(outputStream)
+			container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)
+			Flush(outputStream)
+		}
 		if err == nil {
 			dockerHostConfig := &docker.HostConfig{
 				Binds:           config.Volumes,

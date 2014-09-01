@@ -9,6 +9,7 @@ import (
 	"util/test/vagrant"
 	"github.com/franela/goreq"
 	"time"
+	"os"
 )
 
 func WriteConfigSystemTestConfigFile(proxyPort int, configPort int, uuid string, serverPorts []int, version string) string {
@@ -33,7 +34,7 @@ func WriteConfigSystemTestConfigFile(proxyPort int, configPort int, uuid string,
 	return fileName
 }
 
-func WriteConfigSystemTestDockerConfigFile(proxyPort int, configPort int, dockerHost string, dockerPort int, uuid string, serverPorts []int, version string) string {
+func WriteConfigSystemTestWordPressDockerConfigFile(proxyPort int, configPort int, dockerHost string, dockerPort int, uuid string, serverPorts []int, version string) string {
 	fileName := "/tmp/system_test_docker_config.json"
 	data := "{\n" +
 			"    \"proxy\": {\n" +
@@ -45,7 +46,7 @@ func WriteConfigSystemTestDockerConfigFile(proxyPort int, configPort int, docker
 			"    \"dockerHost\": {\n" +
 			"        \"ip\": \"" + dockerHost + "\",\n" +
 			"        \"port\": " + strconv.Itoa(dockerPort) + ",\n" +
-			"        \"log\": false\n" +
+			"        \"log\": true\n" +
 			"    },\n" +
 			"    \"cluster\": {\n" +
 			"        \"containers\": [\n";
@@ -56,7 +57,7 @@ func WriteConfigSystemTestDockerConfigFile(proxyPort int, configPort int, docker
 		data += "         {\n" +
 				"             \"image\": \"mysql\",\n" +
 				"             \"tag\": \"latest\",\n" +
-				"             \"alwaysPull\": false,\n" +
+				"             \"alwaysPull\": true,\n" +
 				"             \"name\": \"some-mysql-test\",\n" +
 				"             \"environment\": [\n" +
 				"                 \"MYSQL_ROOT_PASSWORD=mysecretpassword\"\n" +
@@ -68,7 +69,7 @@ func WriteConfigSystemTestDockerConfigFile(proxyPort int, configPort int, docker
 				"         {\n" +
 				"             \"image\": \"wordpress\",\n" +
 				"             \"tag\": \"3.9.2\",\n" +
-				"             \"alwaysPull\": false,\n" +
+				"             \"alwaysPull\": true,\n" +
 				"             \"portToProxy\": "+strconv.Itoa(serverPort)+",\n" +
 				"             \"name\": \"some-wordpress-test\",\n" +
 				"             \"links\": [\n" +
@@ -76,6 +77,52 @@ func WriteConfigSystemTestDockerConfigFile(proxyPort int, configPort int, docker
 				"             ],\n" +
 				"             \"portBindings\": {\n" +
 				"                 \"80/tcp\": [\n" +
+				"                     {\n" +
+				"                         \"HostIp\": \"0.0.0.0\",\n" +
+				"                         \"HostPort\": \""+strconv.Itoa(serverPort)+"\"\n" +
+				"                     }\n" +
+				"                 ]\n" +
+				"             }\n" +
+				"         }\n";
+	}
+	data += "        ]\n";
+	if len(uuid) > 0 {
+		data += ",   \"uuid\":\""+uuid+"\""
+	}
+	if len(version) > 0 {
+		data += ",   \"version\":\""+version+"\""
+	}
+	data += "    }\n" +
+			"}\n"
+	ioutil.WriteFile(fileName, []byte(data), 0644)
+	return fileName
+}
+
+func WriteConfigSystemTestMockServerDockerConfigFile(proxyPort int, configPort int, dockerHost string, dockerPort int, uuid string, serverPorts []int, version string) string {
+	fileName := "/tmp/system_test_docker_config.json"
+	data := "{\n" +
+			"    \"proxy\": {\n" +
+			"        \"port\": " + strconv.Itoa(proxyPort) + "\n" +
+			"    },\n" +
+			"    \"configService\": {\n" +
+			"        \"port\": " + strconv.Itoa(configPort) + "\n" +
+			"    },\n" +
+			"    \"dockerHost\": {\n" +
+			"        \"ip\": \"" + dockerHost + "\",\n" +
+			"        \"port\": " + strconv.Itoa(dockerPort) + ",\n" +
+			"        \"log\": true\n" +
+			"    },\n" +
+			"    \"cluster\": {\n" +
+			"        \"containers\": [\n";
+	for index, serverPort := range serverPorts {
+		if index > 0 {
+			data += ","
+		}
+		data += "         {\n" +
+				"             \"image\": \"jamesdbloom/mockserver\",\n" +
+				"             \"portToProxy\": "+strconv.Itoa(serverPort)+",\n" +
+				"             \"portBindings\": {\n" +
+				"                 \"8080/tcp\": [\n" +
 				"                     {\n" +
 				"                         \"HostIp\": \"0.0.0.0\",\n" +
 				"                         \"HostPort\": \""+strconv.Itoa(serverPort)+"\"\n" +
@@ -121,7 +168,11 @@ func Test_Proxy_System_Test_Load_Balancing_With_Initial_Config_File(testCtx *tes
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, ""), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// then - should load balance requests
@@ -143,7 +194,11 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Session_Cluster_Transition(
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, ""), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new cluster
@@ -199,7 +254,11 @@ func Test_Proxy_System_Test_Should_Load_Balance_With_Instant_Cluster_Transition(
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, ""), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// then - should load balance requests
@@ -249,7 +308,11 @@ func Test_Proxy_System_Test_Should_Update_Latest_Cluster_With_Cluster_Removed(te
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, "")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, uuidCookieVersion0_0, serverPortsClusterOne, ""), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new cluster
@@ -311,7 +374,11 @@ func Test_Proxy_System_Test_Should_Maintain_Version_Order_With_Multiple_Clusters
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0"), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new cluster - version less then initial cluster i.e. version 0.9
@@ -346,7 +413,11 @@ func Test_Proxy_System_Test_Should_Route_Concurrently(testCtx *testing.T) {
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0"), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new concurrent cluster
@@ -377,7 +448,11 @@ func Test_Proxy_System_Test_Should_Fallback_On_Connection_Error(testCtx *testing
 	)
 
 	// given
-	NewProxy(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestConfigFile(proxyPort, configPort, "", serverPortsClusterOne, "1.0"), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	networkutil.Test_server(serverPortsClusterOne, false)
 
 	// given - new instant cluster (that will fail immediately)
@@ -397,7 +472,7 @@ func Test_Proxy_System_Test_Should_Fallback_On_Connection_Error(testCtx *testing
 	assertion.AssertDeepEqual("Latest Cluster When Concurrent Clusters - 2nd response", testCtx, "Port: "+strconv.Itoa(serverPortsClusterOne[1])+"\n", makeProxyRequest(proxyPort, "", "", ""))
 }
 
-func Test_Proxy_System_Test_Should_Start_Up_With_Docker_Containers(testCtx *testing.T) {
+func Test_Proxy_System_Test_Should_Start_Up_With_WordPress_Docker_Containers(testCtx *testing.T) {
 	var (
 		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
 		configPort int              = networkutil.FindFreeLocalSocket(testCtx).Port
@@ -406,7 +481,11 @@ func Test_Proxy_System_Test_Should_Start_Up_With_Docker_Containers(testCtx *test
 
 	// given
 	vagrant.CreateVagrantDockerBox()
-	NewProxy(WriteConfigSystemTestDockerConfigFile(proxyPort, configPort, "192.168.50.5", 2375, "", serverPortsClusterOne, "1.0")).Start(false)
+	proxy, err := LoadConfig(WriteConfigSystemTestWordPressDockerConfigFile(proxyPort, configPort, "192.168.50.5", 2375, "", serverPortsClusterOne, "1.0"), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
 	time.Sleep(1 * time.Second)
 
 	// then - should proxy requests to wordpress
@@ -420,6 +499,60 @@ func Test_Proxy_System_Test_Should_Start_Up_With_Docker_Containers(testCtx *test
 	}
 	assertion.AssertDeepEqual("Wordpress Header Returned", testCtx, []string{"Apache/2.2.22 (Debian)"}, res.Header["Server"])
 	assertion.AssertDeepEqual("Wordpress Header Returned", testCtx, []string{"PHP/5.4.4-14+deb7u12"}, res.Header["X-Powered-By"])
+}
+
+func Test_Proxy_System_Test_Should_Start_Up_With_MockServer_Docker_Containers(testCtx *testing.T) {
+	var (
+		proxyPort int               = networkutil.FindFreeLocalSocket(testCtx).Port
+		configPort int              = networkutil.FindFreeLocalSocket(testCtx).Port
+		serverPortsClusterOne []int = []int{networkutil.FindFreeLocalSocket(testCtx).Port}
+	)
+
+	// given
+	vagrant.CreateVagrantDockerBox()
+	proxy, err := LoadConfig(WriteConfigSystemTestMockServerDockerConfigFile(proxyPort, configPort, "192.168.50.5", 2375, "", serverPortsClusterOne, "1.0"), os.Stdout)
+	if err != nil {
+		testCtx.Fatalf("Failed to proxy - err: %s\n", err)
+	}
+	proxy.Start(false)
+	time.Sleep(1 * time.Second)
+
+	// then - should setup expectation on MockServer
+	res, err := goreq.Request{
+		Method: "PUT",
+		Uri: "http://127.0.0.1:"+strconv.Itoa(proxyPort)+"/expectation",
+		Body: " {\n" +
+				"    \"httpRequest\": {\n" +
+				"        \"path\": \"/test\"\n" +
+				"    }, \n" +
+				"    \"httpResponse\": {\n" +
+				"        \"body\": \"this is a test response\"\n" +
+				"    }, \n" +
+				"    \"times\": {\n" +
+				"        \"remainingTimes\": 1, \n" +
+				"        \"unlimited\": false\n" +
+				"    }\n" +
+				"}",
+	}.Do()
+	if res == nil {
+		testCtx.Fatalf("Failed to setup expectation on MockServer - err: %s\n", err)
+	}
+
+	// then - should proxy requests to MockServer
+	res, err = goreq.Request{
+		Method: "GET",
+		Uri: "http://127.0.0.1:"+strconv.Itoa(proxyPort)+"/test",
+	}.Do()
+
+	if res == nil {
+		testCtx.Fatalf("Failed to receive response from MockServer - err: %s\n", err)
+	}
+	var body = make([]byte, 1024)
+	size, err := res.Body.Read(body)
+	if err != nil {
+		testCtx.Fatalf("Failed read response body from MockServer - err: %s\n", err)
+	}
+	assertion.AssertDeepEqual("MockServer returned correct body", testCtx, "this is a test response", string(body[0:size]))
 }
 
 

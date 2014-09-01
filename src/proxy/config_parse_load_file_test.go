@@ -17,7 +17,7 @@ func Test_Load_Config_When_File_Valid_Server_list(testCtx *testing.T) {
 	)
 
 	// when
-	actualProxy, actualError := loadConfig(fileName, &outputStream)
+	actualProxy, actualError := LoadConfig(fileName, &outputStream)
 
 	// then
 	assertion.AssertDeepEqual("Correct Error", testCtx, expectedError, actualError)
