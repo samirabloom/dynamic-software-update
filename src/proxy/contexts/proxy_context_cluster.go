@@ -9,11 +9,13 @@ import (
 	"proxy/tcp"
 	"errors"
 	"proxy/docker_client"
+	"io"
 )
 
 type Clusters  struct {
-	ContextsByVersion *list.List
-	ContextsByID      map[string]*Cluster
+	ContextsByVersion    *list.List
+	ContextsByID         map[string]*Cluster
+	DockerHostEndpoint   string
 }
 
 func (clusters *Clusters) Add(cluster *Cluster) {
@@ -47,9 +49,21 @@ func insertOrderedByVersion(orderedList *list.List, cluster *Cluster) {
 	}
 }
 
-func (clusters *Clusters) Delete(uuidValue uuid.UUID) {
+func (clusters *Clusters) Delete(uuidValue uuid.UUID, outputStream io.Writer) {
 	clusterToDelete := clusters.ContextsByID[uuidValue.String()]
 	if clusterToDelete != nil {
+		if len(clusters.DockerHostEndpoint) > 0 {
+			dockerClient, err := docker_client.NewDockerClient(clusters.DockerHostEndpoint)
+			if err == nil {
+				for _, container := range clusterToDelete.DockerConfigurations {
+					if err = dockerClient.RemoveContainer(container.Name, 60, outputStream); err != nil {
+						fmt.Fprintf(outputStream, "Error deleting docker container for name [%s]: %s\n", container.Name, err)
+					}
+				}
+			} else {
+				fmt.Fprintf(outputStream, "Error creating docker client: %s\n", err)
+			}
+		}
 		deleteFromList(clusters.ContextsByVersion, uuidValue)
 		delete(clusters.ContextsByID, uuidValue.String())
 	}

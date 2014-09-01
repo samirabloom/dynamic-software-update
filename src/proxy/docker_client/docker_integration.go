@@ -25,13 +25,41 @@ sudo vi /etc/default/docker.io
 DOCKER_OPTS="-H unix:// -H tcp://0.0.0.0:2375"
  */
 
-func NewDockerClient(endpoint string) (*DockerClient, error) {
-	client, err := docker.NewClient(endpoint)
-	if err != nil {
-		log.LoggerFactory().Error("error creating client: %s\n", err)
+func timeout(job func() bool) bool {
+	timeout := make(chan bool, 1)
+	work := make(chan bool, 1)
+	go func() {
+		time.Sleep(5 * time.Second)
+		timeout <- true
+	}()
+	go func() {
+		work <- job()
+	}()
+	select {
+	case <-work:
+		// the job completed
+		return true
+	case <-timeout:
+		// the job timed out
+		return false
 	}
-	_, err = client.Version()
-	if err != nil {
+}
+
+func NewDockerClient(endpoint string) (*DockerClient, error) {
+	var (
+		client *docker.Client
+		err error
+	)
+	success := timeout(func() bool {
+		client, err = docker.NewClient(endpoint)
+		if err != nil {
+			log.LoggerFactory().Error("Error creating client: %s\n", err)
+			return false
+		}
+		_, err = client.Version()
+		return true
+	})
+	if !success || err != nil {
 		log.LoggerFactory().Error("%s is the server running at %s?\n", err, endpoint)
 		return nil, err
 	} else {
@@ -42,7 +70,7 @@ func NewDockerClient(endpoint string) (*DockerClient, error) {
 func (dc *DockerClient) PullImage(repository, tag string, outputStream io.Writer) (err error) {
 	err = dc.client.PullImage(docker.PullImageOptions{Repository: repository, Tag: tag, OutputStream: outputStream}, docker.AuthConfiguration{})
 	if err != nil {
-		log.LoggerFactory().Error("error pulling image: %s\n", err)
+		log.LoggerFactory().Error("Error pulling image: %s\n", err)
 	}
 	fmt.Fprintf(outputStream, "Pull Complete for [%s:%s]\n\n", repository, tag)
 	return err
@@ -52,7 +80,7 @@ func (dc *DockerClient) CreateContainer(config *docker.Config, containerName str
 	container, err = dc.client.CreateContainer(docker.CreateContainerOptions{Name: containerName, Config: config})
 	if err != nil {
 		fmt.Fprintf(outputStream, "error creating container: %s\n", err)
-		log.LoggerFactory().Error("error creating container: %s\n", err)
+		log.LoggerFactory().Error("Error creating container: %s\n", err)
 	} else {
 		fmt.Fprintf(outputStream, "Created container [%s] for image [%s]\n", containerName, config.Image)
 	}
@@ -63,7 +91,7 @@ func (dc *DockerClient) InspectContainer(id string, outputStream io.Writer) (con
 	container, err = dc.client.InspectContainer(id)
 	if err != nil {
 		fmt.Fprintf(outputStream, "error inspecting container: %s\n", err)
-		log.LoggerFactory().Error("error inspecting cotainer: %s\n", err)
+		log.LoggerFactory().Error("Error inspecting cotainer: %s\n", err)
 	} else {
 		streamContainer(container, outputStream)
 	}
@@ -87,7 +115,7 @@ func (dc *DockerClient) StartContainer(id string, hostConfig *docker.HostConfig,
 	err = dc.client.StartContainer(id, hostConfig)
 	if err != nil {
 		fmt.Fprintf(outputStream, "error starting container: %s\n", err)
-		log.LoggerFactory().Error("error starting container: %s\n", err)
+		log.LoggerFactory().Error("Error starting container: %s\n", err)
 	} else {
 		container, err = dc.InspectContainer(id, outputStream)
 		time.Sleep(3 * time.Second)
@@ -111,7 +139,7 @@ func (dc *DockerClient) StopContainer(id string, timeout uint, outputStream io.W
 	err := dc.client.StopContainer(id, timeout)
 	if err != nil {
 		fmt.Fprintf(outputStream, "error stopping container: %s\n", err)
-		log.LoggerFactory().Error("error stopping container: %s\n", err)
+		log.LoggerFactory().Error("Error stopping container: %s\n", err)
 		return "", err
 	} else {
 		fmt.Fprintf(outputStream, "Stopped container id: %s\n", id)
@@ -127,7 +155,7 @@ func (dc *DockerClient) RemoveContainer(name string, timeout uint, outputStream 
 	containerList, err = dc.client.ListContainers(docker.ListContainersOptions{All: true})
 	if err != nil {
 		fmt.Fprintf(outputStream, "error listing containers: %s\n", err)
-		log.LoggerFactory().Error("error listing containers: %s\n", err)
+		log.LoggerFactory().Error("Error listing containers: %s\n", err)
 	} else {
 		searchName := "/" + strings.Replace(name, ":", "/", 2)
 		for _, container = range containerList {
@@ -260,7 +288,7 @@ func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputSt
 		}
 		container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)
 		Flush(outputStream)
-		if err == ErrNoSuchImage {
+		if err == docker.ErrNoSuchImage {
 			err = dc.PullImage(config.Image, config.Tag, outputStream)
 			Flush(outputStream)
 			container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)

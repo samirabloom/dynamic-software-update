@@ -39,6 +39,10 @@ type DockerHost struct {
 	Log  bool
 }
 
+func (dh *DockerHost) Endpoint() string {
+	return fmt.Sprintf("http://%s:%d", dh.Ip, dh.Port)
+}
+
 func NewProxy(configFile string) *Proxy {
 	proxy, err := LoadConfig(configFile, os.Stdout)
 	if err != nil {

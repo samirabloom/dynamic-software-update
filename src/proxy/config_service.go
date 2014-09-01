@@ -139,7 +139,7 @@ func DeleteHandler(urlRegex *regexp.Regexp) func(*contexts.Clusters, http.Respon
 		if routeContexts.Get(uuid) == nil {
 			http.NotFound(writer, request)
 		} else {
-			routeContexts.Delete(uuid)
+			routeContexts.Delete(uuid, writer)
 			writer.WriteHeader(http.StatusAccepted)
 		}
 	}

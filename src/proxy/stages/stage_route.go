@@ -7,6 +7,7 @@ import (
 	"proxy/contexts"
 	"syscall"
 	"net"
+	"os"
 )
 
 // ==== ROUTE - START
@@ -25,7 +26,7 @@ func route(next func(*contexts.ChunkContext), clusters *contexts.Clusters, creat
 						if err != nil {
 							log.LoggerFactory().Error("Error communicating with server - %s\n", err)
 							log.LoggerFactory().Warning("Removing cluster from configuration - %s\n", cluster)
-							clusters.Delete(cluster.Uuid)
+							clusters.Delete(cluster.Uuid, os.Stdout)
 							continue;
 						} else {
 							go createBackPipe(contexts.NewBackPipeChunkContext(context))

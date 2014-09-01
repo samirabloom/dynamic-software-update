@@ -165,7 +165,11 @@ func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map
 		if clusterConfiguration != nil {
 			router, err = parseCluster(uuidGenerator, initialCluster)(clusterConfiguration.(map[string]interface{}), nil, dockerHost, outputStream)
 			if err == nil {
-				clusters = &contexts.Clusters{}
+				dockerEndpoint := ""
+				if dockerHost != nil {
+					dockerEndpoint = dockerHost.Endpoint()
+				}
+				clusters = &contexts.Clusters{DockerHostEndpoint: dockerEndpoint}
 				clusters.Add(router)
 			}
 		} else {
@@ -295,7 +299,7 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 		if err == nil {
 			for _, dockerConfiguration := range dockerConfigurations {
 				var dockerClient *docker_client.DockerClient
-				dockerClient, err = docker_client.NewDockerClient(fmt.Sprintf("http://%s:%d", dockerHost.Ip, dockerHost.Port))
+				dockerClient, err = docker_client.NewDockerClient(dockerHost.Endpoint())
 				if err == nil {
 					_, err = dockerClient.CreateServerFromContainer(dockerConfiguration, outputStream)
 				}
