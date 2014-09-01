@@ -1409,7 +1409,7 @@ Qualitative analysis were performed on the dynamic software update proxy (Chapte
 \end{list} 
 
 \subsection{Load Balancing Analysis}
-The dynamic software update proxy is designed to behave as a load balancer and distribute  HTTP requests across multiple servers. Therefore, to test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster with each node running in a separate Docker container. As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase servers were chosen for the load balancing evaluation since they form a cluster with shared data. Therefore each server returns an identical response to a given request.
+The dynamic software update proxy is designed to behave as a load balancer and distribute  HTTP requests across multiple servers. Therefore, to test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster via the proxy with each node running in a separate Docker container. As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase servers were chosen for the load balancing evaluation since they form a cluster with shared data. Therefore each server returns an identical response to a given request.
 
 \begin{figure}[!ht]
   \centering
@@ -1420,31 +1420,7 @@ The dynamic software update proxy is designed to behave as a load balancer and d
 
 Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each Docker container for each Couchbase node used a different internal IP address on the 172.16.0.0 - 172.31.255.255 private range reserved by IANA\footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However, as the port has been mapped from each Docker container to the virtual machine, each node can be addressed on a different port of the virtual machine. The following section summarizes the steps executed for load balancing evaluation. \bigskip
 
-\begin{lstlisting}[language=terminal]
-<@\textcolor{blue}{\# run first node}@>
-docker run --name node_one -i -t -d -p 8091:8091 \
-		-e CLUSTER_INIT_USER=Administrator \
-		-e CLUSTER_INIT_PASSWORD=password \
-		-e SAMPLE_BUCKETS=\"beer-sample\" couchbase
-
-<@\textcolor{blue}{\# run second node}@>
-docker run --name node_two -i -t -d -p 9091:8091 \
-		--link node_one:couchbase \
-		-e CLUSTER_INIT_USER=Administrator \
-		-e CLUSTER_INIT_PASSWORD=password couchbase
-
-<@\textcolor{blue}{\# run third node}@>
-docker run --name node_three -i -t -d -p 10091:8091 \
-		--link node_one:couchbase \
-		-e CLUSTER_INIT_USER=Administrator \
-		-e CLUSTER_INIT_PASSWORD=password couchbase
-\end{lstlisting}
-
-
-\subsubsection*{Proxy Configuration} 
-The proxy was configured to forward HTTP requests to the three nodes in Couchbase cluster (Figure \ref{couchbase_cluster}) using round-robin load balancing. The start-up configuration was echoed back by the proxy as shown in the following terminal output.\bigskip
-\begin{lstlisting}[language=terminal]
-2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
+\begin{lstlisting}[language=json]
 {
     "proxy": {
         "port": 1235
@@ -1452,15 +1428,164 @@ The proxy was configured to forward HTTP requests to the three nodes in Couchbas
     "configService": {
         "port": 9090
     },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
     "cluster": {
-        "servers":[
-            {"ip": "192.168.50.10", "port": 8091},
-            {"ip": "192.168.50.10", "port": 9091},
-            {"ip": "192.168.50.10", "port": 10091}
+        "containers": [
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "node_one",
+                "portToProxy": 8091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password",
+                    "SAMPLE_BUCKETS=\"beer-sample\""
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8091"
+                        }
+                    ]
+                }
+            },
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "node_two",
+                "portToProxy": 9091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password"
+                ],
+                "links": [
+                    "node_one:couchbase"
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "9091"
+                        }
+                    ]
+                }
+            },
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "node_three",
+                "portToProxy": 10091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password"
+                ],
+                "links": [
+                    "node_one:couchbase"
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "10091"
+                        }
+                    ]
+                }
+            }
         ],
         "version": "2.5.1"
     }
 }
+\end{lstlisting}
+
+
+\subsubsection*{Proxy Configuration} 
+The proxy was configured to forward HTTP requests to three nodes in Couchbase cluster each running in separate Docker containers (Figure \ref{couchbase_cluster}) using round-robin load balancing. The start-up configuration was echoed back by the proxy as shown in the following terminal output.\bigskip
+\begin{lstlisting}[language=terminal]
+2014/08/24 19:48:18.309757 config_parse.go:53:   NOTICE - Parsed config file:
+{
+   "proxy": {
+      "port": 1235
+   },
+   "configService": {
+      "port": 9090
+   },
+   "dockerHost": {
+      "ip": "192.168.50.5",
+      "port": 2375
+   },
+   "cluster": {
+      "containers": [
+         {
+            "image": "couchbase",
+            "tag": "2.5.1",
+            "portToProxy": 8091,
+            "name": "node_one",
+            "environment": [
+               "CLUSTER_INIT_USER=Administrator",
+               "CLUSTER_INIT_PASSWORD=password",
+               "SAMPLE_BUCKETS=\"beer-sample\""
+
+            ],
+            "portBindings": {
+               "8091/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "8091"
+                  }
+               ]
+            }
+         },
+
+         {
+            "image": "couchbase",
+            "tag": "2.5.1",
+            "name": "node_two",
+            "portToProxy": 9091,
+            "environment": [
+               "CLUSTER_INIT_USER=Administrator",
+               "CLUSTER_INIT_PASSWORD=password"
+            ],
+            "links": [
+               "node_one:couchbase"
+            ],
+            "portBindings": {
+               "8091/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "9091"
+                  }
+               ]
+            }
+         },
+         {
+            "image": "couchbase",
+            "tag": "2.5.1",
+            "name": "node_three",
+            "portToProxy": 10091,
+            "environment": [
+               "CLUSTER_INIT_USER=Administrator",
+               "CLUSTER_INIT_PASSWORD=password"
+            ],
+            "links": [
+               "node_one:couchbase"
+            ],
+            "portBindings": {
+               "8091/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "10091"
+                  }
+               ]
+            }
+         }
+      ],
+      "version": "2.5.1"
+   }
+} 
 as:
 Proxy{
 	Proxy Address:      0.0.0.0:1235
