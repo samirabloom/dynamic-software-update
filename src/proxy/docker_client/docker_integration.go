@@ -82,7 +82,7 @@ func (dc *DockerClient) PullImage(repository, tag string, outputStream io.Writer
 
 func (dc *DockerClient) CreateContainer(config *docker.Config, containerName string, outputStream io.Writer) (container *docker.Container, err error) {
 	container, err = dc.client.CreateContainer(docker.CreateContainerOptions{Name: containerName, Config: config})
-	if err != nil {
+	if err != nil && err != docker.ErrNoSuchImage {
 		fmt.Fprintf(outputStream, "error creating container: %s\n", err)
 		log.LoggerFactory().Error("Error creating container: %s\n", err)
 	} else {
@@ -296,6 +296,10 @@ func (dc *DockerClient) CreateServerFromContainer(config *DockerConfig, outputSt
 			err = dc.PullImage(config.Image, config.Tag, outputStream)
 			Flush(outputStream)
 			container, err = dc.CreateContainer(dockerConfig, containerName, outputStream)
+			if err == docker.ErrNoSuchImage {
+				fmt.Fprintf(outputStream, "error creating container: %s\n", err)
+				log.LoggerFactory().Error("Error creating container: %s\n", err)
+			}
 			Flush(outputStream)
 		}
 		if err == nil {

@@ -455,7 +455,7 @@ Set-Cookie: dynsoftup=be69fecd-2c53-11e4-9f0f-28cfe9158b63;
 Date: Mon, 25 Aug 2014 12:37:35 GMT
 Server: Apache/2.2.22 (Debian)
 X-Powered-By: PHP/5.4.4-14+deb7u12
-X-Pingback: http://192.168.50.40/xmlrpc.php
+X-Pingback: http://192.168.50.5:8081/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1260,7 +1260,7 @@ The aim of this evaluation was to measure how rapidly the proxy applies an upgra
 
 INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Section \ref{load}.    
 
-The proxy was initially configured to forward responses to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was stimulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
+The proxy was initially configured to forward responses to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was simulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
 As shown in Table  {\ref{upgrade-speed}}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
  
@@ -1441,7 +1441,7 @@ For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the 
   \item An upgrade from WordPress version 3.9.1 to version 3.9.2 was applied by sending PUT HTTP requests to the proxy's configuration service
   \item Proxy's response to the upgrade was evaluated.
   \item HTTP requests were sent to the proxy and the responses were evaluated for the upgrade from WordPress version 3.9.1 to version 3.9.2.
-  \item Crash bugs were introduced to the new version of WordPress and proxy's response to the crash was evaluated.
+  \item The Docker container running the new version of WordPress was stopped to simulate a failure and proxy's response to the failure was evaluated   
 \end{list} 
 
 \subsubsection*{INSTANT Upgrade}
@@ -1453,24 +1453,55 @@ In an INSTANT upgrade the proxy  forwards requests to the most updated version o
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:22:24.922144 config_parse.go:53:   NOTICE - Parsed config file:
 {
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "cluster": {
-        "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
-        ],
-        "version": "3.9.1"
-    }
+   "proxy": {
+      "port": 1235
+   },
+   "configService": {
+      "port": 9090
+   },
+   "dockerHost": {
+      "ip": "192.168.50.5",
+      "port": 2375
+   },
+   "cluster": {
+      "containers": [
+         {
+            "image": "mysql",
+            "tag": "latest",
+            "name": "some-mysql",
+            "environment": [
+               "MYSQL_ROOT_PASSWORD=mysecretpassword"
+            ],
+            "volumes": [
+               "/var/lib/mysql:/var/lib/mysql"
+            ]
+         },
+         {
+            "image": "wordpress",
+            "tag": "3.9.1",
+            "portToProxy": 8080,
+            "name": "some-wordpress",
+            "links": [
+               "some-mysql:mysql"
+            ],
+            "portBindings": {
+               "80/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "8080"
+                  }
+               ]
+            }
+         }
+      ],
+      "version": "3.9.1"
+   }
 }
 as:
 Proxy{
 	Proxy Address:      0.0.0.0:1235
 	ConfigService Port: 9090
-	Proxied Servers:    [version: 3.9.1] [192.168.50.30:80]
+	Proxied Servers:    [version: 3.9.1] [192.168.50.5:8080]
 }   
 \end{lstlisting}
 
@@ -1485,7 +1516,7 @@ When the proxy was run in the INFO level logging, its output to the terminal dem
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 20:22:56.415432 proxy_context_cluster.go:114:     
-   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 0 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting} 
 
@@ -1498,7 +1529,7 @@ Set-Cookie: dynsoftup=24e90b08-2c8d-11e4-a649-28cfe9158b63;
 Date: Mon, 25 Aug 2014 19:22:57 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1512,7 +1543,8 @@ Content-Type: text/html; charset=UTF-8
 \begin{lstlisting}[language=terminal] 
 curl -v \
 http://127.0.0.1:9090/configuration/cluster -X PUT \
---data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "INSTANT" }}}'
+-H 'Content-Type: application/json' \ 
+-d @config_for_curl/config_curl_docker_wordpress_INSTANT.json
 \end{lstlisting}
 
 \noindent\\
@@ -1522,18 +1554,43 @@ The proxy acknowledged addition of the new cluster by outputting the following m
 2014/08/25 20:25:16.080385 config_service.go:66:     
    INFO - Received new cluster configuration:
    {
-       "cluster": {
-           "servers": [
-               {
-                   "hostname": "192.168.50.40", "port": 80
-               }
-           ],
-           "version": "3.9.2",
-           "upgradeTransition": {
-               "mode": "INSTANT"
-           }
-       }
-   } 
+      "cluster": {
+         "containers": [
+            {
+               "environment": [
+                  "MYSQL_ROOT_PASSWORD=mysecretpassword"
+               ],
+               "image": "mysql",
+               "name": "some-mysql-upgrade",
+               "tag": "latest",
+               "volumes": [
+                  "/var/lib/mysql:/var/lib/mysql"
+               ]
+            },
+            {
+               "image": "wordpress",
+               "links": [
+                  "some-mysql:mysql"
+               ],
+               "name": "some-wordpress-upgrade",
+               "portBindings": {
+                  "80/tcp": [
+                     {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8081"
+                     }
+                  ]
+               },
+               "portToProxy": 8081,
+               "tag": "3.9.2"
+            }
+         ],
+         "version": "3.9.2",
+         "upgradeTransition": {
+            "mode": "INSTANT"
+         }		         
+      }
+   }
 \end{lstlisting}   
 
 \noindent\\
@@ -1577,7 +1634,7 @@ curl -v http://127.0.0.1:1235
 \textit{Proxy Log Output After INSTANT Upgrade}
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:28:20.400747 proxy_context_cluster.go:114:     
-   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 0 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [INSTANT]
 \end{lstlisting}
 
@@ -1589,7 +1646,7 @@ Set-Cookie: dynsoftup=8aedb902-2c8d-11e4-a649-28cfe9158b63;
 Date: Mon, 25 Aug 2014 19:28:21 GMT
 Server: Apache/2.2.22 (Debian)
 X-Powered-By: PHP/5.4.4-14+deb7u12
-X-Pingback: http://192.168.50.40/xmlrpc.php
+X-Pingback: http://192.168.50.5:8081/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1605,17 +1662,17 @@ Content-Type: text/html; charset=UTF-8
 \textit{Proxy Log Output After WordPress Version 3.9.2 crashed}
 \begin{lstlisting}[language=terminal]
 2014/08/25 20:32:59.897032 proxy_context_cluster.go:114:     
-   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 1 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [INSTANT]
    
 2014/08/25 20:32:59.897433 stage_route.go:41:    
-   <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused}@>
+   <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.5:8081: connection refused}@>
 
 2014/08/25 20:32:59.899682 stage_route.go:42:  
-   <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]}@>
+   <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.5:8081]}@>
 
 2014/08/25 20:32:59.899707 proxy_context_cluster.go:114:     
-   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 1 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
 
@@ -1627,7 +1684,7 @@ Set-Cookie: dynsoftup=24e90b08-2c8d-11e4-a649-28cfe9158b63;
 Date: Mon, 25 Aug 2014 19:33:00 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1644,24 +1701,55 @@ In the SESSION upgrade the proxy generates cookies with a configured expiry time
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:10:46.064526 config_parse.go:53:   NOTICE - Parsed config file:
 {
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "cluster": {
-        "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
-        ],
-        "version": "3.9.1"
-    }
+   "proxy": {
+      "port": 1235
+   },
+   "configService": {
+      "port": 9090
+   },
+   "dockerHost": {
+      "ip": "192.168.50.5",
+      "port": 2375
+   },
+   "cluster": {
+      "containers": [
+         {
+            "image": "mysql",
+            "tag": "latest",
+            "name": "some-mysql",
+            "environment": [
+               "MYSQL_ROOT_PASSWORD=mysecretpassword"
+            ],
+            "volumes": [
+               "/var/lib/mysql:/var/lib/mysql"
+            ]
+         },
+         {
+            "image": "wordpress",
+            "tag": "3.9.1",
+            "portToProxy": 8080,
+            "name": "some-wordpress",
+            "links": [
+               "some-mysql:mysql"
+            ],
+            "portBindings": {
+               "80/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "8080"
+                  }
+               ]
+            }
+         }
+      ],
+      "version": "3.9.1"
+   }
 }
 as:
 Proxy{
 	Proxy Address:      0.0.0.0:1235
 	ConfigService Port: 9090
-	Proxied Servers:    version: [3.9.1] [192.168.50.30:80]
+	Proxied Servers:    version: [3.9.1] [192.168.50.5:8080]
 }
 \end{lstlisting}
 
@@ -1676,7 +1764,7 @@ curl -v http://127.0.0.1:1235
 
 \begin{lstlisting}[language=terminal] 
 2014/08/25 21:11:18.216192 proxy_context_cluster.go:114:     
-   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 0 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting} 
 
@@ -1689,7 +1777,7 @@ Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;
 Date: Mon, 25 Aug 2014 20:11:18 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1701,8 +1789,10 @@ Content-Type: text/html; charset=UTF-8
 \textit{PUT Request For SESSION Upgrade} - A cluster running version 3.9.2 of WordPress application was added to the proxy with SESSION upgrade transition mode and 60 seconds session time out using the following PUT request: \smallskip 
 
 \begin{lstlisting}[language=terminal] 
-curl -v http://127.0.0.1:9090/configuration/cluster -X PUT \
---data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "SESSION", "sessionTimeout": 60 }}}'
+curl -v \
+http://127.0.0.1:9090/configuration/cluster -X PUT \
+-H 'Content-Type: application/json' \ 
+-d @config_for_curl/config_curl_docker_wordpress_SESSION.json
 \end{lstlisting}
 
 \noindent\\
@@ -1712,19 +1802,43 @@ The proxy acknowledged addition of the new cluster by outputting the following m
 2014/08/25 21:14:10.079590 config_service.go:66:     
    INFO - Received new cluster configuration:
    {
-       "cluster": {
-           "servers": [
-               {
-                   "hostname": "192.168.50.40",
-                   "port": 80
-               }
-           ],
-           "version": "3.9.2",
-           "upgradeTransition": {
-               "mode": "SESSION",
-               "sessionTimeout": 60
-           }
-       }
+      "cluster": {
+         "containers": [
+            {
+               "environment": [
+                  "MYSQL_ROOT_PASSWORD=mysecretpassword"
+               ],
+               "image": "mysql",
+               "name": "some-mysql-upgrade",
+               "tag": "latest",
+               "volumes": [
+                  "/var/lib/mysql:/var/lib/mysql"
+               ]
+            },
+            {
+               "image": "wordpress",
+               "links": [
+                  "some-mysql:mysql"
+               ],
+               "name": "some-wordpress-upgrade",
+               "portBindings": {
+                  "80/tcp": [
+                     {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8081"
+                     }
+                  ]
+               },
+               "portToProxy": 8081,
+               "tag": "3.9.2"
+            }
+         ],
+         "version": "3.9.2",
+         "upgradeTransition": {
+             "mode": "SESSION",
+             "sessionTimeout": 60
+         }
+      }
    }
 \end{lstlisting}   
 
@@ -1764,7 +1878,7 @@ Content-Type: text/plain; charset=utf-8
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:17:22.866773 proxy_context_cluster.go:114:     
-   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 0 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [SESSION] 
    session timeout [60] uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
 \end{lstlisting}
@@ -1778,7 +1892,7 @@ Set-Cookie: dynsoftup=5fba791f-2c94-11e4-88f5-28cfe9158b63; Expires=Mon, 25 Aug 
 Date: Mon, 25 Aug 2014 20:17:23 GMT
 Server: Apache/2.2.22 (Debian)
 X-Powered-By: PHP/5.4.4-14+deb7u12
-X-Pingback: http://192.168.50.40/xmlrpc.php
+X-Pingback: http://192.168.50.5:8081/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1800,7 +1914,7 @@ curl -v 'http://127.0.0.1:1235/' \
 \textit{Proxy Log Output}
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:24:17.273012 proxy_context_cluster.go:114:     
-   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 1 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
 
@@ -1812,7 +1926,7 @@ Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63; Expires=Mon, 25 Aug 
 Date: Mon, 25 Aug 2014 20:24:17 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1825,18 +1939,18 @@ Content-Type: text/html; charset=UTF-8
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:35:10.120521 proxy_context_cluster.go:114:     
-   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 1 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [SESSION] session timeout [60] 
    uuid [5fba791f-2c94-11e4-88f5-28cfe9158b63]
 
 2014/08/25 21:35:10.120978 stage_route.go:41:    
-    <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused}@>
+    <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.5:8081: connection refused}@>
    
 2014/08/25 21:35:10.120999 stage_route.go:42:  
-    <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]}@>
+    <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.5:8081]}@>
 
 2014/08/25 21:35:10.121034 proxy_context_cluster.go:114:     
-   INFO - Serving response 3 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 3 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
  
@@ -1849,7 +1963,7 @@ Set-Cookie: dynsoftup=e6203784-2c93-11e4-88f5-28cfe9158b63;
 Date: Mon, 25 Aug 2014 20:35:10 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7467
 Content-Type: text/html; charset=UTF-8
@@ -1866,25 +1980,55 @@ In the GRADUAL upgrade each client will be allocated a transition cookie. The tr
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:05:30.745828 config_parse.go:53:   NOTICE - Parsed config file:
 {
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "cluster": {
-        "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
-        ],
-        "version": "3.9.1"
-    }
+   "proxy": {
+      "port": 1235
+   },
+   "configService": {
+      "port": 9090
+   },
+   "dockerHost": {
+      "ip": "192.168.50.5",
+      "port": 2375
+   },
+   "cluster": {
+      "containers": [
+         {
+            "image": "mysql",
+            "tag": "latest",
+            "name": "some-mysql",
+            "environment": [
+               "MYSQL_ROOT_PASSWORD=mysecretpassword"
+            ],
+            "volumes": [
+               "/var/lib/mysql:/var/lib/mysql"
+            ]
+         },
+         {
+            "image": "wordpress",
+            "tag": "3.9.1",
+            "portToProxy": 8080,
+            "name": "some-wordpress",
+            "links": [
+               "some-mysql:mysql"
+            ],
+            "portBindings": {
+               "80/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "8080"
+                  }
+               ]
+            }
+         }
+      ],
+      "version": "3.9.1"
+   }
 }
-
 as:
 Proxy{
 	Proxy Address:      0.0.0.0:1235
 	ConfigService Port: 9090
-	Proxied Servers:    version: 3.9.1 [192.168.50.30:80]
+	Proxied Servers:    version: 3.9.1 [192.168.50.5:8080]
 }
 \end{lstlisting}
 
@@ -1900,7 +2044,7 @@ The following proxy output confirms that the HTTP requests were forwarded to the
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:06:01.661061 proxy_context_cluster.go:115:     
-   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 0 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
 
@@ -1913,7 +2057,7 @@ Set-Cookie: dynsoftup=d7bf97fc-2e9a-11e4-8d7c-600308a8245e;
 Date: Thu, 28 Aug 2014 10:06:10 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -1927,7 +2071,8 @@ Content-Type: text/html; charset=UTF-8
 \begin{lstlisting}[language=terminal]
 curl -v \
 http://127.0.0.1:9090/configuration/cluster -X PUT \
---data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "GRADUAL", "percentageTransitionPerRequest": 1 }}}'
+-H 'Content-Type: application/json' \ 
+-d @config_for_curl/config_curl_docker_wordpress_GRADUAL.json
 \end{lstlisting}
  
 \noindent \\
@@ -1937,19 +2082,43 @@ The following output echoed by the proxy showed successful addition of the new c
 2014/08/28 11:11:57.781817 config_service.go:66:     
    INFO - Received new cluster configuration:
    {
-       "cluster": {
-           "servers": [
-               {
-                   "hostname": "192.168.50.40", 
-                   "port": 80
-               }
-           ], 
-           "version": "3.9.2", 
-           "upgradeTransition": {
-               "mode": "GRADUAL", 
-               "percentageTransitionPerRequest": 1
-           }
-       }
+      "cluster": {
+         "containers": [
+            {
+               "environment": [
+                  "MYSQL_ROOT_PASSWORD=mysecretpassword"
+               ],
+               "image": "mysql",
+               "name": "some-mysql-upgrade",
+               "tag": "latest",
+               "volumes": [
+                  "/var/lib/mysql:/var/lib/mysql"
+               ]
+            },
+            {
+               "image": "wordpress",
+               "links": [
+                  "some-mysql:mysql"
+               ],
+               "name": "some-wordpress-upgrade",
+               "portBindings": {
+                  "80/tcp": [
+                     {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8081"
+                     }
+                  ]
+               },
+               "portToProxy": 8081,
+               "tag": "3.9.2"
+            }
+         ],
+          "version": "3.9.2", 
+          "upgradeTransition": {
+              "mode": "GRADUAL", 
+              "percentageTransitionPerRequest": 1
+          }
+      }
    }
 \end{lstlisting}
 
@@ -1984,24 +2153,24 @@ The proxy used the transition cookie to randomly generate a number which determi
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:15:21.019897 proxy_context_cluster.go:115:     
-   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 0 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 
 2014/08/28 11:15:22.190838 proxy_context_cluster.go:115:     
-   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 1 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 
 2014/08/28 11:15:22.988277 proxy_context_cluster.go:115:     
-   INFO - Serving response 2 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 2 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 
 2014/08/28 11:15:23.708418 proxy_context_cluster.go:115:     
-   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 0 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [GRADUAL] transition counter [4.00] 
    percentage transition per request [1.00]
    
 2014/08/28 11:15:24.563001 proxy_context_cluster.go:115:     
-   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 1 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [GRADUAL] transition counter [5.00] 
    percentage transition per request [1.00]
 \end{lstlisting}
@@ -2011,23 +2180,23 @@ The proxy used the transition cookie to randomly generate a number which determi
 
 \begin{lstlisting}[language=terminal]
 2014/08/28 11:20:48.105660 proxy_context_cluster.go:115:     
-   INFO - Serving response 2 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 2 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [GRADUAL] transition counter [8.00] 
    percentage transition per request [1.00]
    
 2014/08/28 11:20:48.106281 stage_route.go:28:    
-   <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.40:80: connection refused}@>
+   <@\textcolor{red}{ERROR - Error communicating with server - dial tcp 192.168.50.5:8081: connection refused}@>
 
 2014/08/28 11:20:48.106299 stage_route.go:29:  
-   <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.40:80]}@>
+   <@\textcolor{orange}{WARNING - Removing cluster from configuration - version: 3.9.2 [192.168.50.5:8081]}@>
 
 2014/08/28 11:20:48.106319 proxy_context_cluster.go:115:     
-   INFO - Serving response 3 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 3 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}   
 
 \noindent\\
-The following response received after the failure of the cluster running version 3.9.2 showed that version 3.9.1 with IP address "192.168.50.30" is processing the requests.\smallskip
+The following response received after the failure of the cluster running version 3.9.2 showed that version 3.9.1 with address "192.168.50.5:8080" is processing the requests.\smallskip
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -2035,7 +2204,7 @@ Set-Cookie: dynsoftup=ffa87add-2e9b-11e4-ae02-600308a8245e;
 Date: Thu, 28 Aug 2014 10:20:56 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -2052,25 +2221,55 @@ In the CONCURRENT mode, the proxy sends HTTP requests to the old and new version
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:39:55.615246 config_parse.go:56:   NOTICE - Parsed config file:
 {
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "cluster": {
-        "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
-        ],
-        "version": "3.9.1"
-    }
+   "proxy": {
+      "port": 1235
+   },
+   "configService": {
+      "port": 9090
+   },
+   "dockerHost": {
+      "ip": "192.168.50.5",
+      "port": 2375
+   },
+   "cluster": {
+      "containers": [
+         {
+            "image": "mysql",
+            "tag": "latest",
+            "name": "some-mysql",
+            "environment": [
+               "MYSQL_ROOT_PASSWORD=mysecretpassword"
+            ],
+            "volumes": [
+               "/var/lib/mysql:/var/lib/mysql"
+            ]
+         },
+         {
+            "image": "wordpress",
+            "tag": "3.9.1",
+            "portToProxy": 8080,
+            "name": "some-wordpress",
+            "links": [
+               "some-mysql:mysql"
+            ],
+            "portBindings": {
+               "80/tcp": [
+                  {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "8080"
+                  }
+               ]
+            }
+         }
+      ],
+      "version": "3.9.1"
+   }
 }
-
 as:
 Proxy{
     Proxy Address:      0.0.0.0:1235
     ConfigService Port: 9090
-    Proxied Servers:    version: 3.9.1 [192.168.50.30:80]
+    Proxied Servers:    version: 3.9.1 [192.168.50.5:8080]
 }
 \end{lstlisting}  
 
@@ -2085,12 +2284,12 @@ As it is shown in the following terminal output echoed by proxy, WordPress versi
 
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:40:00.005587 proxy_context_cluster.go:115:     
-   INFO - Serving response 0 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 0 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}  
 
 \noindent\\
-The "X-Pingback" header in the response received from proxy also confirmed that version 3.9.1 of the WordPress application with IP address "192.168.50.30" is processing the requests. \smallskip 
+The "X-Pingback" header in the response received from proxy also confirmed that version 3.9.1 of the WordPress application with address "192.168.50.5:8080" is processing the requests. \smallskip 
 
 \begin{lstlisting}[language=terminal]
 HTTP/1.1 200 OK
@@ -2098,7 +2297,7 @@ Set-Cookie: dynsoftup=32afd70b-2f71-11e4-b59e-600308a8245e;
 Date: Fri, 29 Aug 2014 11:40:00 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -2112,28 +2311,54 @@ Content-Type: text/html; charset=UTF-8
 \begin{lstlisting}[language=terminal]
 curl -v \
 http://127.0.0.1:9090/configuration/cluster -X PUT \
---data '{"cluster": {"servers":[{"hostname": "192.168.50.40", "port": 80}],"version": "3.9.2","upgradeTransition": { "mode": "CONCURRENT"}}}'
+-H 'Content-Type: application/json' \ 
+-d @config_for_curl/config_curl_docker_wordpress_CONCURRENT.json
 \end{lstlisting}  
 
 \noindent\\
 The following terminal output showed successful addition of the cluster running version 3.9.2 of WordPress application in CONCURRENT upgrade transition mode:\smallskip
 
 \begin{lstlisting}[language=terminal]
-2014/08/29 12:42:55.844840 config_service.go:66:     INFO - Received new cluster configuration:
-{
-    "cluster": {
-        "servers": [
+2014/08/29 12:42:55.844840 config_service.go:66:     
+   INFO - Received new cluster configuration:
+   {
+      "cluster": {
+         "containers": [
             {
-                "hostname": "192.168.50.40", 
-                "port": 80
+               "environment": [
+                  "MYSQL_ROOT_PASSWORD=mysecretpassword"
+               ],
+               "image": "mysql",
+               "name": "some-mysql-upgrade",
+               "tag": "latest",
+               "volumes": [
+                  "/var/lib/mysql:/var/lib/mysql"
+               ]
+            },
+            {
+               "image": "wordpress",
+               "links": [
+                  "some-mysql:mysql"
+               ],
+               "name": "some-wordpress-upgrade",
+               "portBindings": {
+                  "80/tcp": [
+                     {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8081"
+                     }
+                  ]
+               },
+               "portToProxy": 8081,
+               "tag": "3.9.2"
             }
-        ], 
+         ],
         "version": "3.9.2", 
         "upgradeTransition": {
             "mode": "CONCURRENT"
-        }
-    }
-} 
+          }
+      }
+   } 
 \end{lstlisting} 
 
 \noindent
@@ -2160,11 +2385,11 @@ The proxy's log output showed that the proxy sent requests concurrently to both 
 
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:45:00.892252 proxy_context_cluster.go:115:     
-   INFO - Serving response 0 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 0 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [CONCURRENT]
 
 2014/08/29 12:45:00.892822 proxy_context_cluster.go:115:     
-   INFO - Serving response 1 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 1 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
 
@@ -2177,7 +2402,7 @@ Set-Cookie: dynsoftup=9e1cb1e4-2f71-11e4-b59e-600308a8245e;
 Date: Fri, 29 Aug 2014 11:45:00 GMT
 Server: Apache/2.2.22 (Debian)
 X-Powered-By: PHP/5.4.4-14+deb7u12
-X-Pingback: http://192.168.50.40/xmlrpc.php
+X-Pingback: http://192.168.50.5:8081/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8
@@ -2199,11 +2424,11 @@ The log outputted by proxy showed that proxy concurrently forwards messages to b
 \textit{Proxy Log Output}
 \begin{lstlisting}[language=terminal]
 2014/08/29 12:47:30.434366 proxy_context_cluster.go:115:     
-   INFO - Serving response 1 from ip: [192.168.50.40] port: [80] 
+   INFO - Serving response 1 from ip: ip: [192.168.50.5] port: [8081] 
    version: [3.9.2] mode: [CONCURRENT]
    
 2014/08/29 12:47:30.434794 proxy_context_cluster.go:115:     
-   INFO - Serving response 2 from ip: [192.168.50.30] port: [80] 
+   INFO - Serving response 2 from [192.168.50.5] port: [8080] 
    version: [3.9.1] mode: [INSTANT]
 \end{lstlisting}
 
@@ -2216,7 +2441,7 @@ Set-Cookie: dynsoftup=9e1cb1e4-2f71-11e4-b59e-600308a8245e;
 Date: Fri, 29 Aug 2014 11:47:30 GMT
 Server: Apache/2.4.9 (Debian)
 X-Powered-By: PHP/5.5.12-2
-X-Pingback: http://192.168.50.30/xmlrpc.php
+X-Pingback: http://192.168.50.5:8080/xmlrpc.php
 Vary: Accept-Encoding
 Content-Length: 7523
 Content-Type: text/html; charset=UTF-8

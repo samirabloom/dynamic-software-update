@@ -13,6 +13,10 @@ curl -v -X PUT 'http://127.0.0.1:9090/configuration/cluster' -H 'Content-Type: a
 # example lighttpd concurrent upgrade
 curl -v -X PUT 'http://127.0.0.1:9090/configuration/cluster' -H 'Content-Type: application/json' -d @config_for_curl/config_curl_ligttpd_bug.json
 
+# example wordpress concurrent upgrade
+curl -v -X PUT 'http://127.0.0.1:9090/configuration/cluster' -H 'Content-Type: application/json' -d @config_for_curl/config_curl_docker_wordpress.json
+
+
 # example list configurations
 curl -v -X GET 'http://127.0.0.1:9090/configuration/cluster/'
 
