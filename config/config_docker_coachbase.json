@@ -1,0 +1,36 @@
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "couch_one",
+                "portToProxy": 8091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password",
+                    "SAMPLE_BUCKETS=\"beer-sample\""
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8091"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "2.5.1"
+    }
+}

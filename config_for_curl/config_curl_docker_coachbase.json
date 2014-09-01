@@ -1,0 +1,25 @@
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "couchbase",
+                "name": "couch_one",
+                "portToProxy": 8091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password",
+                    "SAMPLE_BUCKETS=\"beer-sample\""
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8091"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "3.9.1"
+    }
+}

@@ -1,20 +1,10 @@
 {
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "dockerHost": {
-        "ip": "192.168.50.5",
-        "port": 2375
-    },
     "cluster": {
         "containers": [
             {
                 "image": "mysql",
                 "tag": "latest",
-                "name": "some-mysql",
+                "name": "some-mysql-upgrade",
                 "environment": [
                     "MYSQL_ROOT_PASSWORD=mysecretpassword"
                 ],
@@ -24,9 +14,9 @@
             },
             {
                 "image": "wordpress",
-                "tag": "3.9.1",
-                "portToProxy": 8080,
-                "name": "some-wordpress",
+                "tag": "3.9.2",
+                "portToProxy": 8081,
+                "name": "some-wordpress-upgrade",
                 "links": [
                     "some-mysql:mysql"
                 ],
@@ -34,12 +24,12 @@
                     "80/tcp": [
                         {
                             "HostIp": "0.0.0.0",
-                            "HostPort": "8080"
+                            "HostPort": "8081"
                         }
                     ]
                 }
             }
         ],
-        "version": "3.9.1"
+        "version": "3.9.2"
     }
 }

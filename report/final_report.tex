@@ -562,7 +562,7 @@ Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their 
 
 \begin{figure}
   \centering
-     \includegraphics[scale=0.5]{docker-filesystem}
+     \includegraphics[scale=0.3]{docker-filesystem}
   \caption{Docker filesystem\textsuperscript{\ref{filesystem}}} %\footnotemark
   \label{docker-filesystem}
 \end{figure}
@@ -1125,59 +1125,144 @@ This Chapter demonstrates the quantitative and qualitative analysis performed on
 
 Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populate web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
 
-\section{Quantitative Analysis add one sentence for recovery speed test}\label{Quantitative_Analysis}
-This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy. Saturation tests focused on stability of the proxy by sending over 400 simultaneous HTTP requests per second to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses.
+\section{Quantitative Analysis}
+This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy.
 
+\subsection{Load Performance and Saturation Tests}\label{load} 
+The objectives of these evaluations were to test the performance of the proxy for forwarding requests to different applications. Both saturation and load tests were performed on Coachbase and WordPress applications running within Docker containers inside a virtual machine by the proxy. The following proxy configurations were used to run WordPress and Coachbase Docker containers.\medskip
 
-
-\subsection{xxxx Load Performance and Saturation Tests}\label{load} - A load test will be used to measure the performance as the number of requests increases. This test will demonstrate the delay incurred by the content switching load balancer and the maximum number of requests that the system can handle.
-
-
-
-
+\noindent
+\textit{Proxy Configuration Running WordPress Docker Container}
+\begin{lstlisting}[language=json]
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "mysql",
+                "tag": "latest",
+                "name": "some-mysql",
+                "environment": [
+                    "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                ],
+                "volumes": [
+                    "/var/lib/mysql:/var/lib/mysql"
+                ]
+            },
+            {
+                "image": "wordpress",
+                "tag": "3.9.1",
+                "portToProxy": 8080,
+                "name": "some-wordpress",
+                "links": [
+                    "some-mysql:mysql"
+                ],
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8080"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "3.9.1"
+    }
+}
+\end{lstlisting}  
 
 \noindent\\
-\hl{\textbf{replace this with proxy's config for running wordpress containers}}
-\begin{lstlisting}[language=terminal]
-<@\textcolor{blue}{\# run WordPress version 3.9.1 container}@>
-docker run --name some-wordpress --link some-mysql:mysql \
-           -p 80:80 -d wordpress:3.9.1
-
-<@\textcolor{blue}{\# run WordPress version 3.9.2 container}@>
-docker run --name some-wordpress --link some-mysql:mysql 
-           -p 80:80 -d wordpress:3.9.2
+\textit{Proxy Configuration Running Couchbase Docker Container}
+\begin{lstlisting}[language=json]
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "couch_one",
+                "portToProxy": 8091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password",
+                    "SAMPLE_BUCKETS=\"beer-sample\""
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8091"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "2.5.1"
+    }
+}
 \end{lstlisting}
+
+\noindent\\
+Saturation tests focused on stability of the proxy by sending HTTP requests (> 150 req/sec for WordPress and 400 req/sec for Couchbase) to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses for 10 seconds, 10 minutes and one hour. 
+
+For both saturation and load tests, requests were sent to WordPress and Couchbase directly and via the proxy. Figure \ref{absoloute-wordpress} and \ref{absoloute-couchbase} show the latency in milliseconds added when sending requests via the proxy in comparison to sending requests directly to either application.  Figure \ref{percentage-wordpress} and \ref{percentage-couchbase} show the latency added when sending requests via the proxy as a percentage of the latency when sending requests directly to the applications. All performance figures show the latency using a percentile distribution; the percentage indicates the proportion of the requests that have the recorded latency or lower. For example, a latency of 40 milliseconds at the 99th percentile indicates that 99\% of the requests have a 40 milliseconds latency or less.   
+
+The evaluation results from WordPress application indicated that in the majority of the time processing requests via proxy was significantly more efficient. It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, one hypothesis is that the proxy manages connections more efficiently than the WordPress application using Apache HTTP Server. This is because the proxy is written in Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle multiple requests where each requests is processed in two goroutines. One goroutine is used for the request and one goroutine is used for the response. Goroutines are executed on thread pools and therefore are not one to one with a thread. This means that when a new connection comes into a proxy generally a new thread will not be created and instead an existing thread will be used from the thread pool. Therefore, the proxy does not close connections as aggressively as Apache HTTP Server and it sends multiple requests down the same connection, which is more efficient, if the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.55]{absoloute-wordpress}
-  \caption{xxxxxxxxxxxxx}
+  \caption{Absolute overhead added by the proxy against WordPress}
   \label{absoloute-wordpress}
 \end{figure} 
 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.55]{percentage-wordpress}
-  \caption{xxxxxxxxxxxxx}
+  \caption{Percentage overhead added by the proxy against WordPress}
   \label{percentage-wordpress}
 \end{figure} 
+
+Moreover, figure xx  and xx shows that the proxy has a greater standard deviation for response times because as the percentile increases up to 99\%, the overhead added by the proxy becomes greater. Go garbage collector and other sporadic activities happening at a low level inside the Go runtime could be an explanation for these findings.
+
+Similar to the WordPress, Couchbase results also showed that processing request via the proxy was mainly more efficient than processing them directly by Couchbase or if any overhead was added by the proxy it was insignificant.
+
+Couchbase performance and saturation tests showed that the proxy add a small over head (<6\%) when it is run for shorter period of time, however, it is significantly increases the performance of the couchbase when it is run for medium and long periods (Figure xx, yy). Although further analysis is required to justify these findings, one hypothesis could be that Couchbase is more efficient at managing request for a short period because it is holding all the connection open. However after a period of time (>10 seconds) it runs out of resources and has to start closing connections more aggressively, therefore, its efficiency at handling connections reduces.
+
 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.55]{absoloute-couchbase}
-  \caption{xxxxxxxxxxxxx}
+  \caption{Absolute overhead added by the proxy against Couchbase}
   \label{absoloute-couchbase}
 \end{figure} 
 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.55]{percentage-couchbase}
-  \caption{xxxxxxxxxxxxx}
+  \caption{Percentage overhead added by the proxy against Couchbase}
   \label{percentage-couchbase}
 \end{figure} 
-
-\noindent
-\underline{Saturation Test} - This test will be performed to measure the performance of the system when it is has been exposed to a moderate number of requests over a prolonged period of time. This test will demonstrate that the system can run for a prolonged period of time without any degradation, such as memory leaks.
 
 
 \subsection{Latency in Response to Updated Version Failure}\label{Recovery}
