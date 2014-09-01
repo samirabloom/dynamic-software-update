@@ -12,6 +12,7 @@ import (
 	"time"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 )
 
 type DockerClient struct {
@@ -60,6 +61,9 @@ func NewDockerClient(endpoint string) (*DockerClient, error) {
 		return true
 	})
 	if !success || err != nil {
+		if err == nil {
+			err = errors.New("Client took too long to reach docker host")
+		}
 		log.LoggerFactory().Error("%s is the server running at %s?\n", err, endpoint)
 		return nil, err
 	} else {
