@@ -1267,12 +1267,12 @@ DELETE requests to \textit{/configuration/cluster/\{clusterId\}} deletes a singl
 \section{Testing}
 As explained by the previous sections, the proxy consists of many components. Therefore, several testing strategies were used to suit the needs of each component (Figure xxxxxxx).\bigskip
 
-XXXXXXXX ADD TEST LEVELS DIAGRAM  XXXXXXXXXXXXXXXXXXX\bigskip
+\hl{XXXXXXXX ADD TEST LEVELS DIAGRAM  XXXXXXXXXXXXXXXXXXX}\bigskip
 
 \subsection{Unit Testing}
 These tests focus on low level checking of the functionality of each proxy component or function. Inversion-of-control and dependency-injection (Section \ref{staged}) allowed dependencies to be injected into each component or function and therefore supported mocking of all dependencies. The unit tests cover both positive and negative cases resulting in overall of xxxxxxx line coverage and xxxxxxx branch coverage.\bigskip    
 
-XXXXXXXX ADD COVERAGE REPORT XXXXXXXXXXXXXXXXXXX\bigskip
+\hl{XXXXXXXX ADD COVERAGE REPORT XXXXXXXXXXXXXXXXXXX}\bigskip
 
 \subsection{Integration Testing}
 These tests focus on the integration between different components of the REST API and the proxy. To ensure each component of the REST API integrates correctly, tests were designed to send simultaneous PUT, GET and DELETE requests to the REST server and the responses were asserted. In addition, integration of different stages of the proxy was tested using different scenarios such as testing the behavior of when the proxy is configured for SESSION or CONCURRENT upgrade modes or when a cluster configuration is deleted from the proxy.
