@@ -4,14 +4,15 @@ import (
 	"testing"
 	assertion "util/test/assertion"
 	"errors"
+	"proxy/docker_client"
 )
 
 func Test_Parse_Docker_Host_When_Config_Valid(testCtx *testing.T) {
 	// given
 	var (
-		expectedError error            = nil
-		expectedDockerHost *DockerHost = &DockerHost{Ip: "123.456.789.012", Port: 1234, Log: true}
-		jsonConfig                     = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": expectedDockerHost.Ip, "port": float64(expectedDockerHost.Port), "log": true}}
+		expectedError error                          = nil
+		expectedDockerHost *docker_client.DockerHost = &docker_client.DockerHost{Ip: "123.456.789.012", Port: 1234, Log: true}
+		jsonConfig                                   = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": expectedDockerHost.Ip, "port": float64(expectedDockerHost.Port), "log": true}}
 	)
 
 	// when
@@ -25,9 +26,9 @@ func Test_Parse_Docker_Host_When_Config_Valid(testCtx *testing.T) {
 func Test_Parse_Docker_Host_When_Config_Valid_Default_Port(testCtx *testing.T) {
 	// given
 	var (
-		expectedError error            = nil
-		expectedDockerHost *DockerHost = &DockerHost{Ip: "123.456.789.012", Port: 2375, Log: true}
-		jsonConfig                     = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": expectedDockerHost.Ip}}
+		expectedError error                          = nil
+		expectedDockerHost *docker_client.DockerHost = &docker_client.DockerHost{Ip: "123.456.789.012", Port: 2375, Log: true}
+		jsonConfig                                   = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": expectedDockerHost.Ip}}
 	)
 
 	// when
@@ -41,9 +42,9 @@ func Test_Parse_Docker_Host_When_Config_Valid_Default_Port(testCtx *testing.T) {
 func Test_Parse_Docker_Host_When_No_Ip(testCtx *testing.T) {
 	// given
 	var (
-		expectedError error            = errors.New("Invalid docker host configuration - \"ip\" is missing from \"dockerHost\" config")
-		expectedDockerHost *DockerHost = nil
-		jsonConfig                     = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": nil}}
+		expectedError error                          = errors.New("Invalid docker host configuration - \"ip\" is missing from \"dockerHost\" config")
+		expectedDockerHost *docker_client.DockerHost = nil
+		jsonConfig                                   = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": nil}}
 	)
 
 	// when
@@ -57,9 +58,9 @@ func Test_Parse_Docker_Host_When_No_Ip(testCtx *testing.T) {
 func Test_Parse_Docker_Host_When_No_DockerHost(testCtx *testing.T) {
 	// given
 	var (
-		expectedError error            = nil
-		expectedDockerHost *DockerHost = nil
-		jsonConfig                     = map[string]interface{}{"dockerHost": nil}
+		expectedError error                          = nil
+		expectedDockerHost *docker_client.DockerHost = nil
+		jsonConfig                                   = map[string]interface{}{"dockerHost": nil}
 	)
 
 	// when

@@ -12,6 +12,7 @@ import (
 	"os"
 	"proxy/transition"
 	"proxy/contexts"
+	"proxy/docker_client"
 )
 
 // this is a trick to ensure that go loads the proxy/transition package
@@ -28,19 +29,9 @@ var uuidGenerator = func(uuidValue uuid.UUID) func() uuid.UUID {
 type Proxy struct {
 	frontendAddr      *net.TCPAddr
 	configServicePort int
-	dockerHost        *DockerHost
+	dockerHost        *docker_client.DockerHost
 	clusters          *contexts.Clusters
 	stop              chan bool
-}
-
-type DockerHost struct {
-	Ip   string
-	Port int
-	Log  bool
-}
-
-func (dh *DockerHost) Endpoint() string {
-	return fmt.Sprintf("http://%s:%d", dh.Ip, dh.Port)
 }
 
 func NewProxy(configFile string) *Proxy {

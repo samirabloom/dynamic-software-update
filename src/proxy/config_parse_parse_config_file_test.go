@@ -8,6 +8,7 @@ import (
 	"proxy/contexts"
 	"errors"
 	"io"
+	"proxy/docker_client"
 )
 
 func mockParseProxy(tcpProxyLocalAddress *net.TCPAddr, proxyParseErr error) func(map[string]interface{}) (*net.TCPAddr, error) {
@@ -22,14 +23,14 @@ func mockParseConfigService(configServicePort int, parseConfigServiceErr error) 
 	}
 }
 
-func mockParseDockerHost(dockerHost *DockerHost, parseDockerHostErr error) func(map[string]interface{}) (*DockerHost, error) {
-	return func(map[string]interface{}) (*DockerHost, error) {
+func mockParseDockerHost(dockerHost *docker_client.DockerHost, parseDockerHostErr error) func(map[string]interface{}) (*docker_client.DockerHost, error) {
+	return func(map[string]interface{}) (*docker_client.DockerHost, error) {
 		return dockerHost, parseDockerHostErr
 	}
 }
 
-func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error) {
-	return func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error) {
+func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(map[string]interface{}, *docker_client.DockerHost, io.Writer) (*contexts.Clusters, error) {
+	return func(map[string]interface{}, *docker_client.DockerHost, io.Writer) (*contexts.Clusters, error) {
 		return clusters, clusterParseErr
 	}
 }
@@ -37,17 +38,17 @@ func mockParseClusters(clusters *contexts.Clusters, clusterParseErr error) func(
 func Test_Parse_Config_File_With_No_Errors(testCtx *testing.T) {
 	// given
 	var (
-		tcpProxyLocalAddress *net.TCPAddr = &net.TCPAddr{}
-		proxyParseErr error               = nil
-		configServicePort int             = 4321
-		parseConfigServiceErr error       = nil
-		dockerHost *DockerHost            = &DockerHost{}
-		parseDockerHostErr error          = nil
-		clusters *contexts.Clusters       = &contexts.Clusters{}
-		clusterParseErr error             = nil
-		jsonData                          = []byte("{}")
-		expectedProxy *Proxy              = &Proxy{frontendAddr: tcpProxyLocalAddress, configServicePort: configServicePort, dockerHost: dockerHost, clusters: clusters, stop: make(chan bool), }
-		expectedError error               = nil
+		tcpProxyLocalAddress *net.TCPAddr    = &net.TCPAddr{}
+		proxyParseErr error                  = nil
+		configServicePort int                = 4321
+		parseConfigServiceErr error          = nil
+		dockerHost *docker_client.DockerHost = &docker_client.DockerHost{}
+		parseDockerHostErr error             = nil
+		clusters *contexts.Clusters          = &contexts.Clusters{}
+		clusterParseErr error                = nil
+		jsonData                             = []byte("{}")
+		expectedProxy *Proxy                 = &Proxy{frontendAddr: tcpProxyLocalAddress, configServicePort: configServicePort, dockerHost: dockerHost, clusters: clusters, stop: make(chan bool), }
+		expectedError error                  = nil
 		outputStream bytes.Buffer
 	)
 
@@ -62,17 +63,17 @@ func Test_Parse_Config_File_With_No_Errors(testCtx *testing.T) {
 func Test_Parse_Config_File_With_Proxy_Parse_Error(testCtx *testing.T) {
 	// given
 	var (
-		tcpProxyLocalAddress *net.TCPAddr = &net.TCPAddr{}
-		proxyParseErr error               = errors.New("Test Proxy Parse Error")
-		configServicePort int             = 4321
-		parseConfigServiceErr error       = nil
-		dockerHost *DockerHost            = &DockerHost{}
-		parseDockerHostErr error          = nil
-		clusters *contexts.Clusters       = &contexts.Clusters{}
-		clusterParseErr error             = nil
-		jsonData                          = []byte("{}")
-		expectedProxy *Proxy              = nil
-		expectedError error               = proxyParseErr
+		tcpProxyLocalAddress *net.TCPAddr    = &net.TCPAddr{}
+		proxyParseErr error                  = errors.New("Test Proxy Parse Error")
+		configServicePort int                = 4321
+		parseConfigServiceErr error          = nil
+		dockerHost *docker_client.DockerHost = &docker_client.DockerHost{}
+		parseDockerHostErr error             = nil
+		clusters *contexts.Clusters          = &contexts.Clusters{}
+		clusterParseErr error                = nil
+		jsonData                             = []byte("{}")
+		expectedProxy *Proxy                 = nil
+		expectedError error                  = proxyParseErr
 		outputStream bytes.Buffer
 	)
 
@@ -87,17 +88,17 @@ func Test_Parse_Config_File_With_Proxy_Parse_Error(testCtx *testing.T) {
 func Test_Parse_Config_File_With_Config_Service_Parse_Error(testCtx *testing.T) {
 	// given
 	var (
-		tcpProxyLocalAddress *net.TCPAddr = &net.TCPAddr{}
-		proxyParseErr error               = nil
-		configServicePort int             = 4321
-		parseConfigServiceErr error       = errors.New("Test Config Service Parse Error")
-		dockerHost *DockerHost            = &DockerHost{}
-		parseDockerHostErr error          = nil
-		clusters *contexts.Clusters       = &contexts.Clusters{}
-		clusterParseErr error             = nil
-		jsonData                          = []byte("{}")
-		expectedProxy *Proxy              = nil
-		expectedError error               = parseConfigServiceErr
+		tcpProxyLocalAddress *net.TCPAddr    = &net.TCPAddr{}
+		proxyParseErr error                  = nil
+		configServicePort int                = 4321
+		parseConfigServiceErr error          = errors.New("Test Config Service Parse Error")
+		dockerHost *docker_client.DockerHost = &docker_client.DockerHost{}
+		parseDockerHostErr error             = nil
+		clusters *contexts.Clusters          = &contexts.Clusters{}
+		clusterParseErr error                = nil
+		jsonData                             = []byte("{}")
+		expectedProxy *Proxy                 = nil
+		expectedError error                  = parseConfigServiceErr
 		outputStream bytes.Buffer
 	)
 
@@ -112,17 +113,17 @@ func Test_Parse_Config_File_With_Config_Service_Parse_Error(testCtx *testing.T) 
 func Test_Parse_Config_File_With_Docker_Host_Parse_Error(testCtx *testing.T) {
 	// given
 	var (
-		tcpProxyLocalAddress *net.TCPAddr = &net.TCPAddr{}
-		proxyParseErr error               = nil
-		configServicePort int             = 4321
-		parseConfigServiceErr error       = nil
-		dockerHost *DockerHost            = &DockerHost{}
-		parseDockerHostErr error          = errors.New("Test Docker Host Parse Error")
-		clusters *contexts.Clusters       = &contexts.Clusters{}
-		clusterParseErr error             = nil
-		jsonData                          = []byte("{}")
-		expectedProxy *Proxy              = nil
-		expectedError error               = parseDockerHostErr
+		tcpProxyLocalAddress *net.TCPAddr    = &net.TCPAddr{}
+		proxyParseErr error                  = nil
+		configServicePort int                = 4321
+		parseConfigServiceErr error          = nil
+		dockerHost *docker_client.DockerHost = &docker_client.DockerHost{}
+		parseDockerHostErr error             = errors.New("Test Docker Host Parse Error")
+		clusters *contexts.Clusters          = &contexts.Clusters{}
+		clusterParseErr error                = nil
+		jsonData                             = []byte("{}")
+		expectedProxy *Proxy                 = nil
+		expectedError error                  = parseDockerHostErr
 		outputStream bytes.Buffer
 	)
 
@@ -137,17 +138,17 @@ func Test_Parse_Config_File_With_Docker_Host_Parse_Error(testCtx *testing.T) {
 func Test_Parse_Config_File_With_Cluster_Parse_Error(testCtx *testing.T) {
 	// given
 	var (
-		tcpProxyLocalAddress *net.TCPAddr = &net.TCPAddr{}
-		proxyParseErr error               = nil
-		configServicePort int             = 4321
-		parseConfigServiceErr error       = nil
-		dockerHost *DockerHost            = &DockerHost{}
-		parseDockerHostErr error          = nil
-		clusters *contexts.Clusters       = &contexts.Clusters{}
-		clusterParseErr error             = errors.New("Test Config Service Parse Error")
-		jsonData                          = []byte("{}")
-		expectedProxy *Proxy              = nil
-		expectedError error               = clusterParseErr
+		tcpProxyLocalAddress *net.TCPAddr    = &net.TCPAddr{}
+		proxyParseErr error                  = nil
+		configServicePort int                = 4321
+		parseConfigServiceErr error          = nil
+		dockerHost *docker_client.DockerHost = &docker_client.DockerHost{}
+		parseDockerHostErr error             = nil
+		clusters *contexts.Clusters          = &contexts.Clusters{}
+		clusterParseErr error                = errors.New("Test Config Service Parse Error")
+		jsonData                             = []byte("{}")
+		expectedProxy *Proxy                 = nil
+		expectedError error                  = clusterParseErr
 		outputStream bytes.Buffer
 	)
 

@@ -140,7 +140,7 @@ func (dualTCPConnection *DualTCPConnection) Write(writeBuffer []byte) (int, erro
 		errorsList string
 	)
 	for index, connection := range dualTCPConnection.Connections {
-		writeBuffer = http.UpdateHostHeader(writeBuffer, dualTCPConnection.Hosts[index], dualTCPConnection.Ports[index])
+		writeBuffer = http.UpdateHostHeader(writeBuffer, dualTCPConnection.Hosts[index], dualTCPConnection.Ports[index], false)
 
 		count, err := connection.Write(writeBuffer)
 		if err != nil {

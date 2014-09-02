@@ -1,6 +1,6 @@
 {
     "proxy": {
-        "port": 1235
+        "port": 8080
     },
     "configService": {
         "port": 9090
@@ -11,8 +11,9 @@
     },
     "cluster": {
         "servers":[
-            {"hostname": "192.168.50.30", "port": 80}
+            {"hostname": "127.0.0.1", "port": 1034},
+            {"hostname": "127.0.0.1", "port": 1035}
         ],
-        "version": "2.5.1"
+        "version": "1.0"
     }
 }

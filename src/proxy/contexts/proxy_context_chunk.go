@@ -78,7 +78,7 @@ func NewForwardPipeChunkContext(from tcp.TCPConnection, pipeComplete chan int64)
 		PipeComplete:   pipeComplete,
 		FirstChunk:     true,
 		RoutingContext: nil,
-		Direction:        ClientToServer,
+		Direction:      ClientToServer,
 	}
 }
 
@@ -90,7 +90,7 @@ func NewBackPipeChunkContext(forwardContext *ChunkContext) *ChunkContext {
 		PipeComplete:   forwardContext.PipeComplete,
 		FirstChunk:     true,
 		RoutingContext: forwardContext.RoutingContext,
-		Direction:        ServerToClient,
+		Direction:       ServerToClient,
 	}
 }
 

@@ -13,7 +13,7 @@ func Test_Update_Header_For_Requests_To_Local_Port_80_Address(testCtx *testing.T
 	)
 
 	// when
-	actualData := UpdateHostHeader(data, "127.0.0.1", "80")
+	actualData := UpdateHostHeader(data, "127.0.0.1", "80", true)
 
 	// then
 	assertion.AssertDeepEqual("Correctly added Host header", testCtx, expectedData, actualData)
@@ -27,7 +27,7 @@ func Test_Update_Header_For_Requests_To_Remote_None_Port_80_Address(testCtx *tes
 	)
 
 	// when
-	actualData := UpdateHostHeader(data, "www.google.co.uk", "443")
+	actualData := UpdateHostHeader(data, "www.google.co.uk", "443", true)
 
 	// then
 	assertion.AssertDeepEqual("Correctly added Host header", testCtx, expectedData, actualData)

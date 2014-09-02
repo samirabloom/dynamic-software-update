@@ -184,11 +184,23 @@ func GenerateRandomName(prefix string, size int) (string, error) {
 	return prefix+hex.EncodeToString(id)[:size], nil
 }
 
+type DockerHost struct {
+	Ip   string `json:"ip,omitempty"`
+	Port int `json:"port,omitempty"`
+	Log  bool `json:"log,omitempty"`
+}
+
+func (dh *DockerHost) Endpoint() string {
+	return fmt.Sprintf("http://%s:%d", dh.Ip, dh.Port)
+}
+
 type DockerConfig struct {
 	// name of the image to create each container from
 	Image           string `json:"image,omitempty"`
 	// the tag for the image, defaulting to `latest`
 	Tag             string `json:"tag,omitempty"`
+	// override the docker host for this container
+	DockerHost	    *DockerHost `json:"dockerHost,omitempty"`
 	// whether to automatically check for new image versions
 	AlwaysPull      bool `json:"alwaysPull,omitempty"`
 	// the port the proxy routes HTTP request to

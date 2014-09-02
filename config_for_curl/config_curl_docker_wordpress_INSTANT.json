@@ -1,14 +1,4 @@
 {
-    "proxy": {
-        "port": 8080
-    },
-    "configService": {
-        "port": 9090
-    },
-    "dockerHost": {
-        "ip": "192.168.50.5",
-        "port": 2375
-    },
     "cluster": {
         "containers": [
             {
@@ -16,7 +6,7 @@
                 "tag": "latest",
                 "name": "some-mysql",
                 "dockerHost": {
-                    "ip": "192.168.50.5",
+                    "ip": "192.168.50.7",
                     "port": 2375
                 },
                 "environment": [
@@ -28,10 +18,10 @@
             },
             {
                 "image": "wordpress",
-                "tag": "3.9.1",
+                "tag": "3.9.2",
                 "portToProxy": 8080,
                 "dockerHost": {
-                    "ip": "192.168.50.5",
+                    "ip": "192.168.50.7",
                     "port": 2375
                 },
                 "name": "some-wordpress",
@@ -48,6 +38,7 @@
                 }
             }
         ],
-        "version": "3.9.1"
+        "uuid": "fec3636f-32f8-11e4-aea1-28cfe9158b63",
+        "version": "3.9.2"
     }
 }

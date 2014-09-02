@@ -225,7 +225,7 @@ func Test_Parse_Docker_Config_With_No_Error(testCtx *testing.T) {
 			"        }\n" +
 			"    ]\n" +
 			"}")
-	var dockerHost = &DockerHost{Ip: "127.0.0.1", Port: 1234}
+	var dockerHost = &docker_client.DockerHost{Ip: "127.0.0.1", Port: 1234}
 	var expectedDockerConfigs = []*docker_client.DockerConfig{
 		&docker_client.DockerConfig{
 			Image: "test image",
@@ -282,7 +282,7 @@ func Test_Parse_Docker_Config_With_Minimum_Config(testCtx *testing.T) {
 			"        }\n" +
 			"    ]\n" +
 			"}")
-	var dockerHost = &DockerHost{Ip: "127.0.0.1", Port: 1234}
+	var dockerHost = &docker_client.DockerHost{Ip: "127.0.0.1", Port: 1234}
 	var expectedDockerConfigs = []*docker_client.DockerConfig{
 		&docker_client.DockerConfig{
 			Image: "test image",
@@ -323,7 +323,7 @@ func Test_Parse_Docker_Config_With_Port_As_Integer(testCtx *testing.T) {
 			"        }\n" +
 			"    ]\n" +
 			"}")
-	var dockerHost = &DockerHost{Ip: "127.0.0.1", Port: 1234}
+	var dockerHost = &docker_client.DockerHost{Ip: "127.0.0.1", Port: 1234}
 	var expectedDockerConfigs = []*docker_client.DockerConfig{
 		&docker_client.DockerConfig{
 			Image: "test image",
@@ -373,7 +373,7 @@ func Test_Parse_Docker_Config_With_Port_Not_Exposed(testCtx *testing.T) {
 			"        }\n" +
 			"    ]\n" +
 			"}")
-	var dockerHost = &DockerHost{Ip: "127.0.0.1", Port: 1234}
+	var dockerHost = &docker_client.DockerHost{Ip: "127.0.0.1", Port: 1234}
 	var expectedDockerConfigs = []*docker_client.DockerConfig{
 		&docker_client.DockerConfig{
 			Image: "test image",
@@ -406,7 +406,7 @@ func Test_Parse_Docker_Config_With_No_Image(testCtx *testing.T) {
 			"        }\n" +
 			"    ]\n" +
 			"}")
-	var dockerHost = &DockerHost{Ip: "127.0.0.1", Port: 1234}
+	var dockerHost = &docker_client.DockerHost{Ip: "127.0.0.1", Port: 1234}
 	var expectedDockerConfigs = []*docker_client.DockerConfig{(*docker_client.DockerConfig)(nil)}
 	var expectedBackendAddresses = []*contexts.BackendAddress{}
 	var expectedError error = errors.New("Invalid container configuration - no \"image\" specified")
@@ -456,7 +456,7 @@ func Test_Parse_Docker_Config_With_Multiple_Containers(testCtx *testing.T) {
 			"        }\n" +
 			"    ]\n" +
 			"}")
-	var dockerHost = &DockerHost{Ip: "127.0.0.1", Port: 1234}
+	var dockerHost = &docker_client.DockerHost{Ip: "127.0.0.1", Port: 1234}
 	var expectedDockerConfigs = []*docker_client.DockerConfig{
 		&docker_client.DockerConfig{
 			Image: "test image one",

@@ -50,7 +50,7 @@ func (mode *TransitionMode) Route(clusters *Clusters, context *ChunkContext) (er
 		if err == nil {
 			tcpConnAndName, isTCPConnAndName := context.To.(*tcp.TCPConnAndName)
 			if isTCPConnAndName && context.To.(*tcp.TCPConnAndName) != nil {
-				context.Data = http.UpdateHostHeader(context.Data, tcpConnAndName.Host, tcpConnAndName.Port)
+				context.Data = http.UpdateHostHeader(context.Data, tcpConnAndName.Host, tcpConnAndName.Port, false)
 			}
 		}
 	}

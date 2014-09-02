@@ -6,6 +6,7 @@ import (
 	"proxy/log"
 	"proxy/contexts"
 	"proxy/tcp"
+	"fmt"
 )
 
 // ==== COMPLETE - START
@@ -25,6 +26,22 @@ func complete(context *contexts.ChunkContext) {
 		log.LoggerFactory().Debug("Complete Stage closed READ with error %s - %s", closeReadError, context)
 	});
 	context.PipeComplete <- context.TotalWriteSize
+
+	if context.Direction == contexts.ClientToServer {
+		var connectionClosedMessage = ""
+		tcp.AllowForNilConnection(context.From, func(connection tcp.TCPConnection) {
+			connectionClosedMessage += fmt.Sprintf("%s", connection.LocalAddr())
+		});
+		tcp.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
+			if len(connectionClosedMessage) > 0 {
+				connectionClosedMessage += " -> "
+			}
+			connectionClosedMessage += fmt.Sprintf("%s", connection.RemoteAddr())
+		});
+		if len(connectionClosedMessage) > 0 {
+			log.LoggerFactory().Info(connectionClosedMessage + " -- Connection Closed")
+		}
+	}
 	log.LoggerFactory().Debug("Complete Stage END - %s", context)
 }
 

@@ -33,7 +33,7 @@ func readConfigFile(configFile string) ([]byte, error) {
 	return jsonConfig, nil
 }
 
-func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseConfigService func(map[string]interface{}) (int, error), parseDockerHost func(map[string]interface{}) (*DockerHost, error), parseClusters func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error), outputStream io.Writer) (proxy *Proxy, err error) {
+func parseConfigFile(jsonData []byte, parseProxy func(map[string]interface{}) (*net.TCPAddr, error), parseConfigService func(map[string]interface{}) (int, error), parseDockerHost func(map[string]interface{}) (*docker_client.DockerHost, error), parseClusters func(map[string]interface{}, *docker_client.DockerHost, io.Writer) (*contexts.Clusters, error), outputStream io.Writer) (proxy *Proxy, err error) {
 	var devNull bytes.Buffer
 
 	// parse json object
@@ -121,13 +121,13 @@ func parseConfigService(jsonConfig map[string]interface{}) (int, error) {
 	return configServicePort, err
 }
 
-func parseDockerHost(jsonConfig map[string]interface{}) (*DockerHost, error) {
+func parseDockerHost(jsonConfig map[string]interface{}) (*docker_client.DockerHost, error) {
 	var (
 		err             error
 		dockerHostIp    string
 		dockerHostPort  int
 		dockerHostLog   bool = true
-		dockerHost      *DockerHost
+		dockerHost      *docker_client.DockerHost
 	)
 
 	if jsonConfig["dockerHost"] != nil {
@@ -147,14 +147,14 @@ func parseDockerHost(jsonConfig map[string]interface{}) (*DockerHost, error) {
 			} else {
 				dockerHostPort = 2375
 			}
-			dockerHost = &DockerHost{Ip: dockerHostIp, Port: dockerHostPort, Log: dockerHostLog}
+			dockerHost = &docker_client.DockerHost{Ip: dockerHostIp, Port: dockerHostPort, Log: dockerHostLog}
 		}
 	}
 	return dockerHost, err
 }
 
-func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}, *DockerHost, io.Writer) (*contexts.Clusters, error) {
-	return func(jsonConfig map[string]interface{}, dockerHost *DockerHost, outputStream io.Writer) (*contexts.Clusters, error) {
+func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}, *docker_client.DockerHost, io.Writer) (*contexts.Clusters, error) {
+	return func(jsonConfig map[string]interface{}, dockerHost *docker_client.DockerHost, outputStream io.Writer) (*contexts.Clusters, error) {
 		var (
 			err      error
 			router   *contexts.Cluster
@@ -181,8 +181,8 @@ func parseClusters(uuidGenerator func() uuid.UUID, initialCluster bool) func(map
 	}
 }
 
-func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}, *contexts.Clusters, *DockerHost, io.Writer) (*contexts.Cluster, error) {
-	return func(clusterConfiguration map[string]interface{}, clusters *contexts.Clusters, dockerHost *DockerHost, outputStream io.Writer) (*contexts.Cluster, error) {
+func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[string]interface{}, *contexts.Clusters, *docker_client.DockerHost, io.Writer) (*contexts.Cluster, error) {
+	return func(clusterConfiguration map[string]interface{}, clusters *contexts.Clusters, dockerHost *docker_client.DockerHost, outputStream io.Writer) (*contexts.Cluster, error) {
 		var (
 			err                            error
 			backendAddresses               []*contexts.BackendAddress
@@ -299,7 +299,11 @@ func parseCluster(uuidGenerator func() uuid.UUID, initialCluster bool) func(map[
 		if err == nil {
 			for _, dockerConfiguration := range dockerConfigurations {
 				var dockerClient *docker_client.DockerClient
-				dockerClient, err = docker_client.NewDockerClient(dockerHost.Endpoint())
+				dockerHost := dockerHost.Endpoint()
+				if dockerConfiguration.DockerHost != nil && len(dockerConfiguration.DockerHost.Endpoint()) > 0 {
+					dockerHost = dockerConfiguration.DockerHost.Endpoint()
+				}
+				dockerClient, err = docker_client.NewDockerClient(dockerHost)
 				if err == nil {
 					_, err = dockerClient.CreateServerFromContainer(dockerConfiguration, outputStream)
 				}
@@ -343,7 +347,7 @@ func parseServers(serversConfiguration interface{}) ([]*contexts.BackendAddress,
 }
 
 
-func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost) ([]*docker_client.DockerConfig, []*contexts.BackendAddress, error) {
+func parseContainers(containersConfiguration interface{}, dockerHost *docker_client.DockerHost) ([]*docker_client.DockerConfig, []*contexts.BackendAddress, error) {
 
 	if dockerHost == nil {
 		errorMessage := "Invalid docker host configuration - \"dockerHost\" must be provided when \"containers\" are specified"
@@ -377,13 +381,17 @@ func parseContainers(containersConfiguration interface{}, dockerHost *DockerHost
 							}
 							if len(portToProxy) > 0 {
 								if dockerConfig.HasPortExposed(portToProxy) {
+									dockerHostIp := dockerHost.Ip
+									if dockerConfig.DockerHost != nil && len(dockerConfig.DockerHost.Endpoint()) > 0 {
+										dockerHostIp = dockerConfig.DockerHost.Ip
+									}
 
-									connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%s", dockerHost.Ip, portToProxy))
+									connection, err = net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%s", dockerHostIp, portToProxy))
 									if err != nil {
-										errorMessage := "Invalid container address [" + fmt.Sprintf("%s:%s", dockerHost.Ip, portToProxy) + "] - " + err.Error()
+										errorMessage := "Invalid container address [" + fmt.Sprintf("%s:%s", dockerHostIp, portToProxy) + "] - " + err.Error()
 										err = errors.New(errorMessage)
 									} else {
-										backendAddresses[backendAddressesIndex] = &contexts.BackendAddress{Address: connection, Host: dockerHost.Ip, Port: portToProxy}
+										backendAddresses[backendAddressesIndex] = &contexts.BackendAddress{Address: connection, Host: dockerHostIp, Port: portToProxy}
 										backendAddressesIndex++
 									}
 								} else {

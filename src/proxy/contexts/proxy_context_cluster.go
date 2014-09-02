@@ -53,15 +53,19 @@ func (clusters *Clusters) Delete(uuidValue uuid.UUID, outputStream io.Writer) {
 	clusterToDelete := clusters.ContextsByID[uuidValue.String()]
 	if clusterToDelete != nil {
 		if len(clusters.DockerHostEndpoint) > 0 {
-			dockerClient, err := docker_client.NewDockerClient(clusters.DockerHostEndpoint)
-			if err == nil {
-				for _, container := range clusterToDelete.DockerConfigurations {
+			for _, container := range clusterToDelete.DockerConfigurations {
+				dockerHost := clusters.DockerHostEndpoint
+				if container.DockerHost != nil && len(container.DockerHost.Endpoint()) > 0 {
+					dockerHost = container.DockerHost.Endpoint()
+				}
+				dockerClient, err := docker_client.NewDockerClient(dockerHost)
+				if err == nil {
 					if err = dockerClient.RemoveContainer(container.Name, 60, outputStream); err != nil {
 						fmt.Fprintf(outputStream, "Error deleting docker container for name [%s]: %s\n", container.Name, err)
 					}
+				} else {
+					fmt.Fprintf(outputStream, "Error creating docker client: %s\n", err)
 				}
-			} else {
-				fmt.Fprintf(outputStream, "Error creating docker client: %s\n", err)
 			}
 		}
 		deleteFromList(clusters.ContextsByVersion, uuidValue)

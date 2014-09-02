@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 	"proxy/contexts"
+	"proxy/docker_client"
 )
 
 func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
@@ -17,7 +18,7 @@ func Test_Config_PUT_GET_DELETE(testCtx *testing.T) {
 		serverPort = networkutil.FindFreeLocalSocket(testCtx).Port
 		serverUrl  = "http://127.0.0.1:" + strconv.Itoa(int(serverPort)) + "/configuration/cluster"
 	)
-	go ConfigServer(serverPort, &contexts.Clusters{}, &DockerHost{})
+	go ConfigServer(serverPort, &contexts.Clusters{}, &docker_client.DockerHost{})
 
 	time.Sleep(150 * time.Millisecond)
 

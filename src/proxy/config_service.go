@@ -12,9 +12,10 @@ import (
 	"os"
 	"io"
 	"net/url"
+	"proxy/docker_client"
 )
 
-func ConfigServer(port int, routeContexts *contexts.Clusters, dockerHost *DockerHost) {
+func ConfigServer(port int, routeContexts *contexts.Clusters, dockerHost *docker_client.DockerHost) {
 	urlRegex := regexp.MustCompile("/configuration/cluster/([a-z0-9-]*){1}")
 	http.ListenAndServe(":"+strconv.Itoa(port), &RegexpHandler{
 			requestMappings: []*requestMapping{
@@ -49,9 +50,9 @@ func (handler *RegexpHandler) ServeHTTP(writer http.ResponseWriter, request *htt
 	http.NotFound(writer, request)
 }
 
-func PUTHandler(uuidGenerator func() uuid.UUID, dockerHost *DockerHost) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
+func PUTHandler(uuidGenerator func() uuid.UUID, dockerHost *docker_client.DockerHost) func(*contexts.Clusters, http.ResponseWriter, *http.Request) {
 	return func(routeContexts *contexts.Clusters, writer http.ResponseWriter, request *http.Request) {
-		body := make([]byte, 1024)
+		body := make([]byte, 4096)
 		size, _ := request.Body.Read(body)
 
 		var jsonConfig map[string]interface{}
