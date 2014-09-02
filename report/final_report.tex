@@ -266,7 +266,7 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \textbf{ Design Chapter} - Presents the requirements of the project and the high level design and component architecture used to meet the requirements.
 
 \noindent \\
-\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail.  
+\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail. Finally, it explains how to install and run the proxy.   
 
 \noindent \\
 \textbf{Evaluation Chapter} - Presents the evaluations of the dynamic software update proxy to test its performance, functional correctness and robustness while proxying requests to real applications. 
@@ -1019,7 +1019,7 @@ The proxy can be installed in two simple steps as follows:
 \end{list}
 
 \noindent
-The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
+\hl{The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. More detailed information on how to use and run the proxy is explained on} \url{https://github.com/samirabloom/dynamic-software-update}. 
 
 \section{Command Line Interface}
 The proxy can be run from the command line with the following options:\bigskip
@@ -2586,9 +2586,9 @@ Content-Type: text/html; charset=UTF-8
 
 
 \subsection{Lighttpd Upgrade with Incorrect Behavior} 
-Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of lighttpd web server with improved HTTP Etag functionality was released\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in lighttpd improved the Etag functionality, however, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the lighttpd server was crashing when the outgoing data was compressed.
+Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of lighttpd web server with improved HTTP Etag functionality was released\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in lighttpd improved the Etag functionality, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the lighttpd server was crashing when the request was requesting a compressed response by using a "Accept-Encoding: deflate, gzip" header.
 
-To evaluate the ability of the proxy to detect the incorrect behavior of the lighttpd with the compression crash bug the following scenario was tested. The proxy was initially configured to forward requests to a Docker container running a fully functional bug-free version of the lighttpd. The proxy was then configured to perform a CONCURRENT upgrade to the new version of lighttpd containing compression crash bugs. HTTP requests were sent to lighttpd and the behavior of the proxy and the responses received from lighttpd via the proxy were analyzed. The analysis showed that when the upgrade was applied, the proxy forwarded HTTP requests to both new and old version of lighttpd server. When HTTP requests without compression were sent, the proxy forwarded responses to the client from the new version of lighttpd. However, for HTTP requests with compression, the proxy forwarded requests to both versions but since the new version crashed, the proxy seamlessly dropped the crash response from the new version and forwarded the response from the old version of lighttpd to the client. The result from each step of the aforementioned evaluation is shown below.
+To evaluate the ability of the proxy to detect the incorrect behavior of the lighttpd with the compression crash bug the following scenario was tested. The proxy was initially configured to forward requests to a Docker container running a fully functional bug-free version of the lighttpd. The proxy was then configured to perform a CONCURRENT upgrade to the new version of lighttpd containing the compression crash bug. HTTP requests were sent to lighttpd and the behavior of the proxy and the responses received from lighttpd via the proxy were analyzed. The analysis showed that when the upgrade was applied, the proxy forwarded HTTP requests to both new and old version of lighttpd server. When HTTP requests were sent without the "Accept-Encoding" header, the proxy forwarded responses to the client from the new version of lighttpd. However, for HTTP requests with the "Accept-Encoding" header, the proxy forwarded requests to both versions but since the new version crashed, the proxy seamlessly dropped the crash response from the new version and forwarded the response from the old version of lighttpd to the client. The result from each step of the evaluation is shown below.
 
 \noindent
 \textit{Proxy Initial Configuration Running Bug-free Lighttpd}
@@ -2755,7 +2755,7 @@ Server: lighttpd/1.4.23
 \end{lstlisting} 
 
 \noindent \\
-\textit{HTTP Request with Compression Tag After Upgrade} 
+\textit{HTTP Request with "Accept-Encoding" header After Upgrade} 
 \begin{lstlisting}[language=terminal]
 curl -v <@\textcolor{magenta}{--compressed}@> http://127.0.0.1:1235 
 \end{lstlisting}  
