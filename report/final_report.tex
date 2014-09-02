@@ -18,6 +18,7 @@
 \usepackage{soul}
 
 
+
 % for adding space between paragraphs
 %\usepackage{parskip}
 \setlength{\parindent}{1.5em}
@@ -46,7 +47,10 @@
 \usepackage{fancyhdr}
 \pagestyle{fancyplain}
 \usepackage[T1]{fontenc}
-\usepackage[numbib]{tocbibind}
+% to include bibliography in table of content and give it a chapter number
+%\usepackage[numbib]{tocbibind}
+\usepackage{tocbibind}
+
 
 % for jason config
 \usepackage{listings}
@@ -168,10 +172,11 @@
 \clearpage
 
 \section*{Abstract}
-This is where the abstract will be 
+\hl{Abstract will be the last section to be added}
 \clearpage
 
 
+\afterpage{\blankpage}
 \tableofcontents
 \clearpage
 
@@ -251,22 +256,19 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \textbf{Related Work Chapter} - Presents different approaches and technologies used in the past decades to achieve and maintain highly available software and reliable dynamic software updates. 
 
 \noindent \\
-\textbf{Technical Background Chapter} -Explains and justifies the technologies used to implement the dynamic software update proxy.
+\textbf{Technical Background Chapter} -Explains and justifies technologies used to implement the dynamic software update proxy.
 
 \noindent \\
-\textbf{ Design Chapter} - DESIGN
+\textbf{ Design Chapter} - Presents the requirements of the project and the high level design and component architecture used to meet the requirements.
 
 \noindent \\
-\textbf{Implementation Chapter} - IMPLEMENTATION
+\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail.  
 
 \noindent \\
 \textbf{Evaluation Chapter} - Presents the evaluations of the dynamic software update proxy to test its performance, functional correctness and robustness while proxying requests to real applications. 
 
 \noindent \\
-\textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project. \hl{The limitations of the system are also presented}. Finally, possible future work for extensions of the dynamic software upgrade proxy. 
-
-\noindent \\
-\textbf{Appendices} - Appendices
+\textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project and possible future works for extensions of the dynamic software upgrade proxy. 
 
 \chapter{Related Work}
 Software reliability is compromised of the following main activities:
@@ -480,6 +482,7 @@ ZeroMQ is a broker-less, language agnostic, lightweight asynchronous messaging l
 
 ZeroMQ provide sockets that carry atomic messages across various transports such as Transmission Control Protocol (TCP) or User Datagram Protocol (UDP) and communication styles such as point-to-point or multicast. Unlike conventional sockets that only allow strict one-to-one, many-to-one, or in some cases one-to-many relationships, ZeroMQ sockets can be connected to multiple endpoints while simultaneously accepting incoming connections from multiple endpoints (many-to-many connection). ZeroMQ sockets support connection patterns such as request-reply (sending requests from a client to a web service or cluster of web services and receiving reply from each request sent), publish-subscribe (one-to-many distribution of data from a single publisher to multiple subscribers in a fan out manner), pipeline (distributing data to nodes arranged in a pipeline) and exclusive pair (connect one peer to exactly one other peer for inter-thread communications) patterns that is summarized in \url{http://api.zeromq.org/2-1:zmq-socket}.      
 
+\clearpage
 
 \section{Efficient Cluster Management} 
 As described in Section \ref{Architectures} clustering supports dynamic software update and software high availability; however, clustering increases the cost of managing and maintaining the application due to the multiple application instances within the cluster. Virtualization is a technique widely used to reduce the cost of hardware, management and risk associated to clustering.
@@ -508,7 +511,7 @@ Container virtualization is a lightweight operating system virtualization techni
 %\vspace{-8pt}
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=1]{containervsvm}
+     \includegraphics[scale=1.1]{containervsvm}
   \caption{Containers vs. traditional virtual machines\textsuperscript{\ref{AAA}}}%\footnotemark %\footnotetext{\url{https://www.docker.io/the_whole_story/}} 
   \label{vm vs container}  
 \end{figure}
@@ -561,7 +564,7 @@ Docker is an open source application (or framework) that extend and simplifies L
 
 Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their filesystem. AuFS is a layered filesystem that can transparently overlay one or more existing filesystems (Figure \ref{docker-filesystem}). A Docker AuFS consists of multiple read-only layers with a single read-write layer at the top merged together to form a single filesystem representation. When a file is modified in the container, the read-only version of the file is copied into the read-write layer using a process called copy-on-write \cite{docker2}. The copy-on-write approach means that the read-write layer only contains the files that have been modified by the container. Docker supports behaviors similar to git\footnote {\url{http://git-scm.com/}} where the read-write filesystem layer can be committed and turned into a new permanent read-only layer called an image. A new container can then be created based on this image or committed filesystem layer. A container created from the image will have a union filesystem that unifies a new copy-on-write read-write filesystem layer with the images' read-only filesystem layer and the dependent image filesystem layers beneath it. A Docker image is therefore simply a diff of changes from the previous base layers, effectively keeping the size of image files to minimum. This also means that image creators have a complete audit trail of changes from one version of a container to another. \bigskip
 
-\begin{figure}
+\begin{figure}[!ht]
   \centering
      \includegraphics[scale=0.3]{docker-filesystem}
   \caption{Docker filesystem\textsuperscript{\ref{filesystem}}} %\footnotemark
@@ -603,7 +606,7 @@ Typically different application update situations require different update appro
 
 \section{Dynamic Software Update Proxy} 
 
-The following section describes the high level design an component architecture used to meet the requirements.
+The following section describes the high level design and component architecture used to meet the requirements.
 
 \subsection{Technology Stack} 
 The following technology stack has been chosen for the dynamic software update system:
@@ -646,6 +649,7 @@ This upgrade mode is useful when a new feature is release which affects the beha
 \end{figure}
 % \vspace{-18pt}
 
+\clearpage
 \subsubsection*{Gradual Upgrade}
 This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number clients that are exposed to the new version. Figure \ref{session_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into.  The Figure \ref{session_upgrade} shows in the first upgrade scenario the second cookie gives the request a number of 45.  The bucket for application 1.0.1 is from 0 to 10 therefore the the request does not match the bucket as 45 falls outside the range 0 to 10.  In the second upgrade scenario the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.
 
@@ -671,11 +675,10 @@ In this mechanism the updated and non-updated versions run concurrently and proc
 
 In all four mechanisms the behaviour of the updated software is automatically monitored to confirm the application is behaving correctly. The ability to receive incoming requests and a response with a non 5xx range status code is used to verify that the updated application is behaving correctly. 
 
-\clearpage
 
 \subsection{Component Architecture}
 
-Figure \ref{proposed_solution} demonstrates the main components and there interactions for the proposed dynamic software update system, which are described below.
+Figure \ref{proposed_solution} demonstrates the main components and there interactions for the proposed dynamic software update system, which are described in this section.
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -843,7 +846,11 @@ The final version of the proxy was implemented using raw sockets in a stage base
 \end{list}
 
 \noindent
-To prevent the socket errors that occurred in the content counting proxy \ref{Content-Counting}, the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in Figure \ref{proxy} and their functionality is explained below.\bigskip
+To prevent the socket errors that occurred in the content counting proxy (Section \ref{Content-Counting}), the staged HTTP dynamic update proxy uses the End-Of-File (EOF) signal to detect the end of messages instead of content counting. Different component and stages of the proxy is shown in Figure \ref{proxy} and their functionality is explained below.
+
+\subsubsection*{Accept Loop} 
+\textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.
+
 
 \begin{figure}[!ht]
   \centering
@@ -852,9 +859,6 @@ To prevent the socket errors that occurred in the content counting proxy \ref{Co
   \label{proxy}
 \end{figure}
 % \vspace{-18pt}
-
-\subsubsection*{Accept Loop} 
-\textit{Accept} loop accepts incoming HTTP connections on a listener and creates a \textit{Forward pipe} for each request.
 
 \subsubsection*{Forward Pipe} 
 \textit{Forward pipe} constructs the \textit{ChunkContext Struct} for the received request and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages of the proxy for forwarding the request to the appropriate server in the cluster. The \textit{ChunkContext Struct} is used to encapsulate the information for managing the transferring chunks of data between the client and servers of the proxy. The \textit{ChunkContext} contains information such as network addresses of the client and the server and the data transfer direction, as follows: \bigskip  
@@ -882,6 +886,7 @@ type RoutingContext struct {
 
 \subsubsection*{Read Stage} 
 \textit{Read} stage is responsible for reading input in a loop from the HTTP connection. The \textit{Read} stage in \textit{Forward pipe} reads requests from the client, while the one in \textit{Back pipe} reads responses from the server. The \textit{Read} loop terminates when an error is encountered while reading from a socket. In the staged proxy (Figure \ref{proxy}) when an EOF condition (\textit{i.e.} when no more input is available) occurs, the \textit{Read} loop treats this condition as a low level socket signal and it stops reading from the connection. This approach allows a graceful and efficient way of detecting the end of input. It also prevents the need for parsing requests / responses and the content counting process mentioned in section \ref{Content-Counting}, which is very inefficient and unreliable.  In addition, the socket based proxy handles socket interaction efficiently by only closing sockets when the other end of the connection closes its socket.  This avoids overhead associated with creating new TCP connections such as the TCP 3-way handshake and TCP slow start.
+
 \subsubsection*{Route Stage} \label{route-stage} 
 \textit{Route} stage has different functionality in the \textit{Forward Pipe}, for processing requests and \textit{Back pipe}, for processing responses. \bigskip  
 
@@ -1299,105 +1304,13 @@ Real applications including Couchbase\footnote{\label{couchbase} \url{http://www
 This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy.
 
 \subsection{Load Performance and Saturation Tests}\label{load} 
-The objectives of these evaluations were to test performance of the proxy for forwarding requests to different applications. Both saturation and load tests were performed on Coachbase and WordPress applications running within Docker containers inside a virtual machine by the proxy. The following proxy configurations were used to run WordPress and Coachbase Docker containers.\medskip
+The objectives of these evaluations were to test performance of the proxy for forwarding requests to different applications. Both saturation and load tests were performed on Coachbase and WordPress applications running within Docker containers inside a virtual machine by the proxy. Appendix \ref{Appendix II} shows the proxy configuration used to run WordPress and Coachbase Docker containers.\medskip
 
-\noindent
-\textit{Proxy Configuration Running WordPress Docker Container}
-\begin{lstlisting}[language=json]
-{
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "dockerHost": {
-        "ip": "192.168.50.5",
-        "port": 2375
-    },
-    "cluster": {
-        "containers": [
-            {
-                "image": "mysql",
-                "tag": "latest",
-                "name": "some-mysql",
-                "environment": [
-                    "MYSQL_ROOT_PASSWORD=mysecretpassword"
-                ],
-                "volumes": [
-                    "/var/lib/mysql:/var/lib/mysql"
-                ]
-            },
-            {
-                "image": "wordpress",
-                "tag": "3.9.1",
-                "portToProxy": 8080,
-                "name": "some-wordpress",
-                "links": [
-                    "some-mysql:mysql"
-                ],
-                "portBindings": {
-                    "80/tcp": [
-                        {
-                            "HostIp": "0.0.0.0",
-                            "HostPort": "8080"
-                        }
-                    ]
-                }
-            }
-        ],
-        "version": "3.9.1"
-    }
-}
-\end{lstlisting}  
-
-\noindent\\
-\textit{Proxy Configuration Running Couchbase Docker Container}
-\begin{lstlisting}[language=json]
-{
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "dockerHost": {
-        "ip": "192.168.50.5",
-        "port": 2375
-    },
-    "cluster": {
-        "containers": [
-            {
-                "image": "couchbase",
-                "tag": "2.5.1",
-                "name": "couch_one",
-                "portToProxy": 8091,
-                "environment": [
-                    "CLUSTER_INIT_USER=Administrator",
-                    "CLUSTER_INIT_PASSWORD=password",
-                    "SAMPLE_BUCKETS=\"beer-sample\""
-                ],
-                "portBindings": {
-                    "8091/tcp": [
-                        {
-                            "HostIp": "0.0.0.0",
-                            "HostPort": "8091"
-                        }
-                    ]
-                }
-            }
-        ],
-        "version": "2.5.1"
-    }
-}
-\end{lstlisting}
-
-\noindent\\
 Saturation tests focused on stability of the proxy by sending HTTP requests (> 150 req/sec for WordPress and > 400 req/sec for Couchbase) to the proxy for 10 hours. The performance tests focused on measuring the overhead added by the proxy to process HTTP requests and responses for 10 seconds, 10 minutes and one hour. 
 
 For both saturation and load tests, requests were sent to WordPress and Couchbase directly and via the proxy. Figure \ref{absoloute-wordpress} and Figure \ref{absoloute-couchbase} show the latency in milliseconds added when sending requests to the applications via the proxy in comparison to sending requests directly.  Figure \ref{percentage-wordpress} and Figure \ref{percentage-couchbase} show the latency added when sending requests via the proxy as a percentage of the latency when sending requests directly to the applications. All performance figures show the latency using a percentile distribution; the percentage indicates the proportion of the requests that have the recorded latency or lower. For example, a latency of 40 milliseconds at the 99\textsuperscript{th} percentile indicates that 99\% of the requests have a 40 milliseconds latency or less.   
 
-The evaluation results from WordPress indicated that in the majority of the time processing requests via proxy was significantly more efficient (Figure \ref{absoloute-wordpress} and Figure \ref{absoloute-wordpress}). It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, a hypothesis is that the proxy manages connections more efficiently than WordPress using Apache HTTP Server. This is because the proxy is written in the Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle each requests.  The proxy uses two goroutines per request and response; one goroutine is used for the request and one goroutine is used for the response. However when serving a PHP page, Apache HTTP Server uses a separate thread to handle each request \footnote{\label{apache_thread_per_req}\url{http://httpd.apache.org/docs/current/mod/mpm_common.html}}.  Goroutines are executed using a thread pool and therefore are not one to one with a thread. This means that the proxy will generally not create a new thread for each request instead an existing thread will be used from the thread pool. As a result the proxy does not close connections as aggressively as Apache HTTP Server.  In addition, Apache HTTP Server uses a separate thread per request and therefore cannot maintain as many open connections.  The proxy therefor can send more requests from the same client down the same connection, as long as the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
+The evaluation results from WordPress indicated that in the majority of the time processing requests via proxy was significantly more efficient (Figure \ref{absoloute-wordpress} and Figure \ref{percentage-wordpress}). It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, a hypothesis is that the proxy manages connections more efficiently than WordPress using Apache HTTP Server. This is because the proxy is written in the Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle each requests.  The proxy uses two goroutines per request and response; one goroutine is used for the request and one goroutine is used for the response. However when serving a PHP page, Apache HTTP Server uses a separate thread to handle each request \footnote{\label{apache_thread_per_req}\url{http://httpd.apache.org/docs/current/mod/mpm_common.html}}.  Goroutines are executed using a thread pool and therefore are not one to one with a thread. This means that the proxy will generally not create a new thread for each request instead an existing thread will be used from the thread pool. As a result the proxy does not close connections as aggressively as Apache HTTP Server.  In addition, Apache HTTP Server uses a separate thread per request and therefore cannot maintain as many open connections.  The proxy therefor can send more requests from the same client down the same connection, as long as the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
 
 \begin{figure}[!ht]
   \centering
@@ -1434,17 +1347,17 @@ Couchbase performance and saturation tests showed that the proxy added a small o
   \label{percentage-couchbase}
 \end{figure} 
 
-
+\clearpage
 \subsection{Latency in Response to Updated Version Failure}\label{Recovery}
 The aim of this evaluation was to measure how rapidly the proxy applies an upgrade and rolls back to an older version of the application when the new version does not behave correctly. 
 
-INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Section \ref{load}.    
+INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Appendix \ref{Appendix II}.    
 
 The proxy was initially configured to forward requests to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was simulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
-As shown in Table  {\ref{upgrade-speed}}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
- 
-\begin{table}
+As shown in Table \ref{upgrade-speed}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
+
+\begin{table}[!h]
 \caption {Proxy Latency for dynamic upgrade and error recovery}
 \label{upgrade-speed}
 \begin{center}
@@ -1473,7 +1386,7 @@ Qualitative analysis were performed on the dynamic software update proxy (Chapte
 \end{list} 
 
 \subsection{Load Balancing Analysis}
-The dynamic software update proxy is designed to behave as a load balancer and distribute  HTTP requests across multiple servers. Therefore, to test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster via the proxy with each node running in a separate Docker container. As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server 2.5.1.  Couchbase servers were chosen for the load balancing evaluation since they form a cluster with shared data. Therefore each server returns an identical response to a given request.
+The dynamic software update proxy is designed to behave as a load balancer and distribute  HTTP requests across multiple servers. Therefore, to test the load balancing feature of the dynamic software update proxy, HTTP requests were sent to a Couchbase cluster via the proxy with each node running in a separate Docker container. As shown in (Figure \ref{couchbase_cluster}) the cluster contained three nodes running Couchbase server version 2.5.1.  Couchbase servers were chosen for the load balancing evaluation since they form a cluster with shared data. Therefore each server returns an identical response to a given request.
 
 \begin{figure}[!ht]
   \centering
@@ -1482,89 +1395,7 @@ The dynamic software update proxy is designed to behave as a load balancer and d
   \label{couchbase_cluster}
 \end{figure} 
 
-Each Couchbase node was run within a Docker container inside a virtual machine as shown below. Internally within the virtual machine each Docker container for each Couchbase node used a different internal IP address on the 172.16.0.0 - 172.31.255.255 private range reserved by IANA\footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However, as the port has been mapped from each Docker container to the virtual machine, each node can be addressed on a different port of the virtual machine. The following section summarizes the steps executed for load balancing evaluation. \bigskip
-
-\begin{lstlisting}[language=json]
-{
-    "proxy": {
-        "port": 1235
-    },
-    "configService": {
-        "port": 9090
-    },
-    "dockerHost": {
-        "ip": "192.168.50.5",
-        "port": 2375
-    },
-    "cluster": {
-        "containers": [
-            {
-                "image": "couchbase",
-                "tag": "2.5.1",
-                "name": "node_one",
-                "portToProxy": 8091,
-                "environment": [
-                    "CLUSTER_INIT_USER=Administrator",
-                    "CLUSTER_INIT_PASSWORD=password",
-                    "SAMPLE_BUCKETS=\"beer-sample\""
-                ],
-                "portBindings": {
-                    "8091/tcp": [
-                        {
-                            "HostIp": "0.0.0.0",
-                            "HostPort": "8091"
-                        }
-                    ]
-                }
-            },
-            {
-                "image": "couchbase",
-                "tag": "2.5.1",
-                "name": "node_two",
-                "portToProxy": 9091,
-                "environment": [
-                    "CLUSTER_INIT_USER=Administrator",
-                    "CLUSTER_INIT_PASSWORD=password"
-                ],
-                "links": [
-                    "node_one:couchbase"
-                ],
-                "portBindings": {
-                    "8091/tcp": [
-                        {
-                            "HostIp": "0.0.0.0",
-                            "HostPort": "9091"
-                        }
-                    ]
-                }
-            },
-            {
-                "image": "couchbase",
-                "tag": "2.5.1",
-                "name": "node_three",
-                "portToProxy": 10091,
-                "environment": [
-                    "CLUSTER_INIT_USER=Administrator",
-                    "CLUSTER_INIT_PASSWORD=password"
-                ],
-                "links": [
-                    "node_one:couchbase"
-                ],
-                "portBindings": {
-                    "8091/tcp": [
-                        {
-                            "HostIp": "0.0.0.0",
-                            "HostPort": "10091"
-                        }
-                    ]
-                }
-            }
-        ],
-        "version": "2.5.1"
-    }
-}
-\end{lstlisting}
-
+Each Couchbase node was run within a Docker container inside a virtual machine (Appendix \ref{Appendix-III}). Internally within the virtual machine each Docker container for each Couchbase node used a different internal IP address on the 172.16.0.0 - 172.31.255.255 private range reserved by IANA\footnote{\label{IANA} \url{http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml}}.  However, as the port has been mapped from each Docker container to the virtual machine, each node can be addressed on a different port of the virtual machine. The following sections summarizes the steps executed for load balancing evaluation.
 
 \subsubsection*{Proxy Configuration} 
 The proxy was configured to forward HTTP requests to three nodes in Couchbase cluster each running in separate Docker containers (Figure \ref{couchbase_cluster}) using round-robin load balancing. The start-up configuration was echoed back by the proxy as shown in the following terminal output.\bigskip
@@ -1734,7 +1565,7 @@ Cache-Control: no-cache
 \subsection{Real Software Upgrades}
 The main feature of the implemented proxy described in Chapter \ref{Implementation} is its ability to support dynamic software update for continues delivery into production. The proxy is able to dynamically update an application to a new version. It then runs different versions of an application concurrently and it automatically monitors the behavior of the most updated version. If the updated version behaves incorrectly, the proxy seamlessly removes that version of the application and routes all requests to the previous stable version with no downtime. This section evaluates the aforementioned functionality of the proxy in details using real applications.
 
-Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Section \ref{load}.
+Dynamic software upgrade strategies described in Section \ref{modes} were applied on two versions of WordPress (version 3.9.1 and version 3.9.2) application. Each version of WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Appendix \ref{Appendix II}.
 
 For each upgrade scenarios (i.e. INSTANT, SESSION, GRADUAL and CONCURRENT), the following actions were executed sequentially:
 
@@ -2750,8 +2581,8 @@ Content-Type: text/html; charset=UTF-8
  
 
 
-\subsection{Lighttpd Update with Incorrect Behavior} 
-Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of lighttpd web server with improved HTTP Etag functionality was released in production\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in lighttpd improved the Etag functionality, however, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the lighttpd server was crashing when the outgoing data was compressed.
+\subsection{Lighttpd Upgrade with Incorrect Behavior} 
+Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of lighttpd web server with improved HTTP Etag functionality was released\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in lighttpd improved the Etag functionality, however, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the lighttpd server was crashing when the outgoing data was compressed.
 
 To evaluate the ability of the proxy to detect the incorrect behavior of the lighttpd with the compression crash bug the following scenario was tested. The proxy was initially configured to forward requests to a Docker container running a fully functional bug-free version of the lighttpd. The proxy was then configured to perform a CONCURRENT upgrade to the new version of lighttpd containing compression crash bugs. HTTP requests were sent to lighttpd and the behavior of the proxy and the responses received from lighttpd via the proxy were analyzed. The analysis showed that when the upgrade was applied, the proxy forwarded HTTP requests to both new and old version of lighttpd server. When HTTP requests without compression were sent, the proxy forwarded responses to the client from the new version of lighttpd. However, for HTTP requests with compression, the proxy forwarded requests to both versions but since the new version crashed, the proxy seamlessly dropped the crash response from the new version and forwarded the response from the old version of lighttpd to the client. The result from each step of the aforementioned evaluation is shown below.
 
@@ -2974,17 +2805,18 @@ Server: lighttpd/1.4.20
 \chapter{Conclusions \& Future Plans}
 \hl{xxxxxxxxx}\bigskip
 
-\hl{xxxxxxxxx}\bigskip
+\noindent
+\hl{In progress}\bigskip
 
+\noindent
 \hl{xxxxxxxxx}\bigskip
 
 
 \clearpage
 
-%\appendix
-\chapter{Appendices}
 
-\section*{Appendix I: Proxy REST API}\label{Appendix I}
+\begin{appendices}
+\chapter[Proxy REST API]{\huge Proxy REST API}\label{Appendix I}
 The proxy provides a simple REST API to support dynamically updating the cluster configuration as follows:
 
 \begin{list}{-}{}
@@ -3769,6 +3601,183 @@ Content-Length: 0
 Content-Type: text/plain; charset=utf-8
 \end{lstlisting}
 
+\clearpage
+
+\chapter[Proxy Configuration for Load Performance and Saturation Tests]{\huge Proxy Configuration for Load Performance and Saturation Tests}\label{Appendix II}
+
+\section{Proxy Configuration Running WordPress Docker Container}
+\begin{lstlisting}[language=json]
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "mysql",
+                "tag": "latest",
+                "name": "some-mysql",
+                "environment": [
+                    "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                ],
+                "volumes": [
+                    "/var/lib/mysql:/var/lib/mysql"
+                ]
+            },
+            {
+                "image": "wordpress",
+                "tag": "3.9.1",
+                "portToProxy": 8080,
+                "name": "some-wordpress",
+                "links": [
+                    "some-mysql:mysql"
+                ],
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8080"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "3.9.1"
+    }
+}
+\end{lstlisting}  
+
+\section{Proxy Configuration Running Couchbase Docker Container}
+\begin{lstlisting}[language=json]
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "couch_one",
+                "portToProxy": 8091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password",
+                    "SAMPLE_BUCKETS=\"beer-sample\""
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8091"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "2.5.1"
+    }
+}
+\end{lstlisting}
+\clearpage
+
+ \chapter[Proxy Configuration for Couchbase Cluster with Three Nodes]{\huge Proxy Configuration for Couchbase Cluster with Three Nodes}\label{Appendix-III}
+\begin{lstlisting}[language=json]
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "node_one",
+                "portToProxy": 8091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password",
+                    "SAMPLE_BUCKETS=\"beer-sample\""
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8091"
+                        }
+                    ]
+                }
+            },
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "node_two",
+                "portToProxy": 9091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password"
+                ],
+                "links": [
+                    "node_one:couchbase"
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "9091"
+                        }
+                    ]
+                }
+            },
+            {
+                "image": "couchbase",
+                "tag": "2.5.1",
+                "name": "node_three",
+                "portToProxy": 10091,
+                "environment": [
+                    "CLUSTER_INIT_USER=Administrator",
+                    "CLUSTER_INIT_PASSWORD=password"
+                ],
+                "links": [
+                    "node_one:couchbase"
+                ],
+                "portBindings": {
+                    "8091/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "10091"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "2.5.1"
+    }
+}
+\end{lstlisting}
+
+\end{appendices}
 
 \clearpage
 
