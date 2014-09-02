@@ -26,7 +26,7 @@ func Test_Parse_Docker_Host_When_Config_Valid_Default_Port(testCtx *testing.T) {
 	// given
 	var (
 		expectedError error            = nil
-		expectedDockerHost *DockerHost = &DockerHost{Ip: "123.456.789.012", Port: 2375}
+		expectedDockerHost *DockerHost = &DockerHost{Ip: "123.456.789.012", Port: 2375, Log: true}
 		jsonConfig                     = map[string]interface{}{"dockerHost": map[string]interface{}{"ip": expectedDockerHost.Ip}}
 	)
 
