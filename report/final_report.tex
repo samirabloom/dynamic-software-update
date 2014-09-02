@@ -1440,7 +1440,7 @@ The aim of this evaluation was to measure how rapidly the proxy applies an upgra
 
 INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Section \ref{load}.    
 
-The proxy was initially configured to forward responses to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was simulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
+The proxy was initially configured to forward requests to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was simulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
 As shown in Table  {\ref{upgrade-speed}}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
  
@@ -1461,7 +1461,7 @@ As shown in Table  {\ref{upgrade-speed}}, there is no additional latency introdu
 \end{table}
 
 \section{Qualitative Analysis}
-Qualitative analysis were performed on the dynamic software update proxy (Chapter \ref{Implementation})  using real applications. These evaluations insured that different features of the proxy such as load balancing and dynamic software upgrade functionality behave correctly and the proxy can survive crash bugs in real examples. The following qualitative analysis were performed: 
+Qualitative analysis were performed on the dynamic software update proxy (Chapter \ref{Implementation})  using real applications. These evaluations insured that different features of the proxy such as load balancing and dynamic software upgrade functionality behave correctly and the proxy can handle failures in upgraded applications using real examples. The following qualitative analysis were performed: 
 
 \begin{list}{-}{}
   \itemsep0em
@@ -1927,7 +1927,7 @@ Content-Type: text/plain; charset=utf-8
 \noindent\\
 \textit{Evaluation of the INSTANT Upgrade} - To check that the proxy applies the upgrade immediately and process the requests with the most updated version, HTTP requests were sent to the proxy and responses received from the proxy were analyzed.
 
-The proxy's output to the terminal showed that the proxy is serving responses from version 3.9.2 of the WordPress application. In addition, the "X-Powered-By" and "X-Pingback" headers in the response recieved from proxy after the upgrade refered to the PHP version and the IP address of version 3.9.2 of WordPress application, respectively. \smallskip 
+The proxy's output to the terminal showed that the proxy is serving responses from version 3.9.2 of the WordPress application. In addition, the "X-Powered-By" and "X-Pingback" headers in the response recieved from proxy after the upgrade referred to the PHP version and the address of version 3.9.2 of WordPress application, respectively. \smallskip 
 
 \noindent
 \textit{HTTP Request After INSTANT Upgrade}
@@ -1961,7 +1961,6 @@ Content-Type: text/html; charset=UTF-8
 
 \noindent\\
 \textit{Handling Incorrect Behavior} - To assure that the proxy can seamlessly handle updates that cause incorrect behavior, the cluster running version 3.9.2 of WordPress was stopped and the behavior of the proxy was evaluated after sending new HTTP requests to the proxy. The following terminal output demonstrates that the proxy first tried to send requests to the cluster with the highest version. When proxy detected that the cluster is not behaving correctly, in this case it could not communicate with the cluster, the proxy removed the updated version of the cluster from the list of configured clusters and forwarded requests to the previous cluster version. 
-%The time shown in the proxy's terminal output demonstrates that the time it takes for the proxy to %switch back to the older version is less than 650 us.
 
 \noindent\\
 \textit{Proxy Log Output After WordPress Version 3.9.2 crashed}
@@ -2175,11 +2174,6 @@ Content-Type: text/plain; charset=utf-8
 
 \noindent\\
 \textit{HTTP Requests Without Cookie} - To check the proxy behaves correctly with SESSION upgrade, an HTTP request with no cookie was sent to the proxy. The proxy forwarded the HTTP request to the new cluster as shown in the following terminal output: \smallskip   
-
-%2014/08/26 21:53:44.763483 proxy_context_cluster.go:115:     
-%   INFO - Serving response 0 from ip: [127.0.0.1] port: [1036] 
-%   version: [9.20] mode: [GRADUAL] 
-%   transition counter [100.00] percentage transition per request [50.00]
 
 \begin{lstlisting}[language=terminal]
 2014/08/25 21:17:22.866773 proxy_context_cluster.go:114:     
@@ -2756,78 +2750,233 @@ Content-Type: text/html; charset=UTF-8
  
 
 
-\subsection{xxxxx Handling Incorrect Behavior} 
-\hl{ To ensure that the system is able to handle updates that cause incorrect behavior multiple scenarios will be tested. This test will cover situations where a single node, multiple nodes or all nodes in the updated application cluster behave incorrectly. Incorrect behavior will be modeled by either the application crashing or by the application taking too long to respond.
+\subsection{Lighttpd Update with Incorrect Behavior} 
+Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of lighttpd web server with improved HTTP Etag functionality was released in production\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in lighttpd improved the Etag functionality, however, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the lighttpd server was crashing when the outgoing data was compressed.
+
+To evaluate the ability of the proxy to detect the incorrect behavior of the lighttpd with the compression crash bug the following scenario was tested. The proxy was initially configured to forward requests to a Docker container running a fully functional bug-free version of the lighttpd. The proxy was then configured to perform a CONCURRENT upgrade to the new version of lighttpd containing compression crash bugs. HTTP requests were sent to lighttpd and the behavior of the proxy and the responses received from lighttpd via the proxy were analyzed. The analysis showed that when the upgrade was applied, the proxy forwarded HTTP requests to both new and old version of lighttpd server. When HTTP requests without compression were sent, the proxy forwarded responses to the client from the new version of lighttpd. However, for HTTP requests with compression, the proxy forwarded requests to both versions but since the new version crashed, the proxy seamlessly dropped the crash response from the new version and forwarded the response from the old version of lighttpd to the client. The result from each step of the aforementioned evaluation is shown below.
+
+\noindent
+\textit{Proxy Initial Configuration Running Bug-free Lighttpd}
+\begin{lstlisting}[language=terminal]
+2014/09/01 00:53:51.457950 config_parse.go:64:   NOTICE - Parsed config file:
+{
+    "proxy": {
+        "port": 1235
+    },
+    "configService": {
+        "port": 9090
+    },
+    "dockerHost": {
+        "ip": "192.168.50.5",
+        "port": 2375
+    },
+    "cluster": {
+        "containers": [
+            {
+                "image": "lighttpd",
+                "tag": "2147",
+                "portToProxy": 8080,
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8080"
+                        }
+                    ]
+                }
+            }
+        ],
+        "version": "1.4"
+    }
+}
+
+as:
+Proxy{
+	Proxy Address:      0.0.0.0:1235
+	ConfigService Port: 9090
+	Proxied Servers:    version: 1.4 [192.168.50.5:8080]
+}
+\end{lstlisting}  
+
+\noindent \\
+\textit{HTTP Request Sent to Proxy Running Bug-free Lighttpd} 
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}  
+
+\noindent \\
+\textit{Proxy Log Output Before Upgrade}
+\begin{lstlisting}[language=terminal]
+2014/09/01 00:54:58.458009 proxy_context_cluster.go:151:     
+   INFO - Serving response 0 from ip: [192.168.50.5] port: [8080] 
+   version: [1.4] mode: [INSTANT]
+\end{lstlisting}
+
+\noindent\\
+\textit{HTTP Response Received via Proxy}
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=0d151a53-316a-11e4-bb0e-600308a8245e;
+Vary: Accept-Encoding
+Content-Type: text/html
+Accept-Ranges: bytes
+Last-Modified: Sun, 31 Aug 2014 23:45:51 GMT
+Content-Length: 177
+Date: Sun, 31 Aug 2014 23:54:57 GMT
+Server: lighttpd/1.4.20
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title><@\textcolor{orange}{Server With NO Bug}@></title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div><@\textcolor{magenta}{Lighttpd server with NO bug running on port 8080}@></div>
+</body>
+</html>
+\end{lstlisting}
+
+\noindent\\
+\textit{PUT Request for CONCURRENT Upgrade to Lighttpd with Bug}
+\begin{lstlisting}[language=terminal]
+curl -v -X PUT \
+'http://127.0.0.1:9090/configuration/cluster' \
+-H 'Content-Type: application/json' 
+-d @config_for_curl/config_curl_ligttpd_bug.json
+\end{lstlisting}  
+
+\noindent\\
+\textit{Proxy New Configuration}
+\begin{lstlisting}[language=terminal]
+2014/09/01 00:58:56.672931 config_service.go:82:     
+   INFO - Received new cluster configuration:
+   {
+      "cluster": {
+         "containers": [
+            {
+               "image": "lighttpd",
+               "portBindings": {
+                  "80/tcp": [
+                     {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8081"
+                     }
+                  ]
+               },
+               "portToProxy": 8081,
+               "tag": "2438"
+            }
+         ],
+         "upgradeTransition": {
+            "mode": "CONCURRENT"
+         },
+         "version": "1.4.2"
+      }
+   }
+\end{lstlisting} 
+
+\noindent \\
+\textit{HTTP Request with no Compression Tag After Upgrade} 
+\begin{lstlisting}[language=terminal]
+curl -v http://127.0.0.1:1235
+\end{lstlisting}  
+
+\noindent \\
+\textit{Proxy Log Output After Upgrade}
+\begin{lstlisting}[language=terminal]
+2014/09/01 01:01:23.255726 proxy_context_cluster.go:151:     
+   INFO - Serving response 0 from ip: [192.168.50.5] port: [8081] 
+   version: [1.4.2] mode: [CONCURRENT]
+   
+2014/09/01 01:01:23.256264 proxy_context_cluster.go:151:     
+   INFO - Serving response 1 from ip: [192.168.50.5] port: [8080] 
+   version: [1.4] mode: [INSTANT]
+\end{lstlisting} 
+
+\noindent\\
+\textit{HTTP Response Received via Proxy after Upgrade}  
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=c302f867-316a-11e4-bb0e-600308a8245e;
+Vary: Accept-Encoding
+Content-Type: text/html
+Accept-Ranges: bytes
+Last-Modified: Sun, 31 Aug 2014 23:45:51 GMT
+Content-Length: 182
+Date: Mon, 01 Sep 2014 00:01:23 GMT
+Server: lighttpd/1.4.23
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title><@\textcolor{orange}{Server With Bug}@></title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div><@\textcolor{magenta}{Lighttpd server with bug running on port 8081}@></div>
+</body>
+</html>
+\end{lstlisting} 
+
+\noindent \\
+\textit{HTTP Request with Compression Tag After Upgrade} 
+\begin{lstlisting}[language=terminal]
+curl -v <@\textcolor{magenta}{--compressed}@> http://127.0.0.1:1235 
+\end{lstlisting}  
+
+\noindent \\
+\textit{Proxy Log Output After Upgrade with Failure}
+\begin{lstlisting}[language=terminal]
+2014/09/01 01:04:22.712415 proxy_context_cluster.go:151:     
+   INFO - Serving response 1 from ip: [192.168.50.5] port: [8081] 
+   version: [1.4.2] mode: [CONCURRENT]
+   
+2014/09/01 01:04:22.712945 proxy_context_cluster.go:151:     
+   INFO - Serving response 2 from ip: [192.168.50.5] port: [8080] 
+   version: [1.4] mode: [INSTANT]
+\end{lstlisting} 
+
+\noindent\\
+\textit{HTTP Response Received via Proxy after Upgrade with Failure}  
+\begin{lstlisting}[language=terminal]
+HTTP/1.1 200 OK
+Set-Cookie: dynsoftup=c302f867-316a-11e4-bb0e-600308a8245e;
+Vary: Accept-Encoding
+Content-Encoding: gzip
+Last-Modified: Sun, 31 Aug 2014 23:45:51 GMT
+ETag: "0"
+Content-Type: text/html
+Accept-Ranges: bytes
+Content-Length: 157
+Date: Mon, 01 Sep 2014 00:04:22 GMT
+Server: lighttpd/1.4.20
+ 
+<!DOCTYPE html>
+<html>
+<head>
+    <title><@\textcolor{orange}{Server With NO Bug}@></title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div><@\textcolor{magenta}{Lighttpd server with NO bug running on port 8080}@></div>
+</body>
+</html>
+\end{lstlisting} 
 
 
 
-Lighttpd1
-is a popular open-source web-server used by
-several high-traffic websites such as Wikipedia and YouTube.
-Despite its popularity, crash bugs are still a common occurrence
-in Lighttpd, as evident from its bug tracking database.2
-Below we discuss one such bug, which our approach could
-successfully eliminate.
-In April 2009, a patch was applied3
-to Lighttpd’s code related
-to the HTTP ETag functionality. An ETag is a unique string
-assigned by a web server to a specific version of a web resource,
-which can be used to quickly determine if the resource has
-changed. The patch was a one-line change, which discarded
-the terminating zero when computing a hash representing the
-ETag. More exactly, line 47 in etag.c:
-for (h=0, i=0; i < etag->used; ++i) h = (h<<5)
-ˆ(h>>27)ˆ(etag->ptr[i]);
-was changed to:
-for (h=0, i=0; i < etag->used-1; ++i) h = (h<<5)
-ˆ(h>>27)ˆ(etag->ptr[i]);
-This correctly changed the
-
-This correctly changed the way ETags are computed, but
-unfortunately, it broke the support for compression, whose
-implementation depended on the previous computation. More
-precisely, Lighttpd’s support for HTTP compression uses
-caching to avoid re-compressing files which have not changed
-since the last access. To determine whether the cached file
-is still valid, Lighttpd internally uses ETags. Unfortunately,
-the code implementing HTTP compression did not consider
-the case when ETags are disabled. In this case, etags->used
-is 0, and when the line above is executed, etag->used-1
-underflows to a very large value, and the code crashes while
-accessing etag->ptr[i]. Interestingly enough, the original
-code was still buggy (it always returns zero as the hash value,
-and thus it would never re-compress the files), but it was not
-vulnerable to a crash.
-The segfault was diagnosed and reported in March 20104
-and
-fixed at the end of April 2010,5 more than one year after it was
-introduced. The bottom line is that for about one year, users
-affected by this buggy patch essentially had to decide between
-(1) incorporating the new features and bug fixes added to the
-code, but being vulnerable to this crash bug, and (2) giving up
-on these new features and bug fixes and using an old version
-of Lighttpd, which is not vulnerable to this bug.
-Our approach provides users with a third choice; when a
-new version arrives, instead of replacing the old version, we
-run both versions in parallel. In our example, consider that we
-are using MX to run a version of Lighttpd from March 2009.
-When the buggy April 2010 version is released, MX runs it in
-parallel with the old one. As the two versions execute:
-• As long as the two versions have the same external
-behaviour (e.g. they write the same values into the same
-files, or send the same data over the network), they are
-run side-by-side and MX ensures t}
 
 \clearpage
 
 
 
 \chapter{Conclusions \& Future Plans}
-xxxxxxxxx\bigskip
+\hl{xxxxxxxxx}\bigskip
 
-xxxxxxxxx\bigskip
+\hl{xxxxxxxxx}\bigskip
 
-xxxxxxxxx\bigskip
+\hl{xxxxxxxxx}\bigskip
 
 
 \clearpage
@@ -3723,7 +3872,7 @@ do fixes become bugs?"}, ESEC/FSE, 2011.
 
 \bibitem{Boehm_b} Boehm, B. W, Victor R. B, \textit{Software Defect Reduction Top 10 List}, Computer, v.34, 2001.
 
-
+%\bibitem{lighttpd} Beattie S, Arnold S, Cowan C, Wagle P, Wright C, \textit{Timing the application of security patches for optimal uptime}, LISA, 2002.
 
 \end{thebibliography} 
 
