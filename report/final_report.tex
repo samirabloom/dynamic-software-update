@@ -172,20 +172,17 @@
 \clearpage
 
 \section*{Abstract}
-Software development is a complex process where errors can easily cause instability, unreliability and incorrect behavior. Therefore, Software updates are essential to remove errors. The aim of this project was to implement a  proxy that adds no significant overhead while it supports reliable dynamic software update and seamless rollback to the previous version of the application when the upgraded version behaves incorrectly.  
+Software development is a complex process where errors can easily cause instability, unreliability and incorrect behavior. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities. However, software upgrade itself may cause unreliability. Recent studies have shown that 14.8\% to 25\% of software upgrades are incorrect and have made impacts on end-users. Many different systems and techniques have been proposed to support reliable software upgrade. Currently, these systems are either specific for particular programming languages or are complex, heavyweight and expensive.   
+
+The aim of this project was to implement a  proxy that adds no significant overhead while it supports reliable dynamic software update and seamless rollback to the previous version of the application when the upgraded version behaves incorrectly. In addition, the aim was for the proxy to be able to manage application clusters using container virtualization.
+
+This report presents development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade of network applications using the HTTP protocol with no downtime and automatic rollback in response to the application failure. The proxy applies seamless dynamic software upgrades using four different upgrade mechanisms. Moreover, the proxy has the ability to manage application clusters using Docker as a container virtualization while being reliable, and stable under heavy load.
+
+Detailed evaluation of the proxy using real applications such as WordPress, Coachbase and Lighttpd showed that there is no significant overhead associated with the proxy when HTTP requests are processed by applications via the proxy. It was also demonstrated that the proxy seamlessly applies a dynamic update of an application from one version to another version with no delay. There is also no additional latency introduced by the proxy when the proxy rolls back to the older version of the application in response to failure in an upgraded application version. 
+
+In conclusion, the work in this report presents a novel and sophisticated proxy that is capable of supporting multiple upgrade modes that are fully resilient to application failure by supporting rollback and capable of orchestrating. The proxy manages  the creation and destruction of clusters of application stacks based on Docker containers.
 
 
-The work in this project reported development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to the application failure. The proxy has the ability to manage application clusters using Docker as a container virtualization while being reliable, and stable under heavy load.
-
-Detailed evaluation of the proxy using real applications such as WordPress and Coachbase showed that there is no significant overhead associated with the proxy when HTTP requests are processed by applications via the proxy. It was also demonstrated that there is no additional latency introduced by the proxy when the proxy rolls back to the older version of the application in response to failure in an upgraded application version. 
-
-In conclusion, A simple but effective   successfully
-
-\hl{simple lightweight system to support reliable dynamic software updates suitable for continuous delivery into production.}  
-
- 
-
-\hl{Abstract will be the last section to be added}
 \afterpage{\blankpage}
 \clearpage
 
@@ -209,7 +206,7 @@ Software development is a complex process where errors can easily cause instabil
  
 \setlength{\leftskip}{0.5cm}
 \setlength{\rightskip}{0.5cm}
-\noindent \textbf{Reliable Software Upgrade} - in safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In E-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
+\noindent \textbf{Reliable Software Upgrade} - in safety critical industries such as air traffic control or healthcare reliable software is essential for ensuring that lives are not put at risk due to software errors or crashes. In e-commerce reliable software is critical for maximizing the return on investment of software development and deployment. Unreliable software has many damaging impacts such as loss of profit due to unavailability of revenue generating services, damaging reputation of the service provider often with long-term impact, risk of incorrect transactions for example in financial sectors, risk of security vulnerability and costs to fix and monitor errors.
 
 All companies and organizations use software applications to run their business, deliver services or manufacture products. Therefore, software upgrade plays a key role to maintain reliable applications that are free from errors and security vulnerabilities.   Internet facing applications are continuously exposed to an ever increasing set of security threats as listed by the Open Web Application Security Project foundation (OWASP)\footnote{\url{https://www.owasp.org/index.php/Top_10_2013-Top_10}} . These threats include injection attacks, broken authentication and session management, cross-site scripting or cross-site request forgery. To avoid such attacks software must be appropriately patched against vulnerabilities. Once a software security patch has been released, the vulnerability is in the public domain and can therefore be used maliciously by attackers. It is therefore important that software is updated to remove these vulnerabilities.  Furthermore, software is updated to enable new services or functionality to be provided to users. Such updates are often important for companies to ensure they are providing the most reliable, competitive and profitable services to their customers. However, software upgrade itself may cause unreliability by introducing new errors, and security vulnerabilities, as stated by Fred Brooks in The Mythical Man-Month. 
 
@@ -248,7 +245,7 @@ The main objectives of this project were to implement a proxy that adds no signi
 \end{list}
  
 \section{Contributions}
-This report presents a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to application failure. The main features provided are:
+This report presents a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade of network applications using the HTTP protocol with no downtime and automatic rollback in response to application failure. The main features provided are:
 \begin{list}{-}{}
 \itemsep0em
 \item Seamless dynamic software upgrade using four different upgrade mechanisms:
@@ -282,13 +279,16 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \textbf{ Design Chapter} - Presents the requirements of the project and the high level design and component architecture used to meet the requirements.
 
 \noindent \\
-\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail. \hl{Finally, it explains how to install and run the proxy. }  
+\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail. 
 
 \noindent \\
 \textbf{Evaluation Chapter} - Presents the evaluations of the dynamic software update proxy to test its performance, functional correctness and robustness while proxying requests to real applications. 
 
 \noindent \\
 \textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project. The limitations of the system are also presented. Finally, possible future works for extensions of the dynamic software upgrade proxy. 
+
+\noindent \\
+\textbf{Appendices} - Presents detailed information about the proxy's REST API. WordPress and Couchbase configurations used for evaluating the proxy is also presented. Finally, a user guide on how to install and use the proxy is provided.   
 
 \chapter{Related Work}
 Software reliability is compromised of the following main activities:
@@ -519,10 +519,11 @@ Operating system virtualization that is called hypervisor virtualization allows 
 \begin{figure}[!ht]
   \centering
      \includegraphics[scale=1]{Hypervisor}
-  \caption{Hypervisor type 1 vs. type 2 \cite{Hypervisors}}
+  \caption{Hypervisor type 1 vs. type 2\textsuperscript{\ref{ibm}}}%\footnotemark %\footnotetext{\url{http://www.ibm.com/developerworks/cloud/library/cl-hypervisorcompare/}} }
   \label{Hypervisor}
 \end{figure}
 %\vspace{-15pt}
+\footnotetext{ \label{ibm}\url{http://www.ibm.com/developerworks/cloud/library/cl-hypervisorcompare/}} 
 
 \subsubsection*{Container Virtualization} 
 Container virtualization is a lightweight operating system virtualization technique that instead of trying to run an entire guest OS, it isolates the guests, but does not virtualize the hardware  \cite{container} (Figure \ref{vm vs container}). Container virtualization is considerably more lightweight than hypervisor virtualization. It has been found to be as much as 40\% less overhead using Docker based container virtualization compared to running full virtual machines on Amazon Elastic Compute Cloud (EC2)\footnote{\url{https://www.appeagle.com/ecommerce-news/ecommerce-is-on-the-rise-in-2013/}}. Each container can be treated like a regular operating system; it can be shut down, booted or rebooted. Resources such as disk space, CPU and memory associated to each container when created can be dynamically increased or decreased while the container is running and applications and users see each container as a separate host. Container virtualization allows installation of several different operating systems on top of a single kernel. Although all the operating systems use the same kernel, they have their own filesystem, processes, memory and devices \cite{container}. \bigskip
@@ -636,9 +637,7 @@ The following technology stack has been chosen for the dynamic software update s
   \item Go\footnote{\url{http://golang.org/}} programming language for building the proxy. Go is chosen because of its simplicity, efficiency, scalability, highly concurrency and garbage collection. Other fast programming languages such as C++ and Java were considered. However, C++ was not chosen since it does not have garbage collection and requires manual memory management. Java was not chosen since it is more heavyweight in comparison to Go, does not give the programmer control over the memory management and is therefore not likely to be as efficient as Go.
     
   \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
-  
-  \item ZeroMQ as message frameworks that support highly efficient load balancing and routing of messages without the need for any middleware.
-  
+   
   \item HTTP as a protocol for application requests and responses.  HTTP is the most widely adopted application level protocol for distributed network systems In addition the use of headers and cookies in HTTP allow sessions and clients to be easily identify.  HTTP headers also allows the efficient comparison between large responses without the need to buffer the entire response body.
 \end{list}
   
@@ -671,7 +670,7 @@ This upgrade mode is useful when a new feature is release which affects the beha
 
 \clearpage
 \subsubsection*{Gradual Upgrade}
-This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number clients that are exposed to the new version. Figure \ref{session_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into.  The Figure \ref{session_upgrade} shows in the first upgrade scenario the second cookie gives the request a number of 45.  The bucket for application 1.0.1 is from 0 to 10 therefore the the request does not match the bucket as 45 falls outside the range 0 to 10.  In the second upgrade scenario the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.
+This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number clients that are exposed to the new version. Figure \ref{gradual_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into.  The Figure \ref{gradual_upgrade} shows in the first upgrade scenario the second cookie gives the request a number of 45.  The bucket for application 1.0.1 is from 0 to 10 therefore the the request does not match the bucket as 45 falls outside the range 0 to 10.  In the second upgrade scenario the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.
 
    
 \begin{figure}[!ht]
@@ -693,7 +692,7 @@ In this mechanism the updated and non-updated versions run concurrently and proc
 \end{figure}
 % \vspace{-18pt}
 
-In all four mechanisms the behaviour of the updated software is automatically monitored to confirm the application is behaving correctly. The ability to receive incoming requests and a response with a non 5xx range status code is used to verify that the updated application is behaving correctly. 
+In all four mechanisms the behavior of the updated software is automatically monitored to confirm the application is behaving correctly. The ability to receive incoming requests and a response with a non 5xx range status code is used to verify that the updated application is behaving correctly. 
 
 
 \subsection{Component Architecture}
@@ -742,7 +741,7 @@ Shows an updated version of the application as two application nodes, using vers
 \clearpage
 
 \chapter{Implementation} \label{Implementation}
-During the implementation of the proxy three separate approaches were used.  The first approach as described in Section \ref{zeromq_section} was to use ZeroMQ due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added.  The second approach describe in Section \ref{Content-Counting} was to used raw sockets.  To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not pursued.  The final approach described in Section \ref{staged} was to use raw sockets in a staged based proxy.  This version improved encapsulation and separation-of-concerns through the use of multiple stages.  In addition this approach used low level socket errors instead of content counting to determine when to close sockets.  This final approach met all the initial requirements and hence it was developed further to provide the full set of features.
+During the implementation of the proxy three different approaches were prototypes.  The first approach as described in Section \ref{zeromq_section} used ZeroMQ due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added.  The second approach described in Section \ref{Content-Counting} used raw sockets.  To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not further pursued.  The final approach described in Section \ref{staged} was to use raw sockets in a staged based proxy.  This version improves encapsulation and separation-of-concerns through the use of multiple stages.  In addition this approach uses low level socket errors instead of content counting to determine when to close sockets.  This final approach met all the initial requirements and hence it was developed further to provide the full set of features.
 
 \section{Message Based Proxy Using ZeroMQ}\label{zeromq_section}
 The first proxy developed to support dynamic software update was an HTTP reverse proxy based on ZeroMQ messaging system. ZeroMQ was chosen due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added as described in this section.
@@ -774,7 +773,7 @@ In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support
 As it was explained in the previous section using a messaging system was not the correct choice to develop a dynamic software update proxy. This section describes two different approaches using raw Go sockets.   
 
 \subsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not pursued, as described in this section.
+The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not further pursued, as described in more detail in this section.
 
 To accept new connections this proxy had a listener running in an  \textit{Accept} loop.  When a new connection was received a TCP connection between the client and the proxy was created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component created another connection between the proxy and the server.  The HTTP request was then written to the server inside a \textit{Write} loop.
 
@@ -944,13 +943,13 @@ If the latest cluster version is deleted using the REST API or an error occurs w
 \textit{Configuration Service} is responsible for managing the configuration for how the proxy routes to different servers or containers.  In addition the configuration service configures the ports exposed by the proxy for both the configuration service its self and for incoming HTTP requests that are being proxied.  The configuration service is made up of multiple separate components, including File Parser, REST API, Cluster \& Container Management and the Docker Client.
 
 \subsubsection*{File Parser}
-\textit{File Parser} is responsible for parsing loading the configuration file provided to the proxy when it initially starts.  The file parser reads the configuration in JSON format and validates it strickly ensuring to output any necessary errors as required.
+\textit{File Parser} is responsible for parsing loading the configuration file provided to the proxy when it initially starts.  The file parser reads the configuration in JSON format and validates it strictly ensuring to output any necessary errors as required.
 
 \subsubsection*{REST API}
 \textit{REST API} exposes a REST service API that can be used to query and update the configuration once the proxy has started.  The REST API can be used to add new server or container clusters.  When a new container cluster is added the configuration service uses the Docker Client to ensure that the necessary containers are created by the Docker Daemon.  The REST API also supports deleting server or container configuration, if the configuration is deleted then the proxy will not longer send requests to the deleted servers or containers.  In addition if the container configuration is deleted then the proxy will stop and remove then relevant containers by communicating with the Docker Daemon.
 
 \subsubsection*{Docker Client}
-\textit{Docker Client} manages all the interactions with the Docker Daemon including pulling images, creating containers, starting containers, querying container status, stopping containers, and removing containers.  The Docker Client is also responsible for stream the response from the Docker Daemon to console output when the proxy starts or to the response of a REST API request.  This ensures that any failure while performing any Docker action is clearly indicated to the user.  To ensure that it is quick and simple for the user to resolve any issues with docker containers the Docker Client also attaches to each new container for the first 3 second of its initial start up and returns the log (standard out and standard error) to the user.  This is particularly helpful when triaging why a container has not started.
+\textit{Docker Client} manages all the interactions with the Docker Daemon including pulling images, creating containers, starting containers, querying container status, stopping containers, and removing containers.  The Docker Client is also responsible for streaming the response from the Docker Daemon to console output when the proxy starts or to response of a REST API request.  This ensures that any failure while performing any Docker action is clearly indicated to the user.  To ensure that it is quick and simple for the user to resolve any issues with Docker containers the Docker Client also attaches to each new container for the first 3 second of its initial start up and returns the log (standard out and standard error) to the user.  This is particularly helpful when triaging why a container has not started.
 
 \noindent
 The Docker Client enables support for the following Docker configurations:
@@ -1025,14 +1024,14 @@ type DockerConfig struct {
 }
 \end{lstlisting} 
 
-
 \section{Proxy Installation}
 The proxy can be installed in two simple steps as follows:
-\begin{list}{-}{}
-  \itemsep0em
-  \item git clone \url {https://github.com/samirabloom/dynamic-software-update} 
-  \item make
-\end{list}
+
+\begin{lstlisting}[language=terminal]
+$ git clone https://github.com/samirabloom/doxy
+
+$ make
+\end{lstlisting}
 
 \noindent
 The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. A detailed user guide on how to install and run the proxy is described in Appendix \ref{Appendix-V}. 
@@ -1101,10 +1100,10 @@ Usage of proxy:
 For example the following command will run the proxy in the "INFO" log level and uses a file called \textit{config/config\_script.json} for its configuration. 
 
 \begin{lstlisting}[language=json]
-proxy -logLevel=INFO -configFile= "config/config_script.json" 
+$ proxy -logLevel=INFO -configFile= "config/config_script.json" 
 \end{lstlisting}
  
-\section{REST API}
+\section{REST API}\label{REST-API}
 The proxy provides a simple REST API (Figure \ref{proxy}) to support dynamically updating the cluster configuration as follows:
 
 \begin{list}{-}{}
@@ -1318,7 +1317,7 @@ The aim of these tests is to check that all components of the dynamic software u
 \chapter{Evaluation}
 This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy; the speed that proxy applies an upgrade and rolls back to an older version when an upgraded version does not behave correctly. The qualitative analysis focused on the functional correctness and robustness of the proxy. 
 
-Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populate web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
+Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populare web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. Hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
 
 \section{Quantitative Analysis}
 This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy.
@@ -1346,9 +1345,9 @@ The evaluation results from WordPress indicated that the majority of the time pr
   \label{percentage-wordpress}
 \end{figure} 
 
-Moreover, figure \ref{absoloute-wordpress} and Figure \ref{percentage-wordpress} shows that the proxy has a greater standard deviation for response times, because as the percentile increases up to 99\%, the overhead added by the proxy becomes greater. Go garbage collector and other sporadic activities happening at a low level which may increase the latency inside the Go application could be an explanation for these findings.
+Moreover, Figure \ref{absoloute-wordpress} and Figure \ref{percentage-wordpress} shows that the proxy has a greater standard deviation for response times, because as the percentile increases up to 99\%, the overhead added by the proxy becomes greater. Go garbage collector and other sporadic activities happening at a low level which may increase the latency inside the Go application could be an explanation for these findings.
 
-Similar to WordPress, Couchbase results also showed that processing requests via the proxy was mainly more efficient than processing them directly by Couchbase, or if any overhead was added by the proxy it was insignificant.
+Similar to WordPress, Couchbase results also showed that processing requests via the proxy was largely more efficient than processing them directly by Couchbase, or if any overhead was added by the proxy it was insignificant.
 
 Couchbase performance and saturation tests showed that the proxy added a small over head (<6\%) when it was run for shorter periods of time.  However, the proxy significantly increased the performance of Couchbase when it was run for medium and long periods of time (Figure \ref{absoloute-couchbase} and Figure \ref{percentage-couchbase}). Although further analysis is required to justify these findings, one hypothesis could be that Couchbase is more efficient at managing requests for a short period because it is keeping connections open. However after a period of time (>10 seconds), it runs out of resources and has to start closing connections more aggressively, therefore, its efficiency at handling connections reduces.
 
@@ -1371,7 +1370,7 @@ Couchbase performance and saturation tests showed that the proxy added a small o
 \subsection{Latency in Response to Updated Version Failure}\label{Recovery}
 The aim of this evaluation was to measure how rapidly the proxy applies an upgrade and rolls back to an older version of the application when the new version does not behave correctly. 
 
-INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WorlPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Appendix \ref{Appendix II}.    
+INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.9.1 and 3.9.2 of the WordPress application. Each version of the WordPress application was run within a Docker container inside a virtual machine by the proxy as demonstrated in Appendix \ref{Appendix II}.    
 
 The proxy was initially configured to forward requests to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was simulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
@@ -1398,11 +1397,11 @@ Qualitative analysis were performed on the dynamic software update proxy (Chapte
 
 \begin{list}{-}{}
   \itemsep0em
-  \item{Load Balancing Analysis} - To ensure that the proxy acts as a reverse proxy and distributes incoming traffics across a number of servers within a cluster. 
+  \item{\textbf{Load Balancing Analysis}} - To ensure that the proxy acts as a reverse proxy and distributes incoming traffics across a number of servers within a cluster. 
 
-  \item{Real Software Upgrades} - To prove the ability of the proxy to handle different upgrade strategies (\textit{i.e.} INSTANT, SESSION, GRADUAL and CONCURRENT) described in Section \ref{modes} in real applications. 
+  \item{\textbf{Real Software Upgrades}} - To prove the ability of the proxy to handle different upgrade strategies (\textit{i.e.} INSTANT, SESSION, GRADUAL and CONCURRENT) described in Section \ref{modes} in real applications. 
   
-   \item{Handling Incorrect Behavior} - To ensure that the proxy is able to handle updates that cause incorrect behavior and allows systems to survive bugs using real examples. 
+   \item{\textbf{Handling Incorrect Behavior}} - To ensure that the proxy is able to handle updates that cause incorrect behavior and allows systems to survive bugs using real examples. 
 \end{list} 
 
 \subsection{Load Balancing Analysis}
@@ -2856,14 +2855,25 @@ Evaluation of the proxy showed that the proxy applies the upgrade immediately wi
 
 The data presented from the load performance and saturation tests of the proxy showed that the proxy is robust and stable and no significant overhead was added by the proxy to process HTTP requests and responses. Interestingly, it was found that WordPress and Couchbase applications have a significantly reduced latency when processing HTTP request via the proxy than directly.  It was hypothesized that the proxy manages connections more efficiently than the servers running WordPress and Couchbase applications. This was explained by the idea that the proxy uses goroutines instead of threads and goroutines are more effective. Hence, the proxy does not close connections aggressively and can send more requests down the same connection than the servers running WordPress and Couchbase, which manage connections with threads.
 
-\section{xxx Suggestions for future work}
+\section{Suggestions for future work}
+All the aims and requirements set out for this project was fully achieved. However the following two areas would help to extend and further improve upon the work that has already been completed.
 
-\noindent
-\hl{xxxxxxxxx}\bigskip
+\subsection{Extend Analysis of Load Performance and Saturation Tests}
+Although a full set of tests were successfully completed for the proxy evaluation, the analysis of the results left some untested hypotheses.  In particular, further analysis would help to understand why the proxy showed a low latency in most tests compared to both WordPress and Couchbase.
 
+In addition, it would be informative to compare the proxy with other web servers such as, included Nginx\footnote{\url{http://wiki.nginx.org/Main}}, Netty\footnote{\url{http://netty.io/}} and Tomcat\footnote{\url{http://tomcat.apache.org/}}, and other load balancers such as, Citrix Netscaler\footnote{\url{http://www.citrix.com/products/netscaler-application-delivery-controller/overview.html}}, F5 BIG-IP\footnote{\url{https://f5.com/products/big-ip}} and Barracuda\footnote{\url{https://www.barracuda.com/products/loadbalancer}}.
+
+\subsection{Support Additional Protocols}
+Even though the proxy fully supports dynamic software upgrade for the HTTP protocol, extending the numbers of supported protocol would increase the number of applications and scenarios for which the proxy could provide benefit.  Additional protocols that should be considered are:
+
+\begin{list}{-}{}
+\itemsep0em
+       \item HTTPS for secure HTTP messages
+       \item Database protocols such as Open DataBase Connectivity (ODBC) or Memcache Protocol
+       \item Messaging protocols such as MQTT\footnote{\url{http://mqtt.org/}} (Message Queue Telemetry Transport), AMQP\footnote{\url{http://www.amqp.org/}} (Advanced Message Queuing Protocol) or STOMP\footnote{\url{http://stomp.github.io/implementations.html}} (Simple/Streaming Text Oriented Messaging Protocol) 
+\end{list}
 
 \clearpage
-
 
 \begin{appendices}
 \chapter[Proxy REST API]{\huge Proxy REST API}\label{Appendix I}
@@ -3827,31 +3837,33 @@ Content-Type: text/plain; charset=utf-8
 }
 \end{lstlisting}
 \clearpage
-
 \chapter[ Proxy User Guide]{\huge Proxy User Guide}\label{Appendix-V}
 This user guide go through how to install and run the proxy.
-\subsection*{Download and Install Go}
+\subsection*{Install Go}
 The Go distribution and the Go tools can be downloaded from \url{https://golang.org/doc/install}.
 
 \subsection*{Install Git}
 Git can be installed from \url{http://git-scm.com/downloads}
 
 \subsection*{Install Docker}
-Docker can be installed from \url{https://docs.docker.com/installation/#installation}. After Docker installation to ensure that the Docker daemon listens on a TCP socket and the proxy can connect to it the following two commands should be executed: \medskip
+Docker can be installed from \url{https://docs.docker.com/installation/#installation}. 
+
+\noindent
+After Docker installation to ensure that the Docker daemon listens on a TCP socket and the proxy can connect to it, the following two commands should be executed: \medskip
 
 \begin{lstlisting}[language=terminal]
-sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io
+$ sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io
 \end{lstlisting}
 
 \begin{lstlisting}[language=terminal]
-service docker.io restart  
+$ service docker.io restart  
 \end{lstlisting}
 
 \subsection*{Install Proxy}
 The proxy can be installed in two simple steps as follows:
 \begin{list}{-}{}
   \itemsep0em
-  \item git clone \url {https://github.com/samirabloom/dynamic-software-update} 
+  \item git clone https://github.com/samirabloom/doxy
   \item make
 \end{list}
 
@@ -3922,29 +3934,21 @@ Usage of proxy:
 For example the following command will run the proxy in the "INFO" log level and uses a file called \textit{config/config\_script.json} for its configuration. 
 
 \begin{lstlisting}[language=json]
-proxy -logLevel=INFO -configFile= "config/config_script.json" 
+$ proxy -logLevel=INFO -configFile= "config/config_script.json" 
 \end{lstlisting}
 
 
-\noindent
-\hl{xxx about REST API etc}
-
-
- 
-
-
-
-  
-
+\subsection*{Rest API}
+The proxy provides a simple RERST API to support dynamically updating the cluster configurations. The detailed explantion of how to use the API with examples are demonstrated in Section \ref{REST-API} and Appendix \ref{Appendix I}.
 
 
 \end{appendices}
 
 \clearpage
 
+
+
 \begin{thebibliography}{1}
-
-
 \bibitem {Replication} Acharya S, Zdonik S. B, {\em An Efficient Scheme for Dynamic Data Replication}, Tech Report, 1993.
 
 \bibitem {opus} Altekar G, Bagrak I, Burstein P, Schultz A, {\em OPUS: Online patches and updates for security}, USENIX Security, 2005.
