@@ -1,0 +1,44 @@
+{
+    "cluster": {
+        "containers": [
+            {
+                "image": "mysql",
+                "tag": "latest",
+                "name": "some-mysql",
+                "dockerHost": {
+                    "ip": "192.168.50.7",
+                    "port": 2375
+                },
+                "environment": [
+                    "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                ],
+                "volumes": [
+                    "/var/lib/mysql:/var/lib/mysql"
+                ]
+            },
+            {
+                "image": "wordpress",
+                "tag": "3.9.2",
+                "portToProxy": 8080,
+                "dockerHost": {
+                    "ip": "192.168.50.7",
+                    "port": 2375
+                },
+                "name": "some-wordpress",
+                "links": [
+                    "some-mysql:mysql"
+                ],
+                "portBindings": {
+                    "80/tcp": [
+                        {
+                            "HostIp": "0.0.0.0",
+                            "HostPort": "8080"
+                        }
+                    ]
+                }
+            }
+        ],
+        "uuid": "fec3636f-32f8-11e4-aea1-28cfe9158b63",
+        "version": "3.9.2"
+    }
+}

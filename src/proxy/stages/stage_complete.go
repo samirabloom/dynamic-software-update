@@ -34,13 +34,10 @@ func complete(context *contexts.ChunkContext) {
 		});
 		tcp.AllowForNilConnection(context.To, func(connection tcp.TCPConnection) {
 			if len(connectionClosedMessage) > 0 {
-				connectionClosedMessage += " -> "
+				connectionClosedMessage += fmt.Sprintf(" -> %s", connection.RemoteAddr())
+				log.LoggerFactory().Info(connectionClosedMessage + " -- Connection Closed")
 			}
-			connectionClosedMessage += fmt.Sprintf("%s", connection.RemoteAddr())
 		});
-		if len(connectionClosedMessage) > 0 {
-			log.LoggerFactory().Info(connectionClosedMessage + " -- Connection Closed")
-		}
 	}
 	log.LoggerFactory().Debug("Complete Stage END - %s", context)
 }
