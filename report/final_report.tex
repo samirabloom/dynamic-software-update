@@ -172,6 +172,19 @@
 \clearpage
 
 \section*{Abstract}
+Software development is a complex process where errors can easily cause instability, unreliability and incorrect behavior. Therefore, Software updates are essential to remove errors. The aim of this project was to implement a  proxy that adds no significant overhead while it supports reliable dynamic software update and seamless rollback to the previous version of the application when the upgraded version behaves incorrectly.  
+
+
+The work in this project reported development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to the application failure. The proxy has the ability to manage application clusters using Docker as a container virtulization while being reliable, and stable under heavy load.
+
+Detailed evaluation of the proxy using real applications such as WordPress and Coachbase showed that there is no significant overhead associated with the proxy when HTTP requests are processed by applications via the proxy. It was also demonstrated that there is no additional latency introduced by the proxy when the proxy rolls back to the older version of the application in response to failure in an upgraded application version. 
+
+In conclusion, A simple but effective   successfully
+
+\hl{simple lightweight system to support reliable dynamic software updates suitable for continuous delivery into production.}  
+
+ 
+
 \hl{Abstract will be the last section to be added}
 \afterpage{\blankpage}
 \clearpage
@@ -272,7 +285,7 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \textbf{Evaluation Chapter} - Presents the evaluations of the dynamic software update proxy to test its performance, functional correctness and robustness while proxying requests to real applications. 
 
 \noindent \\
-\textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project and possible future works for extensions of the dynamic software upgrade proxy. 
+\textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project. The limitations of the system are also presented. Finally, possible future works for extensions of the dynamic software upgrade proxy. 
 
 \chapter{Related Work}
 Software reliability is compromised of the following main activities:
@@ -696,7 +709,7 @@ Figure \ref{proposed_solution} demonstrates the main components and there intera
 \subsubsection*{client}
 
 \noindent
-The client indicate the user of the application that is sending requests for the application to process.  It is assumed that the client will correctly interact using the HTTP protocol including correctly handling cookies.
+The client represents the user of the application that is sending requests for the application to process. It is assumed that the client will correctly implement the HTTP protocol including correctly handling cookies.
 
 \subsubsection*{upstream}
 
@@ -1314,7 +1327,7 @@ Saturation tests focused on stability of the proxy by sending HTTP requests (> 1
 
 For both saturation and load tests, requests were sent to WordPress and Couchbase directly and via the proxy. Figure \ref{absoloute-wordpress} and Figure \ref{absoloute-couchbase} show the latency in milliseconds added when sending requests to the applications via the proxy in comparison to sending requests directly.  Figure \ref{percentage-wordpress} and Figure \ref{percentage-couchbase} show the latency added when sending requests via the proxy as a percentage of the latency when sending requests directly to the applications. All performance figures show the latency using a percentile distribution; the percentage indicates the proportion of the requests that have the recorded latency or lower. For example, a latency of 40 milliseconds at the 99\textsuperscript{th} percentile indicates that 99\% of the requests have a 40 milliseconds latency or less.   
 
-The evaluation results from WordPress indicated that in the majority of the time processing requests via proxy was significantly more efficient (Figure \ref{absoloute-wordpress} and Figure \ref{percentage-wordpress}). It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, a hypothesis is that the proxy manages connections more efficiently than WordPress using Apache HTTP Server. This is because the proxy is written in the Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle each requests.  The proxy uses two goroutines per request and response; one goroutine is used for the request and one goroutine is used for the response. However when serving a PHP page, Apache HTTP Server uses a separate thread to handle each request \footnote{\label{apache_thread_per_req}\url{http://httpd.apache.org/docs/current/mod/mpm_common.html}}.  Goroutines are executed using a thread pool and therefore are not one to one with a thread. This means that the proxy will generally not create a new thread for each request instead an existing thread will be used from the thread pool. As a result the proxy does not close connections as aggressively as Apache HTTP Server.  In addition, Apache HTTP Server uses a separate thread per request and therefore cannot maintain as many open connections.  The proxy therefor can send more requests from the same client down the same connection, as long as the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
+The evaluation results from WordPress indicated that the majority of the time processing requests via proxy was significantly more efficient (Figure \ref{absoloute-wordpress} and Figure \ref{percentage-wordpress}). It is not fully clear why processing requests via the proxy is faster than using WordPress directly. These findings require further investigation, however, a hypothesis is that the proxy manages connections more efficiently than WordPress using Apache HTTP Server. This is because the proxy is written in the Go programming language and uses goroutines\footnote{\label{golangtutorials}\url{http://golangtutorials.blogspot.co.uk/2011/06/goroutines.html}}  instead of threads to handle each requests.  The proxy uses two goroutines per request and response; one goroutine is used for the request and one goroutine is used for the response. However when serving a PHP page, Apache HTTP Server uses a separate thread to handle each request \footnote{\label{apache_thread_per_req}\url{http://httpd.apache.org/docs/current/mod/mpm_common.html}}.  Goroutines are executed using a thread pool and therefore are not one to one with a thread. This means that the proxy will generally not create a new thread for each request instead an existing thread will be used from the thread pool. As a result the proxy does not close connections as aggressively as Apache HTTP Server.  In addition, Apache HTTP Server uses a separate thread per request and therefore cannot maintain as many open connections.  The proxy therefor can send more requests from the same client down the same connection, as long as the client does not close the connection. This is particularly true for HTTP/1.1 which supports connection re-uses when the "Connection" header has a value of "keep-alive".    
 
 \begin{figure}[!ht]
   \centering
@@ -2807,10 +2820,35 @@ Server: lighttpd/1.4.20
 
 
 \chapter{Conclusions \& Future Plans}
-\hl{xxxxxxxxx}\bigskip
+\section{xxx Project Summary and Conclusions}
+The main aim of this project was to implement a  proxy that adds no significant overhead while it supports reliable dynamic software update and seamless rollback to the previous version of the application when the upgraded version behaves incorrectly. In addition, the aim was for the proxy to be able to manage application clusters using container visualization while being reliable, robust and stable under heavy load.
 
-\noindent
-\hl{In progress}\bigskip
+The work presented in here reported development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to the application failure.  
+
+It was demonstrated that the proxy is able to provide the seamless dynamic software upgrade by using four different upgrade modes: 
+	\begin{list}{-}{}
+\itemsep0em
+	\item{Instant upgrade} - immediate upgrade to the latest version of an application 
+		\item{Session upgrade} - upgrading only new sessions to the latest version of an application 
+		\item{Gradual upgrade} - gradual upgrade of clients to the latest version of an application
+		\item{Concurrent upgrade} - routing requests to multiple versions of an application simultaneously and returning the response from the latest version of the application that is behaving correctly  
+		\end{list}
+
+\hl {The proxy is novel in the way it manages different versions of an application. When it is configured to apply a specified upgrade, it 
+
+
+It was shown that the  dynamic software update proxy manages software versions by communicating with each application version either on a separate IP and port combination (distinct TCP sockets) or via Docker containers that created by the proxy for images of each version of an application. }    
+
+Evaluation of the proxy showed that the proxy applies the upgrade immediately with no overhead. The proxy is also able to roll back to the older version of the application when the upgraded version does not behave correctly. Measuring the latency for the proxy to roll back a failed upgrade demonstrated that there is no additional latency introduced by the proxy when rolling back in response to failure in an upgraded application version.
+
+The data presented from the load performance and saturation tests of the proxy showed that the proxy is robust and stable and no significant overhead was added by the proxy to process HTTP requests and responses. Interestingly, it was found that WordPress and Couchbase applications are significantly more efficient in processing HTTP request via the proxy than directly.
+
+\hl {In conclusion}
+
+%It was hypothesized that possibly the proxy manages connections more efficiently than the servers running WordPress and Couchbase applications. This was explained by the idea that the proxy uses goroutines instead of threads and goroutines are more effective hence, the proxy does not close connections aggressively and sends more requests down the same connection than the servers running WordPress and Couchbase, which manage connections with threads,     
+
+
+\section{xxx Suggestions for future work}
 
 \noindent
 \hl{xxxxxxxxx}\bigskip
