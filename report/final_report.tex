@@ -175,7 +175,7 @@
 Software development is a complex process where errors can easily cause instability, unreliability and incorrect behavior. Therefore, Software updates are essential to remove errors. The aim of this project was to implement a  proxy that adds no significant overhead while it supports reliable dynamic software update and seamless rollback to the previous version of the application when the upgraded version behaves incorrectly.  
 
 
-The work in this project reported development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to the application failure. The proxy has the ability to manage application clusters using Docker as a container virtulization while being reliable, and stable under heavy load.
+The work in this project reported development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to the application failure. The proxy has the ability to manage application clusters using Docker as a container virtualization while being reliable, and stable under heavy load.
 
 Detailed evaluation of the proxy using real applications such as WordPress and Coachbase showed that there is no significant overhead associated with the proxy when HTTP requests are processed by applications via the proxy. It was also demonstrated that there is no additional latency introduced by the proxy when the proxy rolls back to the older version of the application in response to failure in an upgraded application version. 
 
@@ -282,7 +282,7 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \textbf{ Design Chapter} - Presents the requirements of the project and the high level design and component architecture used to meet the requirements.
 
 \noindent \\
-\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail. Finally, it explains how to install and run the proxy.   
+\textbf{Implementation Chapter} - Presents the implementation approaches used to develop the dynamic software update proxy. In addition, this chapter explains different components of the proxy and their functionality in detail. \hl{Finally, it explains how to install and run the proxy. }  
 
 \noindent \\
 \textbf{Evaluation Chapter} - Presents the evaluations of the dynamic software update proxy to test its performance, functional correctness and robustness while proxying requests to real applications. 
@@ -1035,7 +1035,7 @@ The proxy can be installed in two simple steps as follows:
 \end{list}
 
 \noindent
-\hl{The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. More detailed information on how to use and run the proxy is explained on} \url{https://github.com/samirabloom/dynamic-software-update}. 
+The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. A detailed user guide on how to install and run the proxy is described in Appendix \ref{Appendix-V}. 
 
 \section{Command Line Interface}
 The proxy can be run from the command line with the following options:\bigskip
@@ -2823,33 +2823,38 @@ Server: lighttpd/1.4.20
 
 
 \chapter{Conclusions \& Future Plans}
-\section{xxx Project Summary and Conclusions}
-The main aim of this project was to implement a  proxy that adds no significant overhead while it supports reliable dynamic software update and seamless rollback to the previous version of the application when the upgraded version behaves incorrectly. In addition, the aim was for the proxy to be able to manage application clusters using container visualization while being reliable, robust and stable under heavy load.
 
-The work presented in here reported development of a novel, lightweight, robust and reliable proxy that supports dynamic software upgrade with no downtime and automatic rollback in response to the application failure.  
+\section{Project Summary and Conclusions}
+The main aim of this project was to implement a  proxy with no significant overhead that supports reliable dynamic software update and seamless rollback if the update behaves incorrectly. In addition, the aim was for the proxy to be able to manage application clusters using container virtualization.  It was important for the proxy to be reliable, robust and stable under heavy load.
 
-It was demonstrated that the proxy is able to provide the seamless dynamic software upgrade by using four different upgrade modes: 
-	\begin{list}{-}{}
+
+The work presented in this report demonstrated how a novel, lightweight, robust and reliable proxy was developed that supported dynamic software upgrade with no downtime and automatic rollback in response to the application failure.
+
+
+It was also demonstrated that the proxy is able to provide the seamless dynamic software upgrade by using four different upgrade modes:
+
+       \begin{list}{-}{}
+
 \itemsep0em
-	\item{Instant upgrade} - immediate upgrade to the latest version of an application 
-		\item{Session upgrade} - upgrading only new sessions to the latest version of an application 
-		\item{Gradual upgrade} - gradual upgrade of clients to the latest version of an application
-		\item{Concurrent upgrade} - routing requests to multiple versions of an application simultaneously and returning the response from the latest version of the application that is behaving correctly  
-		\end{list}
 
-\hl {The proxy is novel in the way it manages different versions of an application. When it is configured to apply a specified upgrade, it 
+       \item{Instant upgrade} - immediate upgrade to the latest version of an application
+
+               \item{Session upgrade} - upgrading only new sessions to the latest version of an application
+
+               \item{Gradual upgrade} - gradual upgrade of clients to the latest version of an application
+
+               \item{Concurrent upgrade} - routing requests to multiple versions of an application simultaneously and returning the response from the latest version of the application that is behaving correctly
+
+               \end{list}
 
 
-It was shown that the  dynamic software update proxy manages software versions by communicating with each application version either on a separate IP and port combination (distinct TCP sockets) or via Docker containers that created by the proxy for images of each version of an application. }    
+The proxy is novel in two main ways.  Firstly the proxy is novel in the way it manages different versions of an application using Docker containers.  Secondly the proxy is novel in the modes it supports for upgrade as no known existing proxy handles the concurrent mode for update at an HTTP layer.
+
+This report shows that the dynamic software update proxy manages software versions by communicating with each application version either on a separate IP and port combination (distinct TCP sockets) or via Docker containers created by the proxy for different images of each version of an application.
 
 Evaluation of the proxy showed that the proxy applies the upgrade immediately with no overhead. The proxy is also able to roll back to the older version of the application when the upgraded version does not behave correctly. Measuring the latency for the proxy to roll back a failed upgrade demonstrated that there is no additional latency introduced by the proxy when rolling back in response to failure in an upgraded application version.
 
-The data presented from the load performance and saturation tests of the proxy showed that the proxy is robust and stable and no significant overhead was added by the proxy to process HTTP requests and responses. Interestingly, it was found that WordPress and Couchbase applications are significantly more efficient in processing HTTP request via the proxy than directly.
-
-\hl {In conclusion}
-
-%It was hypothesized that possibly the proxy manages connections more efficiently than the servers running WordPress and Couchbase applications. This was explained by the idea that the proxy uses goroutines instead of threads and goroutines are more effective hence, the proxy does not close connections aggressively and sends more requests down the same connection than the servers running WordPress and Couchbase, which manage connections with threads,     
-
+The data presented from the load performance and saturation tests of the proxy showed that the proxy is robust and stable and no significant overhead was added by the proxy to process HTTP requests and responses. Interestingly, it was found that WordPress and Couchbase applications have a significantly reduced latency when processing HTTP request via the proxy than directly.  It was hypothesized that the proxy manages connections more efficiently than the servers running WordPress and Couchbase applications. This was explained by the idea that the proxy uses goroutines instead of threads and goroutines are more effective. Hence, the proxy does not close connections aggressively and can send more requests down the same connection than the servers running WordPress and Couchbase, which manage connections with threads.
 
 \section{xxx Suggestions for future work}
 
@@ -3740,7 +3745,7 @@ Content-Type: text/plain; charset=utf-8
 \end{lstlisting}
 \clearpage
 
- \chapter[Proxy Configuration for Couchbase Cluster with Three Nodes]{\huge Proxy Configuration for Couchbase Cluster with Three Nodes}\label{Appendix-III}
+\chapter[Proxy Configuration for Couchbase Cluster with Three Nodes]{\huge Proxy Configuration for Couchbase Cluster with Three Nodes}\label{Appendix-III}
 \begin{lstlisting}[language=json]
 {
     "proxy": {
@@ -3821,6 +3826,117 @@ Content-Type: text/plain; charset=utf-8
     }
 }
 \end{lstlisting}
+\clearpage
+
+\chapter[ Proxy User Guide]{\huge Proxy User Guide}\label{Appendix-V}
+This user guide go through how to install and run the proxy.
+\subsection*{Download and Install Go}
+The Go distribution and the Go tools can be downloaded from \url{https://golang.org/doc/install}.
+
+\subsection*{Install Git}
+Git can be installed from \url{http://git-scm.com/downloads}
+
+\subsection*{Install Docker}
+Docker can be installed from \url{https://docs.docker.com/installation/#installation}. After Docker installation to ensure that the Docker daemon listens on a TCP socket and the proxy can connect to it the following two commands should be executed: \medskip
+
+\begin{lstlisting}[language=terminal]
+sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io
+\end{lstlisting}
+
+\begin{lstlisting}[language=terminal]
+service docker.io restart  
+\end{lstlisting}
+
+\subsection*{Install Proxy}
+The proxy can be installed in two simple steps as follows:
+\begin{list}{-}{}
+  \itemsep0em
+  \item git clone \url {https://github.com/samirabloom/dynamic-software-update} 
+  \item make
+\end{list}
+
+\noindent
+The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
+
+\subsection*{Command Line Interface}
+The proxy can be run from the command line with the following options:\bigskip
+
+\begin{lstlisting}[language=terminal]
+Usage of proxy:
+  -configFile="./config.json":  Set the location of the configuration file 
+  that should contain configuration to start the proxy, 
+  for example:
+              {
+                  "proxy": {
+                      "port": 1235
+                  },
+                  "configService": {
+                      "port": 9090
+                  },
+                  "dockerHost": {
+                      "ip": "127.0.0.1",
+                      "port": 2375
+                  },
+                  "cluster": {
+                      "containers":[
+                          {
+                              "image": "mysql",
+                              "tag": "latest",
+                              "name": "some-mysql",
+                              "environment": [
+                                  "MYSQL_ROOT_PASSWORD=mysecretpassword"
+                              ],
+                              "volumes": [
+                                  "/var/lib/mysql:/var/lib/mysql"
+                              ]
+                          },
+                          {
+                              "image": "wordpress",
+                              "tag": "3.9.1",
+                              "portToProxy": 8080,
+                              "name": "some-wordpress",
+                              "links": [
+                                  "some-mysql:mysql"
+                              ],
+                              "portBindings": {
+                                  "80/tcp": [
+                                      {
+                                          "HostIp": "0.0.0.0",
+                                          "HostPort": "8080"
+                                      }
+                                  ]
+                              }
+                          }
+                      ],
+                      "version": "3.9.1"
+                  }
+              }
+
+  -logLevel="WARN":  Set the log level as "CRITICAL", "ERROR", "WARNING", 
+  "NOTICE", "INFO" or "DEBUG"
+
+  -h: Displays this message
+\end{lstlisting} 
+
+\noindent\\
+For example the following command will run the proxy in the "INFO" log level and uses a file called \textit{config/config\_script.json} for its configuration. 
+
+\begin{lstlisting}[language=json]
+proxy -logLevel=INFO -configFile= "config/config_script.json" 
+\end{lstlisting}
+
+
+\noindent
+\hl{xxx about REST API etc}
+
+
+ 
+
+
+
+  
+
+
 
 \end{appendices}
 
