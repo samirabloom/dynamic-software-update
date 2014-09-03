@@ -190,7 +190,10 @@ In conclusion, A simple but effective   successfully
 \clearpage
 
 \section*{Acknowledgment}
-\hl{Acknowledgment will be the last section to be added}
+First and foremost, sincerest gratitude to my supervisor, Dr Cristian Cadar, and my co-supervisor, Petr Hosek, for their support, advice and enthusiasm over the last few months. Special thanks also to Dr Peter Pietzuch for accepting to be my internal examiner.   
+
+Above all, I would like to thank my husband for his enormous patience and love and for being a statute of support. I would not have been able to maintain my sanity through this period of my life without his constant support, love and encouragement.
+
 \afterpage{\blankpage}
 \clearpage
 
@@ -372,7 +375,7 @@ Dynamic software update systems mentioned above affect code updates at the granu
 Most dynamic software update systems handle the data update by using object replacement. The system or the developer allocates replacement objects and initialize them using data from the old version. Ginseng uses type-wrapping approach. In this approach the programs are compiled so that \textit{struct}s have an added version field and extra "slop" space to allow for future extensions. Transformation of old objects will be initiated by inserting calls to mediator functions which access updated objects. Ksplice and DynaMOS do not change the old objects but allocate shadow data structures containing only the new fields. Shadow data structures have the advantage of changing fewer functions by an update. When a new field is added to a \textit{struct}, only the code using that field is affected but not all the code that uses the \textit{struct}. 
 
 \section{Dynamic Software Update Safety}
-Choosing when to safely apply updates has been one of the main concerns of the prior work on dynamic software updating. Some solutions rely on no updates to active code, \textit{i.e.} no thread is running that code, and no thread's stack refers to it, (\cite{Safety 32}, \cite{Ksplice}, \cite{K42}, \cite{Safety 43} ). This restriction reduces post-update errors but it does not eliminate them, and additionally imposes strong restrictions on the form of an update and how quickly it can be applied. Moreover, some researchers suggest that no updated code should access data generated prior to the update being applied (\cite{Safety 213}, \cite{Safety 214}, \cite{Safety 267}). This technique ensures that updates with type difference do not pose a threat to type safety. The final approach suggested by researchers is using transactions in a distributed or local context to enforce stronger timing constrains (\cite{Safety 173}, \cite{Safety 215}, \cite{Safety 279}). However, it is currently been shown that update timing may not be a main concern and a few programmer-designed update points are typically sufficient to determine safe and timely update states (\cite{Safety 213}, \cite{Kitsune}, \cite{Safety 131}, \cite{Safety 108}). 
+Choosing when to safely apply updates has been one of the main concerns of the prior work on dynamic software updating. Some solutions rely on no updates to active code, \textit{i.e.} no thread is running that code, and no thread's stack refers to it, (\cite{opus}, \cite{Ksplice}, \cite{K42}, \cite{Safety 43} ). This restriction reduces post-update errors but it does not eliminate them, and additionally imposes strong restrictions on the form of an update and how quickly it can be applied. Moreover, some researchers suggest that no updated code should access data generated prior to the update being applied (\cite{Safety 213}, \cite{Ginseng}, \cite{Safety 267}). This technique ensures that updates with type difference do not pose a threat to type safety. The final approach suggested by researchers is using transactions in a distributed or local context to enforce stronger timing constrains (\cite{Safety 173}, \cite{Safety 215}, \cite{Safety 279}). However, it is currently been shown that update timing may not be a main concern and a few programmer-designed update points are typically sufficient to determine safe and timely update states (\cite{Safety 213}, \cite{Kitsune}, \cite{Eiken}, \cite{Safety 108}). 
 
 \section{Software Update Using Multi-Version Framework} \label{upgrade1} 
 The idea of N-version programming, also known as multi-version programming, was originally introduced in 1970s. This method is defined as the independent generation of more than two functionally equivalent programs. Separate developers develop each version of the program all using the same initial specification. These versions will be run concurrently in the application environment. Each version will handle identical inputs and the output of all the versions will be collected and the voting scheme are used to decide which version(s) of the program behave correctly \cite{N-version programming}. N-version programming technique was originally proposed as a method of providing reliable and fault tolerance software. This methodology has inspired many researchers to propose new techniques for development of reliable software applications 
@@ -3824,106 +3827,98 @@ Content-Type: text/plain; charset=utf-8
 \clearpage
 
 \begin{thebibliography}{1}
-\bibitem {Java} Orso A, Rao A, Harrold M. J , {\em A Technique for Dynamic Updating of Java Software}, CSM Proceedings of the International Conference on Software, 2002.
- 
-  \bibitem {fly} Segal M. E, Frieder O, \textit{On-the-fly program modification: Systems for dynamic updating.} IEEE Software, 1993.
-
-   \bibitem {Tandem} Thakur A, {\em Analysis of failures in the Tandem NonStop-UX Operating System.}, Proceedings., Sixth International Symposium on Software Reliability Engineering, 1995. 
-   
-    \bibitem {Clustring} Ohba M, {\em Software reliability analysis models.}, IBM Journal of Research and Development, 1984.
-    
-    \bibitem {active_passive} Speirs, N.A, Barrett, P. A, {\em Using passive replicates in Delta-4 to provide dependable distributed computing.}, Fault-Tolerant Computing, 1989. 
-    Speirs, N.A, Barrett, P. A
-     \bibitem {Replication} Acharya S , Zdonik S. B, {\em An Efficient Scheme for Dynamic Data Replication.}, Tech Report, 1993. 
-   
-	 \bibitem {NoSQL} Pokorny J, {\em NoSQL databases: a step to database scalability in web environment.}, International Journal of Web Information Systems, 2013. 
-	 
-	\bibitem {Automated} Sahai A, Calton P, Jung G, Wu Q, Yan W, Swint G. S, {\em Towards Automated Deployment of Built-to-Order Systems.}, Ambient Networks, 2005  
-	  
-  \bibitem {Continuous Delivery} Humble J, Farley D, {\em Continuous Delivery: Reliable Software Releases Through Build, Test, and Deployment Automation.}, Addison-Wesley Professional Publisher, 2010.     
-   
-   \bibitem {balancer} Apostolopoulos G, Aubespin D, Peris V, Pradhan P, Saha D, {\em Design, implementation and performance of a content-based switch.}, Nineteenth Annual Joint Conference of the IEEE Computer and Communications Societies, 2000.
-   
-  \bibitem {Ksplice} Arnold J, Kaashoek M. F, {\em Ksplice: automatic rebootless kernel updates.}, EuroSys, 2009.
-  
-   \bibitem {opus} Altekar G, Bagrak I, Burstein P, Schultz A, {\em OPUS: Online patches and updates for security.}, USENIX Security, 2005.
 
 
-  \bibitem{Dynamos} Makris K Ryu K. D, {\em Dynamic and Adaptive Updates of Non-Quiescent Subsystems in Commodity Operating System Kernels.}, EuroSys, 2007. 
-  
-  \bibitem {PLOUS} Chen H, Yu J, Hang C, Zang B, Yew P. C, {\em Dynamic software updating using a relaxed consistency model.}, IEEE Transactions on Software Engineering, 2011.
+\bibitem {Replication} Acharya S, Zdonik S. B, {\em An Efficient Scheme for Dynamic Data Replication}, Tech Report, 1993.
 
-  \bibitem {Ginseng} Neamtiu I, Hicks M, Stoyle G, Oriol M, {\em Practical dynamic software updating for C.}, PLDI, 2006.
-  
-  \bibitem {K42} Baumann A, Appavoo J, Silva D. D, Kerr J, Krieger O, Wisniewski R. W, {\em Providing dynamic update in an operating system.} USENIX ATC, 2005. 
+\bibitem {opus} Altekar G, Bagrak I, Burstein P, Schultz A, {\em OPUS: Online patches and updates for security}, USENIX Security, 2005.
 
-  \bibitem {UpStare} Makris K, Bazzi R, {\em Immediate Multi-Threaded Dynamic Software Updates Using Stack Reconstruction.}, USENIX ATC, 2009.
 
- \bibitem {Eiken} Hayden C. M, Smith E. K, Hicks  M ,Foster J. S, {\em State transfer for clear and efficient runtime upgrades.}, HotSWUp, 2011.
- 
-  \bibitem {Kitsune} Hayden C. M, Smith  E. K, Denchev M, Hicks M, Foster J. K, {\em "Kitsune: Efficient, general-purpose dynamic software updating for C"}, OOPSLA, 2012.
-  
-  \bibitem {Safety 32} Altekar G, Bagrak L, Burstein P, and Schultz A, {\em OPUS: Online patches and updates for security.}, USENIX Security Symp, 2005. 
+\bibitem {balancer}Apostolopoulos G, Aubespin D, Peris V, Pradhan P, Saha D, {\em Design, implementation and performance of a content-based switch}, Nineteenth Annual Joint Conference of the IEEE Computer and Communications Societies, 2000.
 
-  \bibitem {Safety 43} Baumann A, Appavoo J, Wisniewski R. W, Silva D. D, Krieger O, Heiser G, {\em Reboots are for hardware: Chal- lenges and solutions to updating an operating system on the fly.}, USENIX Annual Tech. Conf., 2007. 
-  
-  \bibitem {Safety 214} Neamtiu L, Hicks M, Stoyle G, Oriol M, {\em Practical dynamic software updating for C.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
+\bibitem {Ksplice} Arnold J, Kaashoek M. F, {\em Ksplice: automatic rebootless kernel updates}, EuroSys, 2009.
 
-  \bibitem {Safety 213} Neamtiu L, Hicks M, {\em Safe and timely updates to multi-threaded programs.} ACM SIGPLAN Conf. on Programming Language Design and Implementation,  2009.
+  \bibitem {K42} Baumann A, Appavoo J, Silva D. D, Kerr J, Krieger O, Wisniewski R. W, {\em Providing dynamic update in an operating system} USENIX ATC, 2005. 
 
-  \bibitem {Safety 267} Stoyle G, Hicks M, Bierman G, Sewell P, Neamtiu L, Mutandis M, {\em Safe and predictable dynamic software updating.}, ACM Trans. Program. Lang. Syst., 29(4), 2007.
-  
-  \bibitem {Safety 131} Hayden C M, Smith E. K, Hicks M, Foster S. J, {\em State transfer for clear and efficient runtime updates.}, In Proc. of the Third Int'l Workshop on Hot Topics in Software Upgrades, 2011.
+\bibitem {Safety 43} Baumann A, Appavoo J, Wisniewski R. W, Silva D. D, Krieger O, Heiser G, {\em Reboots are for hardware: Chal- lenges and solutions to updating an operating system on the fly}, USENIX Annual Tech. Conf., 2007. 
 
-  \bibitem {Safety 108} Giuffrida C, Kuijsten A, Tanenbaum A. S, {\em Enhanced operating system security through efficient and fine-grained address space randomization.}, USENIX Security Symp., 2012.
-
-  \bibitem {Safety 215} Neamtiu L, Hicks M, Foster J. S, Pratikakis P, {\em Contextual effects for version-consistent dynamic software updating and safe concurrent programming.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2008. 
-
-  \bibitem {Safety 173} Kramer J, Magee J, {\em The evolving philosophers problem: Dynamic change management.}, IEEE Trans. Softw. Eng., 1990. 
-
- \bibitem {Safety 279} Vandewoude Y, Ebraert P, Berbers Y, D'Hondt T, {\em Tranquility: A low disruptive alternative to quiescence for ensuring safe dynamic updates.}, IEEE Trans. Softw. Eng., 2007.
-
- \bibitem {Cook} Cook J. E, Dage J. A, {\em "Highly reliable upgrading of components"}, ICSE Conf. on Proceedings of the 21st international conference on Software engineering, 1999.
-
- \bibitem {Berger} Berger E. D, Zorn B, {\em DieHard: probabilistic memory safety for unsafe languages.}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
- 
- \bibitem {Veeraraghavan} Kaushik Veeraraghavan, Chen M. P, Flinn J, Narayanasamy S, {\em detecting and surviving data races using complementary schedules}, SOSP, 2011. 
- 
- \bibitem {Cadar1} Hosek P, Cadar C, {\em Safe software updates via multi-version execution.}, Int'l Conf. on Software Eng., 2013.
- 
- \bibitem {Cadar2} Cadar C, Hosek P, {\em Multi-version software updates.}, In Proc. of the Fourth Int'l Workshop on Hot Topics in Software Upgrades, 2012.
-
- 	\bibitem{N-version programming} Chen L, Avizienis A, {\em  "N-version programming: A fault-tolerance approach to reliability of software operation"}, in FTCS, 1978. 
-   
-	\bibitem{virtualization} Mosharaf Kabir Chowdhury N. M, Boutaba R. b, {\em A survey of network virtualization}, Computer Networks, 2010.
-   
-	\bibitem {Hypervisors2} Bressoud T. C, Schneider F. B, {\em Hypervisor-based fault tolerance.}, ACM 	Transactions on Computer System, 1996.
-	   
-  	\bibitem{Hypervisors} Tholeti B. P, {\em Hypervisors, virtualization, and the cloud: Learn about hypervisors, system virtualization, and how it works in a cloud environment}, IBM, 2011. 
-
-	 \bibitem {container} Vaughan-Nichols S. J, {\em New Approach to Virtualization Is a Lightweight.}, Computer, 2006.  
-	 
-	  \bibitem {security} Sahoo J, {\em Virtualization: A Survey on Concepts, Taxonomy and Associated Security Issues.}, Computer and Network Technology, 2010.
-  
-   \bibitem {docker2} Merkel, D, {\em Docker: Lightweight Linux Containers for Consistent Development and Deployment.}, Linux Journal, 2014.
-	
-	\bibitem{AMPQ} Vinoski S, {\em Advanced Message Queuing Protocol}, IEEE Internet Computing, 2006. 
-
-    \bibitem{JMS} Hapner M, Burridge R, Sharma R, Fialli J, Stout K, {\em Java Message Service}, In Oracle America, Inc., 2012.
-
-\bibitem{broker} Raj A, Kumar S. P, {\em "Branch Sequencing Based XML Message Broker Architecture,"}, IEEE 23rd International Conference on Data Engineering, 2007.  
-
-\bibitem{hypertext} 
-Vassar C, Poughkeepsie, N.Y, \textit{A File Structure for the Complex, the Changing, and the Indeterminate}, 20th National Conference, New York, Association for Computing Machinery, 1965.
-
-\bibitem{bugs}Yin Z, Yuan D, Zhou Y, Pasupathy S, and Bairavasundaram L, \textit{"How
-do fixes become bugs?"}, ESEC/FSE, 2011.
+\bibitem {Berger} Berger E. D, Zorn B, {\em DieHard: probabilistic memory safety for unsafe languages}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
 
 \bibitem{Boehm_a}Boehm, B. W, \textit{Improving software productivity}, IEEE Computer, 1987a.
 
-\bibitem{Boehm_b} Boehm, B. W, Victor R. B, \textit{Software Defect Reduction Top 10 List}, Computer, v.34, 2001.
+\bibitem{Boehm_b}Boehm, B. W, Victor R. B, \textit{Software Defect Reduction Top 10 List}, Computer, v.34, 2001.
 
-%\bibitem{lighttpd} Beattie S, Arnold S, Cowan C, Wagle P, Wright C, \textit{Timing the application of security patches for optimal uptime}, LISA, 2002.
+\bibitem {Hypervisors2} Bressoud T. C, Schneider F. B, {\em Hypervisor-based fault tolerance}, ACM Transactions on Computer System, 1996.
+
+\bibitem {Cadar2} Cadar C, Hosek P, {\em Multi-version software updates}, In Proc. of the Fourth Int'l Workshop on Hot Topics in Software Upgrades, 2012.
+
+\bibitem {PLOUS}Chen H, Yu J, Hang C, Zang B, Yew P. C, {\em Dynamic software updating using a relaxed consistency model}, IEEE Transactions on Software Engineering, 2011.
+
+\bibitem{N-version programming}Chen L, Avizienis A, {\em  "N-version programming: A fault-tolerance approach to reliability of software operation"}, in FTCS, 1978.
+ 
+\bibitem {Cook} Cook J. E, Dage J. A, {\em "Highly reliable upgrading of components"}, ICSE Conf. on Proceedings of the 21st international conference on Software engineering, 1999.
+
+\bibitem {Safety 108}Giuffrida C, Kuijsten A, Tanenbaum A. S, {\em Enhanced operating system security through efficient and fine-grained address space randomization}, USENIX Security Symp., 2012.
+
+\bibitem{JMS} Hapner M, Burridge R, Sharma R, Fialli J, Stout K, {\em Java Message Service}, In Oracle America, Inc., 2012.
+
+\bibitem {Eiken} Hayden C M, Smith E. K, Hicks M, Foster S. J, {\em State transfer for clear and efficient runtime updates}, In Proc. of the Third Int'l Workshop on Hot Topics in Software Upgrades, 2011.
+
+\bibitem {Kitsune} Hayden C. M, Smith  E. K, Denchev M, Hicks M, Foster J. K, {\em "Kitsune: Efficient, general-purpose dynamic software updating for C"}, OOPSLA, 2012.
+
+\bibitem {Cadar1} Hosek P, Cadar C, {\em Safe software updates via multi-version execution.}, Int'l Conf. on Software Eng., 2013.
+
+\bibitem {Continuous Delivery}Humble J, Farley D, {\em Continuous Delivery: Reliable Software Releases Through Build, Test, and Deployment Automation}, Addison-Wesley Professional Publisher, 2010.     
+
+\bibitem {Veeraraghavan} Kaushik Veeraraghavan, Chen M. P, Flinn J, Narayanasamy S, {\em detecting and surviving data races using complementary schedules}, SOSP, 2011. 
+
+\bibitem {Safety 173}Kramer J, Magee J, {\em The evolving philosophers problem: Dynamic change management}, IEEE Trans. Softw. Eng., 1990. 
+
+\bibitem{Dynamos} Makris K Ryu K. D, {\em Dynamic and Adaptive Updates of Non-Quiescent Subsystems in Commodity Operating System Kernels}, EuroSys, 2007. 
+
+\bibitem {UpStare}Makris K, Bazzi R, {\em Immediate Multi-Threaded Dynamic Software Updates Using Stack Reconstruction}, USENIX ATC, 2009.
+
+\bibitem {docker2} Merkel, D, {\em Docker: Lightweight Linux Containers for Consistent Development and Deployment}, Linux Journal, 2014.
+
+\bibitem{virtualization} Kabir M, Chowdhury N. M, Boutaba R. b, {\em A survey of network virtualization}, Computer Networks, 2010.
+
+\bibitem {Ginseng} Neamtiu I, Hicks M, Stoyle G, Oriol M, {\em Practical dynamic software updating for C}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2006.
+
+\bibitem {Safety 213}Neamtiu L, Hicks M, {\em Safe and timely updates to multi-threaded programs} ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2009.
+
+\bibitem {Safety 215} Neamtiu L, Hicks M, Foster J. S, Pratikakis P, {\em Contextual effects for version-consistent dynamic software updating and safe concurrent programming}, ACM SIGPLAN Conf. on Programming Language Design and Implementation, 2008. 
+
+\bibitem {Clustring} Ohba M, {\em Software reliability analysis models}, IBM Journal of Research and Development, 1984.
+
+\bibitem {Java} Orso A, Rao A, Harrold M. J , {\em A Technique for Dynamic Updating of Java Software}, CSM Proceedings of the International Conference on Software, 2002.
+
+\bibitem {NoSQL} Pokorny J, {\em NoSQL databases: a step to database scalability in web environment}, International Journal of Web Information Systems, 2013. 
+
+\bibitem{broker} Raj A, Kumar S. P, {\em "Branch Sequencing Based XML Message Broker Architecture"}, IEEE 23rd International Conference on Data Engineering, 2007.  
+
+\bibitem {Automated}Sahai A, Calton P, Jung G, Wu Q, Yan W, Swint G. S, {\em Towards Automated Deployment of Built-to-Order Systems}, Ambient Networks, 2005.
+  
+\bibitem {security} Sahoo J, {\em Virtualization: A Survey on Concepts, Taxonomy and Associated Security Issues}, Computer and Network Technology, 2010.
+
+\bibitem {fly} Segal M. E, Frieder O, \textit{On-the-fly program modification: Systems for dynamic updating} IEEE Software, 1993. 
+
+\bibitem {active_passive} Speirs, N.A, Barrett, P. A, {\em Using passive replicates in Delta-4 to provide dependable distributed computing}, Fault-Tolerant Computing, 1989. 
+
+\bibitem {Safety 267} Stoyle G, Hicks M, Bierman G, Sewell P, Neamtiu L, Mutandis M, {\em Safe and predictable dynamic software updating}, ACM Trans. Program. Lang. Syst., 29(4), 2007.
+
+\bibitem {Tandem} Thakur A, {\em Analysis of failures in the Tandem NonStop-UX Operating System}, Proceedings., Sixth International Symposium on Software Reliability Engineering, 1995.
+ 
+\bibitem{Hypervisors} Tholeti B. P, {\em Hypervisors, virtualization, and the cloud: Learn about hypervisors, system virtualization, and how it works in a cloud environment}, IBM, 2011. 
+
+\bibitem {Safety 279}Vandewoude Y, Ebraert P, Berbers Y, D'Hondt T, {\em Tranquillity: A low disruptive alternative to quiescence for ensuring safe dynamic updates}, IEEE Trans. Softw. Eng., 2007.
+
+\bibitem{hypertext} Vassar C, Poughkeepsie, N.Y, \textit{A File Structure for the Complex, the Changing, and the Indeterminate}, 20th National Conference, New York, Association for Computing Machinery, 1965.
+
+\bibitem {container} Vaughan-Nichols S. J, {\em New Approach to Virtualization Is a Lightweight}, Computer, 2006. 
+ 
+\bibitem{AMPQ} Vinoski S, {\em Advanced Message Queuing Protocol}, IEEE Internet Computing, 2006. 
+
+\bibitem{bugs} Yin Z, Yuan D, Zhou Y, Pasupathy S, and Bairavasundaram L, \textit{"How do fixes become bugs?"}, ESEC/FSE, 2011.
 
 \end{thebibliography} 
 
