@@ -180,7 +180,7 @@ This report presents development of a novel, lightweight, robust and reliable pr
 
 Detailed evaluation of the proxy using real applications such as WordPress, Coachbase and Lighttpd showed that there is no significant overhead associated with the proxy when HTTP requests are processed by applications via the proxy. It was also demonstrated that the proxy seamlessly applies a dynamic update of an application from one version to another version with no delay. There is also no additional latency introduced by the proxy when the proxy rolls back to the older version of the application in response to failure in an upgraded application version. 
 
-In conclusion, the work in this report presents a novel and sophisticated proxy that is capable of supporting multiple upgrade modes that are fully resilient to application failure by supporting rollback and capable of orchestrating. The proxy manages  the creation and destruction of clusters of application stacks based on Docker containers.
+In conclusion, the work in this report presents a novel and sophisticated proxy that is capable of supporting multiple upgrade modes that are fully resilient to application failure by supporting rollback. The proxy is capable of orchestrating and managing  the creation and destruction of clusters of application stacks based on Docker containers.
 
 
 \afterpage{\blankpage}
@@ -288,8 +288,11 @@ This report presents a novel, lightweight, robust and reliable proxy that suppor
 \textbf{Conclusion \& Future Chapter} - Presents the overall discussion of the results and the achievements of the project. The limitations of the system are also presented. Finally, possible future works for extensions of the dynamic software upgrade proxy. 
 
 \noindent \\
-\textbf{Appendices} - Presents detailed information about the proxy's REST API. WordPress and Couchbase configurations used for evaluating the proxy is also presented. Finally, a user guide on how to install and use the proxy is provided.   
+\textbf{Appendices} - Presents detailed information about the proxy's REST API and WordPress and Couchbase configurations used for evaluating the proxy. A user guide on how to install and use the proxy is also provided.   
 
+
+
+\clearpage
 \chapter{Related Work}
 Software reliability is compromised of the following main activities:
 
@@ -358,7 +361,7 @@ Continuous delivery is a software development approach that ensures application 
 Furthermore, continuous delivery promotes small incremental updates that are deployed on a regular bases reducing the risk from any given update. Continuous delivery also increases software reliability by reducing the cost of applying updates. If an update is extremely easy to deploy, then any defect that has been deployed into production can be more easily fixed by a subsequent deployment. However, continuous delivery from development all the way into production is rare with most companies only managing to promote application updates as far as pre-production. This is because performing automated deployment via continuous delivery into production is considered too risky. This fact reduces many of the benefit that continuous delivery provide.
 
 \subsection{Immutable Infrastructure}
- A common problem in infrastructures is that manual changes introduce state into servers and network components.  This state is unrecorded, unknown and often unreproducible causing issues when resolving problems or attempting to rebuild the environment, for example, after a critical failure.  An immutable infrastructure is an infrastructure that is made of components that are replaced (or completely rebuilt) on every deployment.  The advantage of using the immutable infrastructure technique is that state is siloed and can not leak through out the entire infrastructure.  The boundaries between layers storing state and the layers that are ephemeral, which may not be running the next minute, are clearly drawn and no leakage can possibly happen between those layers. State is stored in the database or in deployment scripts (also called infrastructure-as-code) and it is not scattered through out the architecture. 
+ A common problem in infrastructures is that manual changes introduce state into servers and network components.  This state is unrecorded, unknown and often unreproducible causing issues when resolving problems or attempting to rebuild the environment, for example, after a critical failure.  An immutable infrastructure is an infrastructure that is made of components that are replaced (or completely rebuilt) on every deployment.  The advantage of using the immutable infrastructure technique is that state is solid and can not leak through out the entire infrastructure.  The boundaries between layers storing state and the layers that are ephemeral, which may not be running the next minute, are clearly drawn and no leakage can possibly happen between those layers. State is stored in the database or in deployment scripts (also called infrastructure-as-code) and it is not scattered through out the architecture. 
 
 \section{Dynamic Software Update Systems} \label{DSU}
 Software updates are an important part of maintaining a long-lived system with new software enhancements, fixes and modifications being released on a continuous basis. In the past decades several systems have been developed to support highly reliable dynamic software upgrades. Each of these systems uses different approaches to change the code and the data of a program from an old version to a new version. 
@@ -587,7 +590,7 @@ Advanced Multi-Layered Unification Filesystem (AuFS) is used in Docker as their 
 
 \begin{figure}[!ht]
   \centering
-     \includegraphics[scale=0.3]{docker-filesystem}
+     \includegraphics[scale=0.2]{docker-filesystem}
   \caption{Docker filesystem\textsuperscript{\ref{filesystem}}} %\footnotemark
   \label{docker-filesystem}
 \end{figure}
@@ -619,7 +622,7 @@ Typically different application update situations require different update appro
 \begin{list}{-}{}
 \itemsep0em
 \item Serious bugs such as a critical security flaw requires the application to be updated immediately to reduce the error or security exposure as quickly as possible.  All users should therefore immediately be updated to the most recent version.
-\item A new feature may change the behaviour of the system.  Users who are currently interacting with the system should typically not experience the new feature until their current interaction session has completed.  For example a user in the process of purchasing products on an e-commerce site would typically not want the sites behaviour to change during a shopping experience.  In this case the user should not experience the new application version until their next interaction with the site.
+\item A new feature may change the behavior of the system.  Users who are currently interacting with the system should typically not experience the new feature until their current interaction session has completed.  For example a user in the process of purchasing products on an e-commerce site would typically not want the web site behavior to change during a shopping experience.  In this case the user should not experience the new application version until their next interaction with the site.
 \item To reduce the risk associated with deploying a new feature application updates are often rolled out gradually.  A gradual update mechanism slowly migrates users from the existing application version to the updated application version in a controlled manner.
 \item In the case where an application upgrade does not significantly change the user facing feature set or the shape of the API the old and the new versions can be run in parallel.  All requests are sent to both versions of the application as long as the new application version responds correctly then this response will be returned to the user.  If the new application version fails to respond, crashes or returns a server error then the response from the previous version can be returned to the user.
 \end{list}
@@ -638,7 +641,7 @@ The following technology stack has been chosen for the dynamic software update s
     
   \item Docker as a container virtualization mechanism that runs containers for both the target application that is to be updated and the content switching load balancer.
    
-  \item HTTP as a protocol for application requests and responses.  HTTP is the most widely adopted application level protocol for distributed network systems In addition the use of headers and cookies in HTTP allow sessions and clients to be easily identify.  HTTP headers also allows the efficient comparison between large responses without the need to buffer the entire response body.
+  \item HTTP as a protocol for application requests and responses.  HTTP is the most widely adopted application level protocol for distributed network systems In addition, the use of headers and cookies in HTTP allow sessions and clients to be easily identify.  HTTP headers also allows the efficient comparison between large responses without the need to buffer the entire response body.
 \end{list}
   
 \subsection{Upgrade Modes}\label{modes}
@@ -646,7 +649,7 @@ The following technology stack has been chosen for the dynamic software update s
 To support the multiple update approaches listed in the requirements (Section \ref{HTTP}) four mechanisms are supported.
 
 \subsubsection*{Instant Upgrade} 
-This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. Figure \ref{instant_upgrade} shows a cookie, indicating the application version, is always added to a response.  When an instant upgrade mode is used the proxy routes all requests to the new version and updates their cookie.  When a failure occurs the proxy routes the request to the previous version and removes the failed version from the list of available versions.
+This mechanism is useful when an update must be applied urgently, such as a critical security patch required to stop an in-progress security breach.  In this mechanism the updated version of software immediately processes all requests. The non-updated version remains running and will be immediately available to process requests if the updated system does not behave correctly. Figure \ref{instant_upgrade} shows a cookie, indicating the application version, is always added to a response.  When an instant upgrade mode is used, the proxy routes all requests to the new version and updates their cookie.  When a failure occurs, the proxy routes the request to the previous version and removes the failed version from the list of available versions.
    
 \begin{figure}[!ht]
   \centering
@@ -657,7 +660,7 @@ This mechanism is useful when an update must be applied urgently, such as a crit
 % \vspace{-18pt}
 
 \subsubsection*{Session Upgrade}
-This upgrade mode is useful when a new feature is release which affects the behaviour of the system and therefore only new sessions are switched to the updated version. Figure \ref{session_upgrade} shows that when a request is received the cookie, indicating which version the client was previously using, is examined to determine which version the request should be routed to.  The cookie in the response is updated to add a timeout.  A request with no cookie is only received from clients who have not made a request within the timeout period, therefore, a new session is identified by a request with no cookie.
+This upgrade mode is useful when a new feature is released which affects the behavior of the system and therefore only new sessions are switched to the updated version. Figure \ref{session_upgrade} shows that when a request is received, the cookie, indicating which version the client was previously using, is examined to determine which version the request should be routed to.  The cookie in the response is updated to add a timeout.  A request with no cookie is only received from clients who have not made a request within the timeout period, therefore, a new session is identified by a request with no cookie.
 
    
 \begin{figure}[!ht]
@@ -670,8 +673,7 @@ This upgrade mode is useful when a new feature is release which affects the beha
 
 \clearpage
 \subsubsection*{Gradual Upgrade}
-This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number clients that are exposed to the new version. Figure \ref{gradual_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into.  The Figure \ref{gradual_upgrade} shows in the first upgrade scenario the second cookie gives the request a number of 45.  The bucket for application 1.0.1 is from 0 to 10 therefore the the request does not match the bucket as 45 falls outside the range 0 to 10.  In the second upgrade scenario the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.
-
+This mechanism switches new sessions gradually to the updated version over multiple days or weeks and is useful to reduce the risk associated with a new application version by gradually increasing the number of clients that are exposed to the new version. Figure \ref{gradual_upgrade} shows how this approach uses a second cookie in addition to the cookie used in the session and instant upgrade modes.  The second cookie has no expiry and is never updated once it is assigned to a client.  This second cookie contains a unique randomly assigned id, that is given to a client, between 0 and 100.  Each request will be routed to the version depending on which bucket it falls into. For example, if in the first upgrade scenario (non upgrade bucket in Figure \ref{gradual_upgrade}), the second cookie gives the request a number of 45, the bucket for application 1.0.1 is from 0 to 10, therefore, the the request does not match the bucket as 45 falls outside the range 0 to 10. In the second upgrade scenario (upgrade bucket in Figure \ref{gradual_upgrade}), the request number of 45 falls within the bucket, for application 1.0.1, because the range has been increased and is now 0 to 50.  This bucket range is gradually increased for each successfully processed request, at a configurable rate, so that the number of clients that use the new application version is gradually increased.     
    
 \begin{figure}[!ht]
   \centering
@@ -682,7 +684,7 @@ This mechanism switches new sessions gradually to the updated version over multi
 % \vspace{-18pt}
 
 \subsubsection*{Concurrent Upgrade}
-In this mechanism the updated and non-updated versions run concurrently and process identical requests.  As shown in Figure \ref{concurrent_upgrade} in this strategy, both the old and the new versions handle all requests.  If the latest version of the application behaves correctly then the client receives the response from the latest version.  The latest version of the application is considered to behave correctly if it accepts a TCP connection, returns a response, and the response has an HTTP status code that is not in the 5xx range, used to indicate server errors.
+In this mechanism the updated and non-updated versions run concurrently and process identical requests.  As shown in Figure \ref{concurrent_upgrade}, in this strategy both the old and the new versions handle all requests.  If the latest version of the application behaves correctly, then the client receives the response from the latest version.  The latest version of the application is considered to behave correctly if it accepts a TCP connection, returns a response, and the response has an HTTP status code that is not in the 5xx range, used to indicate server errors.
    
 \begin{figure}[!ht]
   \centering
@@ -696,8 +698,7 @@ In all four mechanisms the behavior of the updated software is automatically mon
 
 
 \subsection{Component Architecture}
-
-Figure \ref{proposed_solution} demonstrates the main components and there interactions for the proposed dynamic software update system, which are described in this section.
+Figure \ref{proposed_solution} demonstrates the main components and their interactions for the proposed dynamic software update system, which are described in this section.
 
 %\vspace{-8pt}
 \begin{figure}[!ht]
@@ -709,39 +710,30 @@ Figure \ref{proposed_solution} demonstrates the main components and there intera
 %\vspace{-18pt}
 
 \subsubsection*{client}
-
-\noindent
 The client represents the user of the application that is sending requests for the application to process. It is assumed that the client will correctly implement the HTTP protocol including correctly handling cookies.
 
 \subsubsection*{upstream}
-
-\noindent
 The upstream component encapsulates all the interactions with the client.  This includes accepting incoming TCP connections, reading the request from the socket and writing the response to the socket.
 
 \subsubsection*{routing \& upgrading}
-
-\noindent
-This component is responsible to handling all the upgrade modes and determining which server to route the request is.  This component parses the headers from both the request and response to manage the cookies required for the upgrade modes.  This component is also used to detect when a server is behaving incorrectly by examining the server response.  Load balancing is also performed by this component as it routes requests to the servers within a cluster in a round-robin fashion.
+This component is responsible for handling all the upgrade modes and determining which server to route the request to.  This component parses the headers from both the request and the response to manage the cookies required for the upgrade modes.  This component is also used to detect when a server is behaving incorrectly by examining the server response.  Load balancing is also performed by this component as it routes requests to the servers within a cluster in a round-robin fashion.
 
 \subsubsection*{downstream}
-
-\noindent
-This component is responsible to making the TCP connection to the server.  Once the connection is established this component will write the request to the socket and will read the response of the socket.
+This component is responsible for making the TCP connection to the server.  Once the connection is established, this component will write the request to the socket and will read the response of the socket.
 
 \subsubsection*{Version 1.0.0 Cluster}
-
-\noindent
-Shows two application nodes, both using version 1.0.0 of the application, running in a single cluster.
+This shows two application nodes, both using version 1.0.0 of the application, running in a single cluster.
 
 \subsubsection*{Version 1.0.1 Cluster}
+This shows an updated version of the application as two application nodes, using version 1.0.1, of the application running in a single cluster.
 
-\noindent
-Shows an updated version of the application as two application nodes, using version 1.0.1, of the application running in a single cluster.
+\subsection*{Configuration Service}
+The configuration service is responsible for managing the configuration for how the dynamic software update system routes to different application clusters.
+
 
 \clearpage
-
 \chapter{Implementation} \label{Implementation}
-During the implementation of the proxy three different approaches were prototypes.  The first approach as described in Section \ref{zeromq_section} used ZeroMQ due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added.  The second approach described in Section \ref{Content-Counting} used raw sockets.  To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not further pursued.  The final approach described in Section \ref{staged} was to use raw sockets in a staged based proxy.  This version improves encapsulation and separation-of-concerns through the use of multiple stages.  In addition this approach uses low level socket errors instead of content counting to determine when to close sockets.  This final approach met all the initial requirements and hence it was developed further to provide the full set of features.
+During the implementation of the proxy three different approaches were prototypes.  The first approach as described in Section \ref{zeromq_section} used ZeroMQ due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However, this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added.  The second approach described in Section \ref{Content-Counting} used raw sockets.  To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not further pursued.  The final approach described in Section \ref{staged} was to use raw sockets in a staged based proxy.  This version improves encapsulation and separation-of-concerns through the use of multiple stages.  In addition this approach uses low level socket errors instead of content counting to determine when to close sockets.  This final approach met all the initial requirements and hence it was developed further to provide the full set of features.
 
 \section{Message Based Proxy Using ZeroMQ}\label{zeromq_section}
 The first proxy developed to support dynamic software update was an HTTP reverse proxy based on ZeroMQ messaging system. ZeroMQ was chosen due to its support for low latency messaging and sophisticated support for multiple routing strategies.  However this approach was not successful due to ZeroMQ's handling of multiple HTTP chunks and the overhead added as described in this section.
@@ -765,7 +757,7 @@ A custom Dockerfile was written that creates a Docker container running an examp
 \end{figure}
 
 \subsection{Performance Evaluation}
-Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chunked HTTP requests and a simpler approach would be to use raw Go sockets directly. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity and overhead. Therefore, other messaging systems were not explored for developing a content switching load balancer. 
+Detailed analysis of the reverse HTTP proxy showed that when the HTTP requests are chunked (Section \ref{Requests}), ZeroMQ STREAM socket treats each chunk as a separate message and the DEALER socket distributes each chunk of the same request to different recipients. Therefore, it was concluded that ZeroMQ messaging library is not suitable and reliable for load balancing chunked HTTP requests and a simpler approach would be to use raw Go sockets directly. Furthermore, HTTP provides adequate messaging support such as content encoding and caching and wrapping HTTP messages in another message layer adds unnecessary complexity. Therefore, other messaging systems were not explored for developing a content switching load balancer. 
 
 In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support dynamic software update instead an alternative approach using raw sockets was developed. 
 
@@ -773,7 +765,7 @@ In conclusion, the ZeroMQ HTTP reverse proxy was not advanced further to support
 As it was explained in the previous section using a messaging system was not the correct choice to develop a dynamic software update proxy. This section describes two different approaches using raw Go sockets.   
 
 \subsection{Socket Based Proxy With Content Counting}\label{Content-Counting}
-The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol this approach was not further pursued, as described in more detail in this section.
+The first version of the socket based proxy was designed as demonstrated in Figure \ref{content_counting_proxy}. To detect when the sockets should be closed the request and response body content was counted as each chunk was transmitted; once all the content was received the socket was closed.  However, due to the complexity, inconsistency and inaccuracy in the way different servers implemented the HTTP protocol, this approach was not further pursued, as described in more detail in this section.
 
 To accept new connections this proxy had a listener running in an  \textit{Accept} loop.  When a new connection was received a TCP connection between the client and the proxy was created over which the HTTP request read from the socket in \textit{Read} loop.  The routing component created another connection between the proxy and the server.  The HTTP request was then written to the server inside a \textit{Write} loop.
 
@@ -802,7 +794,7 @@ When Content-Length header is provided, the size of message body is known upfron
 \noindent
 However, when no Content-Length header is provided, the size of the message body is not known upfront. Instead the Transfer-Encoding header with a value of "chunked" indicates the message body is chunked and a zero chunk will mark the end of the message body.  At the start of each new chunk, the chunk size is defined as a hexadecimal number followed by '\textbackslash r\textbackslash n', therefore, the format for the last chunk is always defined as '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n'. To detect the end of HTTP messages with chunked Transfer-Encoding header, the content counting proxy screens each chunk and when the last chunk, \textit{i.e.} '0 \textbackslash r\textbackslash n \textbackslash r\textbackslash n', is detected, the  \textit{Read} loop ends. 
 
-\subsubsection*{Performance Evaluation}
+\subsubsection*{Performance Evaluation} \label{wrk_1}
 To evaluate the performance of the aforementioned proxy an HTTP benchmarking tool called \textit{wrk}\footnote{\label{wrk} \url{https://github.com/wg/wrk}} was used. \textit{wrk} is capable of generating significant load when it runs on a single multi-core CPU by combining a multi-threaded design and scalable event notification systems such as epoll\footnote{\label{epoll} \url{http://man7.org/linux/man-pages/man7/epoll.7.html}} and kqueue\footnote{\label{kqueue} \url{http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}}.
 
 
@@ -940,23 +932,23 @@ If the latest cluster version is deleted using the REST API or an error occurs w
 \textit{Back pipe} is responsible for receiving requests from the server and forwarding it to the client. Similar to \textit{Forward pipe}, \textit{Back pipe} constructs the \textit{ChunkContext Struct} for responses and creates \textit{Read}, \textit{Route}, \textit{Write} and \textit{Complete} stages for forwarding the response to the client.
 
 \subsubsection*{Configuration Service}
-\textit{Configuration Service} is responsible for managing the configuration for how the proxy routes to different servers or containers.  In addition the configuration service configures the ports exposed by the proxy for both the configuration service its self and for incoming HTTP requests that are being proxied.  The configuration service is made up of multiple separate components, including File Parser, REST API, Cluster \& Container Management and the Docker Client.
+\textit{Configuration Service} is responsible for managing the configuration for how the proxy routes to different servers or containers.  In addition, the configuration service configures the ports exposed by the proxy for both the configuration service itself and for incoming HTTP requests that are being proxied.  The configuration service is made up of multiple separate components, including \textit{File Parser}, \textit{REST API}, \textit{Cluster \& Container Management} and the \textit{Docker Client}.
 
 \subsubsection*{File Parser}
-\textit{File Parser} is responsible for parsing loading the configuration file provided to the proxy when it initially starts.  The file parser reads the configuration in JSON format and validates it strictly ensuring to output any necessary errors as required.
+\textit{File Parser} is responsible for parsing and loading the configuration file provided to the proxy when it initially starts.  The file parser reads the configuration in JSON format and validates it strictly ensuring to output any necessary errors as required.
 
 \subsubsection*{REST API}
-\textit{REST API} exposes a REST service API that can be used to query and update the configuration once the proxy has started.  The REST API can be used to add new server or container clusters.  When a new container cluster is added the configuration service uses the Docker Client to ensure that the necessary containers are created by the Docker Daemon.  The REST API also supports deleting server or container configuration, if the configuration is deleted then the proxy will not longer send requests to the deleted servers or containers.  In addition if the container configuration is deleted then the proxy will stop and remove then relevant containers by communicating with the Docker Daemon.
+\textit{REST API} exposes a REST service API that can be used to query and update the configurations once the proxy has started.  The \textit{REST API} can be used to add new server or container clusters.  When a new container cluster is added, the configuration service uses the \textit{Docker Client} to ensure that the necessary containers are created by the Docker Daemon.  The \textit{REST API} also supports deleting server or container configurations. If the configuration is deleted, the proxy will no longer send requests to the deleted servers or containers.  In addition, if the container configuration is deleted, the proxy will stop and remove the relevant containers by communicating with the Docker Daemon.
 
 \subsubsection*{Docker Client}
-\textit{Docker Client} manages all the interactions with the Docker Daemon including pulling images, creating containers, starting containers, querying container status, stopping containers, and removing containers.  The Docker Client is also responsible for streaming the response from the Docker Daemon to console output when the proxy starts or to response of a REST API request.  This ensures that any failure while performing any Docker action is clearly indicated to the user.  To ensure that it is quick and simple for the user to resolve any issues with Docker containers the Docker Client also attaches to each new container for the first 3 second of its initial start up and returns the log (standard out and standard error) to the user.  This is particularly helpful when triaging why a container has not started.
+\textit{Docker Client} manages all the interactions with the Docker Daemon including pulling images, creating containers, starting containers, querying container status, stopping containers, and removing containers.  The \textit{Docker Client} is also responsible for streaming the response from the Docker Daemon to console output when the proxy starts or to response of a \textit{REST API} request.  This ensures that any failure while performing any Docker action is clearly indicated to the user.  To ensure that it is quick and simple for the user to resolve any issues with Docker containers, the \textit{Docker Client} also attaches to each new container the first three seconds of its initial start up and returns the log (standard out and standard error) to the user.  This is particularly helpful when triaging why a container has not started.
 
 \noindent
 The Docker Client enables support for the following Docker configurations:
 	\begin{list}{-}{}
 		\itemsep0em	
 		\item name of the image to create each container from
-		\item the tag for the image, defaulting to `latest`
+		\item the tag for the image, defaulting to "latest"
 		\item whether to automatically check for new image versions
 		\item the name of the container, defaulting to an auto-generated unique name
 		\item the current working directory inside the container's root file system
@@ -964,8 +956,8 @@ The Docker Client enables support for the following Docker configurations:
 		\item the environment variables that are set in the running container
 		\item the command to be executed when running the container
 		\item the container's hostname
-		\item mounting volumes from either the host or from another docker container
-		\item mounting all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode
+		\item mounting volumes from either the host or from another Docker container
+		\item mounting all the volumes defined for one or more other Docker containers, including control over whether the volumes are mounted in read-write or read-only mode
 		\item binding ports from within the container to one or more host port and IP combinations
 		\item linking the container to another Docker container
 		\item setting the user user id and group id of the executing process running inside the container
@@ -976,7 +968,7 @@ The Docker Client enables support for the following Docker configurations:
 	\end{list}
 	
 \subsubsection*{Cluster \& Container Management}
-\textit{Cluster \& Container Management} is the bridge between the File Parser, REST API, Docker Client and the routing stage of the proxy.  This component manages the list of all server and container configurations and which configuration are grouped into a cluster.  All persistent data is stored in this component to support routing decisions, such as, for example information to support the gradual upgrade mode, as follows: \bigskip  
+\textit{Cluster \& Container Management} is the bridge between the \textit{File Parser}, \textit{REST API}, \textit{Docker Client} and the \textit{Route} stage of the proxy.  This component manages the list of all server and container configurations and which configuration are grouped into a cluster.  All persistent data is stored in this component to support routing decisions. For example information to support the GRADUAL upgrade mode, as follows: \bigskip  
 
 \begin{lstlisting}[language=terminal]
 type Clusters  struct {
@@ -1034,7 +1026,7 @@ $ make
 \end{lstlisting}
 
 \noindent
-The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. A detailed user guide on how to install and run the proxy is described in Appendix \ref{Appendix-V}. 
+The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. A detailed user guide on how to install and run the proxy is provided in Appendix \ref{Appendix-V}. 
 
 \section{Command Line Interface}
 The proxy can be run from the command line with the following options:\bigskip
@@ -1133,7 +1125,7 @@ The REST API supports the following HTTP response codes:
 \end{list}
 
 \subsection{PUT /configuration/cluster}\label{PUT}
-The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. There are two supported request body formats depending on whether the cluster is using docker containers or pre-existing servers (i.e. IP and port combinations), as follows:\bigskip
+The PUT request to \textit{/configuration/cluster}  is used to add a new cluster to the proxy. There are two supported request body formats depending on whether the cluster is using Docker containers or pre-existing servers (i.e. IP and port combinations), as follows:\bigskip
 
 \subsubsection*{Docker Container Configuration}
 
@@ -1219,7 +1211,7 @@ The JSON fields are used for the following reasons:
 
 \begin{list}{-}{}
   \itemsep0em
-  \item\textbf{{cluster.containers}} - specifies the list of docker containers in the cluster.
+  \item\textbf{{cluster.containers}} - specifies the list of Docker containers in the cluster.
 
   \item\textbf{{cluster.containers[i].image}} - name of the image to create each container from.
   \item\textbf{{cluster.containers[i].tag}} - the tag for the image, defaulting to `latest`.
@@ -1232,8 +1224,8 @@ The JSON fields are used for the following reasons:
   \item\textbf{{cluster.containers[i].cmd}} - the command to be executed when running the container
   \item\textbf{{cluster.containers[i].hostname}} - the container's hostname
 
-  \item\textbf{{cluster.containers[i].volumes}} - mount volumes from either the host or from another docker container
-  \item\textbf{{cluster.containers[i].volumesFrom}} - mount all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode
+  \item\textbf{{cluster.containers[i].volumes}} - mount volumes from either the host or from another Docker container
+  \item\textbf{{cluster.containers[i].volumesFrom}} - mount all the volumes defined for one or more other Docker containers, including control over whether the volumes are mounted in read-write or read-only mode
   \item\textbf{{cluster.containers[i].portBindings}} - bind ports from within the container to one or more host port and IP combination, using format <port>/tcp or <port>/udp as the key
   \item\textbf{{cluster.containers[i].portBindings[i].hostIp}} - the host ip address to bind the port to
   \item\textbf{{cluster.containers[i].portBindings[i].hostPort}} - the host port to bind the port to
@@ -1317,10 +1309,14 @@ The aim of these tests is to check that all components of the dynamic software u
 \chapter{Evaluation}
 This Chapter demonstrates the quantitative and qualitative analysis performed on the dynamic software update proxy presented in Chapter \ref{Implementation}. The quantitative analysis focused on the load and saturation performance of the proxy; the speed that proxy applies an upgrade and rolls back to an older version when an upgraded version does not behave correctly. The qualitative analysis focused on the functional correctness and robustness of the proxy. 
 
-Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populare web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. Hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.     
+Real applications including Couchbase\footnote{\label{couchbase} \url{http://www.couchbase.com/}}, WordPress\footnote{\label{wordpress} \url{https://wordpress.com/}} and Lighttpd\footnote{\label{lighttpd}\url{http://www.lighttpd.net/}} were used for the evaluations. Couchbase is a widely used high performing clustered NoSQL database and it is designed to handle large numbers of  simultaneous requests. WordPress is a popular and mature content management system for writing blogs and websites based on PHP\footnote{\label{PHP}\url{http://php.net/}} and MySQL\footnote{\label{MySQL}\url{http://www.mysql.com/}}. WordPress was used by more than 23\% of the top 10 million websites as of September 2014\footnote{\label{w3techs}\url{http://w3techs.com/technologies/overview/content_management/all/}}. Therefore, Couchbase and WordPress were ideal applications for evaluating the proxy. Lighttpd is a popular web server used by several high-traffic websites such as Wikipedia and YouTube. Even though Lighttpd is a populare web server, its bug tracking database\footnote{\label{redmine}\url{http://redmine.lighttpd.net/issues/}} shows that it is not crash bug free. Hence, in addition to Couchbase and WordPress,  Lighttpd was used to test that the dynamic software update proxy is able to handle updates that cause incorrect behavior or crashes.
+
+All the evaluations described in this chapter were performed by running WordPress, Couchbase and Lighttpd applications within Docker containers inside a virtual machine. The Docker version 0.9.1, build 3600720 was used running in an ubuntu 1404-i386 virtual machine which itself ran on a VirtualBox version 4.3.12 hypervisor. The hypervisor was run on a Mac OS X version 10.9.4.
+
+To run the WordPress application, MySQL and WordPress official repository were used form Docker registry. MySQL container was taken from \url{https://registry.hub.docker.com/_/mysql/} and WordPress was pulled from \url{https://registry.hub.docker.com/_/wordpress/}. For Couchbase and Lighttpd, custom Docker containers were used running Couchbase version 2.5.1 and Lighttpd version 1.4.23.              
 
 \section{Quantitative Analysis}
-This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy.
+This section summarizes the load and saturation tests performed on the dynamic software update proxy. The performance of the proxy was also measured under multiple upgrades and different error conditions to evaluate how rapidly the proxy responds to an upgraded application version behaving incorrectly. The aim of these tests were to evaluate the performance and stability of the proxy. The HTTP benchmarking tool, \textit{wrk}, (Section \ref{wrk_1}) was used for all the quantitative analysis.
 
 \subsection{Load Performance and Saturation Tests}\label{load} 
 The objectives of these evaluations were to test performance of the proxy for forwarding requests to different applications. Both saturation and load tests were performed on Coachbase and WordPress applications running within Docker containers inside a virtual machine by the proxy. Appendix \ref{Appendix II} shows the proxy configuration used to run WordPress and Coachbase Docker containers.\medskip
@@ -1374,7 +1370,7 @@ INSTANT and CONCURRENT upgrades (Section \ref{modes}) were applied on version 3.
 
 The proxy was initially configured to forward requests to the WordPress application version 3.9.1. The proxy was then configured to perform an upgrade to WordPress version 3.9.2 using either INSTANT or CONCURRENT mode. The latency for processing HTTP requests by WordPress via the proxy was recorded. The latency was also recorded for the scenario when the upgraded version failed (Table \ref{upgrade-speed}). The failure was simulated by stopping the upgraded version after the proxy had been configured to perform the upgrade. This test therefore measured the latency for the proxy to roll back a failed upgrade using INSTANT or CONCURRENT mode. SESSION and GRADUAL modes were not tested because they behave identically to INSTANT mode when a failure in an upgraded version occurs.
 
-As shown in Table \ref{upgrade-speed}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. 
+As shown in Table \ref{upgrade-speed}, there is no additional latency introduced by the proxy when rolling back in response to a failure in an upgraded application version. \\
 
 \begin{table}[!h]
 \caption {Proxy Latency for dynamic upgrade and error recovery}
@@ -2601,9 +2597,9 @@ Content-Type: text/html; charset=UTF-8
 
 
 \subsection{Lighttpd Upgrade with Incorrect Behavior} 
-Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of lighttpd web server with improved HTTP Etag functionality was released\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in lighttpd improved the Etag functionality, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the lighttpd server was crashing when the request was requesting a compressed response by using a "Accept-Encoding: deflate, gzip" header.
+Lighttpd is common web server used by popular websites such as Wikipedia and YouTube. In April 2009 a new version of Lighttpd web server with improved HTTP Etag functionality was released\footnote{\url{http://redmine.lighttpd.net/projects/lighttpd/repository/revisions/2438}}. An Etag is a header returned by an HTTP/1.1 web server to determine changes in content of a resource. Even though the new changes in Lighttpd improved the Etag functionality, they broke the support for HTTP compression in the new version\footnote{\url {http://redmine.lighttpd.net/issues/2169}}. Therefore, the Lighttpd server was crashing when the request was requesting a compressed response by using a "Accept-Encoding: deflate, gzip" header.
 
-To evaluate the ability of the proxy to detect the incorrect behavior of the lighttpd with the compression crash bug the following scenario was tested. The proxy was initially configured to forward requests to a Docker container running a fully functional bug-free version of the lighttpd. The proxy was then configured to perform a CONCURRENT upgrade to the new version of lighttpd containing the compression crash bug. HTTP requests were sent to lighttpd and the behavior of the proxy and the responses received from lighttpd via the proxy were analyzed. The analysis showed that when the upgrade was applied, the proxy forwarded HTTP requests to both new and old version of lighttpd server. When HTTP requests were sent without the "Accept-Encoding" header, the proxy forwarded responses to the client from the new version of lighttpd. However, for HTTP requests with the "Accept-Encoding" header, the proxy forwarded requests to both versions but since the new version crashed, the proxy seamlessly dropped the crash response from the new version and forwarded the response from the old version of lighttpd to the client. The result from each step of the evaluation is shown below.
+To evaluate the ability of the proxy to detect the incorrect behavior of the Lighttpd with the compression crash bug the following scenario was tested. The proxy was initially configured to forward requests to a Docker container running a fully functional bug-free version of the Lighttpd. The proxy was then configured to perform a CONCURRENT upgrade to the new version of Lighttpd containing the compression crash bug. HTTP requests were sent to Lighttpd and the behavior of the proxy and the responses received from Lighttpd via the proxy were analyzed. The analysis showed that when the upgrade was applied, the proxy forwarded HTTP requests to both new and old version of Lighttpd server. When HTTP requests were sent without the "Accept-Encoding" header, the proxy forwarded responses to the client from the new version of Lighttpd. However, for HTTP requests with the "Accept-Encoding" header, the proxy forwarded requests to both versions but since the new version crashed, the proxy seamlessly dropped the crash response from the new version and forwarded the response from the old version of Lighttpd to the client. The result from each step of the evaluation is shown below.
 
 \noindent
 \textit{Proxy Initial Configuration Running Bug-free Lighttpd}
@@ -2869,7 +2865,7 @@ Even though the proxy fully supports dynamic software upgrade for the HTTP proto
 \begin{list}{-}{}
 \itemsep0em
        \item HTTPS for secure HTTP messages
-       \item Database protocols such as Open DataBase Connectivity (ODBC) or Memcache Protocol
+       \item Database protocols such as Open DataBase Connectivity (ODBC\footnote{\url{http://www.orafaq.com/wiki/ODBC_FAQ}}) or Memcache\footnote{\url{http://memcached.org/}} Protocol
        \item Messaging protocols such as MQTT\footnote{\url{http://mqtt.org/}} (Message Queue Telemetry Transport), AMQP\footnote{\url{http://www.amqp.org/}} (Advanced Message Queuing Protocol) or STOMP\footnote{\url{http://stomp.github.io/implementations.html}} (Simple/Streaming Text Oriented Messaging Protocol) 
 \end{list}
 
@@ -2901,7 +2897,7 @@ The proxy provides a simple REST API to support dynamically updating the cluster
 \textbf{PUT - /configuration/cluster}
 
 \noindent
-To add a new cluster make a PUT request to \textit{/configuration/cluster}.  There are two supported request body formats depending on whether the cluster is using docker containers or pre-existing servers (i.e. IP and port combinations), as follows:\bigskip
+To add a new cluster make a PUT request to \textit{/configuration/cluster}.  There are two supported request body formats depending on whether the cluster is using Docker containers or pre-existing servers (i.e. IP and port combinations), as follows:\bigskip
 
 \noindent
 \textit{\textbf{Request Body - Docker Container Configuration}}
@@ -2990,7 +2986,7 @@ To add a new cluster make a PUT request to \textit{/configuration/cluster}.  The
 Type: 'Array' Default value: '[]'\smallskip
 
 \noindent 
-specifies the list of docker containers in the cluster.\bigskip
+specifies the list of Docker containers in the cluster.\bigskip
 
 \noindent
 \textbf{cluster.containers[i].image}
@@ -3089,7 +3085,7 @@ the container's hostname.\bigskip
 Type: 'Array' Default value: '[]'\smallskip
 
 \noindent 
-mount volumes from either the host or from another docker container.\bigskip
+mount volumes from either the host or from another Docker container.\bigskip
 
 \noindent
 \textbf{cluster.containers[i].volumesFrom}
@@ -3098,7 +3094,7 @@ mount volumes from either the host or from another docker container.\bigskip
 Type: 'Array' Default value: '[]'\smallskip
 
 \noindent 
-mount all the volumes defined for one or more other docker containers, including control over whether the volumes are mounted in read-write or read-only mode.\bigskip
+mount all the volumes defined for one or more other Docker containers, including control over whether the volumes are mounted in read-write or read-only mode.\bigskip
 
 \noindent
 \textbf{cluster.containers[i].portBindings}
@@ -3862,11 +3858,13 @@ $ service docker.io restart
 
 \subsection*{Install Proxy}
 The proxy can be installed in two simple steps as follows:
-\begin{list}{-}{}
-  \itemsep0em
-  \item git clone https://github.com/samirabloom/doxy
-  \item make
-\end{list}
+\begin{lstlisting}[language=terminal]
+$ git clone https://github.com/samirabloom/doxy
+\end{lstlisting}
+
+\begin{lstlisting}[language=terminal]
+$ make
+\end{lstlisting}
 
 \noindent
 The above steps install the proxy to the PATH by adding it to the \textit{/usr/local/bin} directory. However, this will only work if the PATH environment variable has \textit{/usr/local/bin} in its list of directories. 
