@@ -3852,7 +3852,8 @@ Docker can be installed from \url{https://docs.docker.com/installation/#installa
 After Docker installation to ensure that the Docker daemon listens on a TCP socket and the proxy can connect to it, the following two commands should be executed: \medskip
 
 \begin{lstlisting}[language=terminal]
-$ sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io
+$ sed -i 's/#DOCKER_OPTS.*/DOCKER_OPTS="-H unix:\/\/ \ 
+  -H tcp:\/\/0.0.0.0:2375"/g' /etc/default/docker.io
 \end{lstlisting}
 
 \begin{lstlisting}[language=terminal]

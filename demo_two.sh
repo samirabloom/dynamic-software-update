@@ -44,9 +44,9 @@ USER_DATA_DIR=google/user/data/`date +'%s'`
 "$GOOGLE_CHROME" --user-data-dir=$USER_DATA_DIR --no-default-browser-check --no-first-run --disable-default-apps --window-position=0,0 "http://127.0.0.1:8080" &> /dev/null
 
 echo
-echo "==================================="
-echo "FAILING UPGRADE WORDPRESS CONTAINER"
-echo "==================================="
+echo "===================================="
+echo "FAILING UPGRADED WORDPRESS CONTAINER"
+echo "===================================="
 echo
 
 read -n 2 -s
